@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.2.8
+// @version      6.2.9
 // @description      Adds a floating modal for advanced search on X.com (Twitter). Syncs with search box and remembers position/display state. The top-right search icon is now draggable and its position persists.
 // @description:ja   X.com（Twitter）に高度な検索機能を呼び出せるフローティング・モーダルを追加します。検索ボックスと双方向で同期し、位置や表示状態も記憶します。右上の検索アイコンはドラッグで移動でき、位置は保存されます。
 // @description:en   Adds a floating modal for advanced search on X.com (formerly Twitter). Syncs with search box and remembers position/display state. The top-right search icon is draggable with persistent position.
@@ -4237,6 +4237,18 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             background: rgba(244, 33, 46, 0.1); /* Red tint */
             color: rgb(244, 33, 46);
             border-color: rgb(244, 33, 46);
+        }
+
+        /* 検索入力中、モーダルを背景レベルまで下げる */
+        #advanced-search-modal.adv-z-lower {
+            z-index: 0 !important;
+        }
+
+        /* 検索入力中、Xのアプリ全体をモーダルの上に持ち上げる */
+        /* #react-root は body 直下の X アプリケーションのルート要素 */
+        #react-root.adv-app-lifted {
+            z-index: 1 !important;
+            position: relative !important; /* z-indexを効かせるために必須 */
         }
     `);
 
@@ -11178,6 +11190,35 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 }
             }, { passive: true, capture: true }); // capture: true でより確実に補足
         });
+
+        // 検索入力中、アプリ全体を持ち上げてサジェストをモーダルの上に表示する
+        const handleNativeSearchFocus = (e) => {
+            const target = e.target;
+            if (!target || target.nodeType !== 1) return;
+
+            const isSearchInput = target.matches(allSearchSelectorsStr) ||
+                                  target.getAttribute('data-testid') === 'SearchBox_Search_Input';
+            if (!isSearchInput) return;
+
+            const modalEl = document.getElementById('advanced-search-modal');
+            const reactRoot = document.getElementById('react-root'); // Xのアプリルート要素
+
+            if (!modalEl || !reactRoot) return;
+
+            if (e.type === 'focusin') {
+                // アプリ全体を持ち上げ、モーダルを下げる
+                modalEl.classList.add('adv-z-lower');
+                reactRoot.classList.add('adv-app-lifted');
+            } else if (e.type === 'focusout') {
+                // サジェストクリックの猶予を持たせて元に戻す
+                setTimeout(() => {
+                    modalEl.classList.remove('adv-z-lower');
+                    reactRoot.classList.remove('adv-app-lifted');
+                }, 200);
+            }
+        };
+        appContainer.addEventListener('focusin', handleNativeSearchFocus);
+        appContainer.addEventListener('focusout', handleNativeSearchFocus);
 
         // 3. フォーム送信 (イベント委任)
         appContainer.addEventListener('submit', (e) => {
