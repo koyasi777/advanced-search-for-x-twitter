@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.2.9
+// @version      6.3.0
 // @description      Adds a floating modal for advanced search on X.com (Twitter). Syncs with search box and remembers position/display state. The top-right search icon is now draggable and its position persists.
 // @description:ja   X.com（Twitter）に高度な検索機能を呼び出せるフローティング・モーダルを追加します。検索ボックスと双方向で同期し、位置や表示状態も記憶します。右上の検索アイコンはドラッグで移動でき、位置は保存されます。
 // @description:en   Adds a floating modal for advanced search on X.com (formerly Twitter). Syncs with search box and remembers position/display state. The top-right search icon is draggable with persistent position.
@@ -4250,6 +4250,26 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             z-index: 1 !important;
             position: relative !important; /* z-indexを効かせるために必須 */
         }
+
+        /* === Native Search Resizer === */
+        form[role="search"] {
+            position: relative !important; /* リサイザーの基準点 */
+            max-width: none !important;    /* 幅制限の解除 */
+        }
+        .adv-native-search-resizer {
+            position: absolute;
+            right: -8px;
+            top: 0;
+            bottom: 0;
+            width: 16px;
+            cursor: col-resize;
+            z-index: 9999;
+            background: transparent;
+            touch-action: none; /* スマホでのスクロール干渉防止 */
+        }
+        .adv-native-search-resizer:hover {
+            background: rgba(29,155,240,0.15); /* ホバー時に薄く青色を表示 */
+        }
     `);
 
     const modalHTML = `
@@ -6576,6 +6596,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         const SECRET_KEY  = 'advSearchSecretMode_v1';
 
         const MUTE_KEY = 'advMutedWords_v1';
+        const NATIVE_SEARCH_WIDTH_KEY = 'advNativeSearchWidth_v1';
         const migrateMuted = (list) =>
           Array.isArray(list)
             ? list
@@ -6634,6 +6655,81 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           rescanAllTweetsForFilter();
         };
 
+        // 検索窓リサイザーのセットアップ関数
+        const setupNativeSearchResizer = () => {
+            // サイドバーおよびメインカラムの検索フォームを対象にする
+            const forms = document.querySelectorAll('div[data-testid="sidebarColumn"] form[role="search"], div[data-testid="primaryColumn"] form[role="search"]');
+
+            // 保存された幅を取得
+            const savedWidth = kv.get(NATIVE_SEARCH_WIDTH_KEY, null);
+
+            forms.forEach(form => {
+                // 既に適用済みならスキップ
+                if (form.querySelector('.adv-native-search-resizer')) {
+                    // ただし幅が未適用の場合は再適用（DOM書き換え対策）
+                    if (savedWidth && form.style.width !== savedWidth) {
+                        form.style.width = savedWidth;
+                    }
+                    return;
+                }
+
+                // 幅の初期適用
+                if (savedWidth) {
+                    form.style.width = savedWidth;
+                }
+
+                // リサイズハンドルを作成
+                const resizer = document.createElement('div');
+                resizer.className = 'adv-native-search-resizer';
+                resizer.title = 'Drag to resize search box';
+                form.appendChild(resizer);
+
+                // ドラッグ処理
+                let isResizing = false;
+                let startX = 0;
+                let startW = 0;
+
+                const onPointerDown = (e) => {
+                    if (e.button !== 0) return; // 左クリックのみ
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    isResizing = true;
+                    startX = e.clientX;
+                    startW = form.getBoundingClientRect().width;
+
+                    document.body.classList.add('adv-dragging');
+                    try { resizer.setPointerCapture(e.pointerId); } catch (_) {}
+                };
+
+                const onPointerMove = (e) => {
+                    if (!isResizing) return;
+                    e.preventDefault();
+
+                    // 幅の計算
+                    const dx = e.clientX - startX;
+                    const newW = Math.max(200, startW + dx); // 最小幅200px
+
+                    form.style.width = `${newW}px`;
+                };
+
+                const onPointerUp = (e) => {
+                    if (!isResizing) return;
+                    isResizing = false;
+                    document.body.classList.remove('adv-dragging');
+                    try { resizer.releasePointerCapture(e.pointerId); } catch (_) {}
+
+                    // 保存
+                    kv.set(NATIVE_SEARCH_WIDTH_KEY, form.style.width);
+                };
+
+                resizer.addEventListener('pointerdown', onPointerDown);
+                window.addEventListener('pointermove', onPointerMove);
+                window.addEventListener('pointerup', onPointerUp);
+                window.addEventListener('pointercancel', onPointerUp);
+            });
+        };
+
         const SETTINGS_EXPORT_VERSION = 2;
         function buildSettingsExportJSON() {
           // タブごとのズーム
@@ -6670,6 +6766,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             // シークレットモード・履歴ソート
             secret: kv.get(SECRET_KEY, '0') === '1',
             historySort: kv.get(HISTORY_SORT_KEY, 'newest'),
+
+            // 検索窓の幅
+            nativeSearchWidth: kv.get(NATIVE_SEARCH_WIDTH_KEY, null),
 
             // タブ状態
             tabs: {
@@ -6791,6 +6890,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             }
             if (data.historySort) {
                 try { kv.set(HISTORY_SORT_KEY, data.historySort); } catch (_) {}
+            }
+            // 検索窓の幅復元
+            if (data.nativeSearchWidth !== undefined) {
+                try {
+                    if (data.nativeSearchWidth) kv.set(NATIVE_SEARCH_WIDTH_KEY, data.nativeSearchWidth);
+                    else kv.del(NATIVE_SEARCH_WIDTH_KEY);
+                } catch (_) {}
             }
             if (data.tabs && typeof data.tabs === 'object') {
                 if (data.tabs.last) {
@@ -7671,6 +7777,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               EXC_HANDLE_KEY,
               EXC_REPOSTS_KEY,
               EXC_HASHTAGS_KEY,
+              NATIVE_SEARCH_WIDTH_KEY,
               FAV_KEY,
               'advSavedUnassignedIndex_v1',
               'advAccountsUnassignedIndex_v1',
@@ -9686,7 +9793,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         const ACCOUNTS_FOLDERS_KEY = 'advAccountsFolders_v1';
         const LISTS_FOLDERS_KEY    = 'advListsFolders_v1';
         // ▼ セクション（フォルダー + Unassigned）の並び順を永続化するキー
-        const SAVED_FOLDERS_KEY    = 'advSavedFolders_v1'
+        const SAVED_FOLDERS_KEY    = 'advSavedFolders_v1';
 
         function loadFolders(key, _defaultName="") {
           const raw = loadJSON(key, null);
@@ -11076,6 +11183,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                                 }
                             }
 
+                            // 検索フォームが追加されたらリサイザーをセットアップ
+                            if (node.matches?.('form[role="search"]') || node.querySelector?.('form[role="search"]')) {
+                                // 少し遅延させてDOM安定後に実行
+                                setTimeout(setupNativeSearchResizer, 100);
+                            }
+
                             // B. ツイート (article) が直接追加された場合
                             if (node.tagName === 'ARTICLE' && node.getAttribute('data-testid') === 'tweet') {
                                 processSingleTweet(node);
@@ -11127,6 +11240,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
                 // ページ遷移時は強制的に全スキャン (Force)
                 processNewTweets(true);
+                setupNativeSearchResizer();
             });
         };
         window.addEventListener('resize', debounce(()=>{
@@ -11274,6 +11388,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         activateTab(targetTab || 'search');
         (async () => {
             const input = await waitForElement(searchInputSelectors.join(','), 7000);
+
+            // 検索窓が見つかったらリサイザー設置
+            setupNativeSearchResizer();
+
             if (input) {
                 syncFromSearchBoxToModal();
                 applyScopesToControls(readScopesFromURL());
