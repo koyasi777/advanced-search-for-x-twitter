@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.3.6
+// @version      6.3.7
 // @description      Adds a floating modal for advanced search on X.com (Twitter). Syncs with search box and remembers position/display state. The top-right search icon is now draggable and its position persists.
 // @description:ja   X.com（Twitter）に高度な検索機能を呼び出せるフローティング・モーダルを追加します。検索ボックスと双方向で同期し、位置や表示状態も記憶します。右上の検索アイコンはドラッグで移動でき、位置は保存されます。
 // @description:en   Adds a floating modal for advanced search on X.com (formerly Twitter). Syncs with search box and remembers position/display state. The top-right search icon is draggable with persistent position.
@@ -4321,6 +4321,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             .ft-tag-dropdown {
                 /* 32bit整数の最大値を指定して、GrokやDMレイヤー(#layers: 6000)を含むあらゆる要素の上に強制配置 */
                 z-index: 2147483647 !important;
+            }
+
+            /* モーダルが開いている(bodyにクラスがある)時はトリガーを消す */
+            body.adv-modal-active #advanced-search-trigger {
+                display: none !important;
             }
         }
     `);
@@ -10578,6 +10583,14 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             const shouldShow = (!blocked) && ( (desiredVisible && !autoClose) || manualOverrideOpen );
             const wasShown = (modal.style.display === 'flex');
             modal.style.display = shouldShow ? 'flex' : 'none';
+
+            // 表示状態に合わせてbodyにクラスをトグル
+            if (shouldShow) {
+                document.body.classList.add('adv-modal-active');
+            } else {
+                document.body.classList.remove('adv-modal-active');
+            }
+
             if (shouldShow) {
                 // 既に表示されている場合(wasShown=true)は、位置の強制適用をスキップする
                 if (!wasShown) {
@@ -10601,10 +10614,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             if (isVisibleNow) {
                 manualOverrideOpen = false;
                 modal.style.display = 'none';
+                document.body.classList.remove('adv-modal-active');
                 saveModalRelativeState();
             } else {
                 manualOverrideOpen = true;
                 modal.style.display = 'flex';
+                document.body.classList.add('adv-modal-active');
                 syncFromSearchBoxToModal();
                 applyScopesToControls(readScopesFromURL());
                 applyModalStoredPosition();
@@ -10618,6 +10633,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         const closeModal = () => {
             manualOverrideOpen = false;
             modal.style.display = 'none';
+            document.body.classList.remove('adv-modal-active');
             saveModalRelativeState();
         };
         closeButton.addEventListener('click', closeModal);
