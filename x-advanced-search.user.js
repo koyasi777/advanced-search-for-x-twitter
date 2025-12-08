@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.3.2
+// @version      6.3.3
 // @description      Adds a floating modal for advanced search on X.com (Twitter). Syncs with search box and remembers position/display state. The top-right search icon is now draggable and its position persists.
 // @description:ja   X.com（Twitter）に高度な検索機能を呼び出せるフローティング・モーダルを追加します。検索ボックスと双方向で同期し、位置や表示状態も記憶します。右上の検索アイコンはドラッグで移動でき、位置は保存されます。
 // @description:en   Adds a floating modal for advanced search on X.com (formerly Twitter). Syncs with search box and remembers position/display state. The top-right search icon is draggable with persistent position.
@@ -2786,9 +2786,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
     GM_addStyle(`
         :root { --modal-primary-color:#1d9bf0; --modal-primary-color-hover:#1a8cd8; --modal-primary-text-color:#fff; }
+        #layers { z-index: 6000 !important; } /* #layers (Grok/DM) をモーダルより手前に表示する設定 */
         #advanced-search-trigger { position:fixed; top:18px; right:20px; z-index:9999; background-color:var(--modal-primary-color); color:var(--modal-primary-text-color); border:none; border-radius:50%; width:50px; height:50px; font-size:24px; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; transition:transform .2s, background-color .2s; }
         #advanced-search-trigger:hover { transform:scale(1.1); background-color:var(--modal-primary-color-hover); }
-        #advanced-search-modal { position:fixed; z-index:10000; width:450px; display:none; flex-direction:column; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background-color:var(--modal-bg, #000); color:var(--modal-text-primary, #e7e9ea); border:1px solid var(--modal-border, #333); border-radius:16px; box-shadow:0 8px 24px rgba(29,155,240,.2); transition:background-color .2s,color .2s,border-color .2s; }
+        #advanced-search-modal { position:fixed; z-index: 5000; width:450px; display:none; flex-direction:column; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background-color:var(--modal-bg, #000); color:var(--modal-text-primary, #e7e9ea); border:1px solid var(--modal-border, #333); border-radius:16px; box-shadow:0 8px 24px rgba(29,155,240,.2); transition:background-color .2s,color .2s,border-color .2s; }
         .adv-modal-header{padding:12px 16px;border-bottom:1px solid var(--modal-border,#333);cursor:move;display:flex;justify-content:space-between;align-items:center}
         .adv-modal-title-left{display:flex;align-items:center;gap:8px;}
         .adv-modal-header h2{margin:0;font-size:18px;font-weight:700}
@@ -5755,7 +5756,28 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
         const modalContainer = document.createElement('div');
         modalContainer.innerHTML = modalHTML;
-        document.body.appendChild(modalContainer);
+        // bodyへの単純追加をやめ、#layers と同じ階層に挿入
+        const mountModal = () => {
+            const layers = document.getElementById('layers');
+            // #layers が見つかればその親要素に追加（layersの直前＝裏側に挿入）
+            if (layers && layers.parentNode) {
+                // まだ挿入されていない、または場所が違う場合のみ移動
+                if (modalContainer.nextSibling !== layers) {
+                    layers.parentNode.insertBefore(modalContainer, layers);
+                }
+            } else {
+                // #layers がまだない場合は body に仮置き
+                if (modalContainer.parentNode !== document.body) {
+                    document.body.appendChild(modalContainer);
+                }
+            }
+        };
+
+        // 初回配置
+        mountModal();
+
+        // X (React) が画面遷移でDOMを書き換えてモーダルが消されるのを防ぐため、定期的に配置を修正
+        setInterval(mountModal, 500);
         i18n.apply(modalContainer);
 
         const modal = document.getElementById('advanced-search-modal');
