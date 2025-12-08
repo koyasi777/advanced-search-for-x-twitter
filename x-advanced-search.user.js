@@ -4328,7 +4328,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
                 /* サイズの強制 (画面に合わせる) */
                 width: 96vw !important;
-                height: 87vh !important;
+                height: 85.5vh !important;
                 max-width: none !important;
                 max-height: none !important;
                 border-radius: 16px !important;
