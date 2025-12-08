@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.3.0
+// @version      6.3.1
 // @description      Adds a floating modal for advanced search on X.com (Twitter). Syncs with search box and remembers position/display state. The top-right search icon is now draggable and its position persists.
 // @description:ja   X.com（Twitter）に高度な検索機能を呼び出せるフローティング・モーダルを追加します。検索ボックスと双方向で同期し、位置や表示状態も記憶します。右上の検索アイコンはドラッグで移動でき、位置は保存されます。
 // @description:en   Adds a floating modal for advanced search on X.com (formerly Twitter). Syncs with search box and remembers position/display state. The top-right search icon is draggable with persistent position.
@@ -4239,16 +4239,50 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             border-color: rgb(244, 33, 46);
         }
 
-        /* 検索入力中、モーダルを背景レベルまで下げる */
+        /* ▼▼▼ 検索入力中のフォーカス制御 (Focus Mode) ▼▼▼ */
+
+        /* 1. モーダルを背景レベルまで下げる */
         #advanced-search-modal.adv-z-lower {
             z-index: 0 !important;
         }
 
-        /* 検索入力中、Xのアプリ全体をモーダルの上に持ち上げる */
+        /* 2. Xのアプリ全体をモーダルの上に持ち上げる（サジェスト救出のため） */
         /* #react-root は body 直下の X アプリケーションのルート要素 */
         #react-root.adv-app-lifted {
             z-index: 1 !important;
             position: relative !important; /* z-indexを効かせるために必須 */
+        }
+
+        /* 3. サイドバー全体を「不可視」にする
+           これにより、トレンド・おすすめユーザー・フッター・枠線などが全て消え、
+           背後にあるモーダルが見えるように。
+           (opacityではなくvisibilityを使うことで、枠線も判定も完全に消す)
+        */
+        #react-root.adv-app-lifted [data-testid="sidebarColumn"] {
+            visibility: hidden !important;
+        }
+
+        /* 4. 検索フォームとその中身だけを「可視化」して救出する
+           （visibilityは親がhiddenでも自分をvisibleにすれば表示される）
+        */
+        #react-root.adv-app-lifted [data-testid="sidebarColumn"] form[role="search"],
+        #react-root.adv-app-lifted [data-testid="sidebarColumn"] form[role="search"] * {
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        /* 5. サジェスト（入力候補）も同様に救出する */
+        #react-root.adv-app-lifted [data-testid="sidebarColumn"] [role="listbox"],
+        #react-root.adv-app-lifted [data-testid="sidebarColumn"] [role="listbox"] * {
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        /* モーダルが左側にあって被る場合のみ、左メニューを隠す */
+        #react-root.adv-app-lifted.adv-overlap-left-menu header[role="banner"] {
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
         }
 
         /* === Native Search Resizer === */
@@ -11305,7 +11339,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             }, { passive: true, capture: true }); // capture: true でより確実に補足
         });
 
-        // 検索入力中、アプリ全体を持ち上げてサジェストをモーダルの上に表示する
+        // 検索入力中、アプリ全体を持ち上げてサジェストを表示しつつ、サイドバーのノイズを隠す
         const handleNativeSearchFocus = (e) => {
             const target = e.target;
             if (!target || target.nodeType !== 1) return;
@@ -11315,19 +11349,35 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             if (!isSearchInput) return;
 
             const modalEl = document.getElementById('advanced-search-modal');
-            const reactRoot = document.getElementById('react-root'); // Xのアプリルート要素
+            const reactRoot = document.getElementById('react-root');
 
             if (!modalEl || !reactRoot) return;
 
+            // モーダルが表示されているかチェック (非表示なら何もしない)
+            const isModalVisible = window.getComputedStyle(modalEl).display !== 'none';
+
             if (e.type === 'focusin') {
-                // アプリ全体を持ち上げ、モーダルを下げる
-                modalEl.classList.add('adv-z-lower');
-                reactRoot.classList.add('adv-app-lifted');
+                // モーダルが開いている時だけ発動
+                if (isModalVisible) {
+                    modalEl.classList.add('adv-z-lower');
+                    reactRoot.classList.add('adv-app-lifted');
+
+                    // モーダルの位置を確認し、左メニューと被るなら左メニューを隠すフラグを立てる
+                    const modalRect = modalEl.getBoundingClientRect();
+                    // 左メニューの幅は最大で275px程度(PC版)
+                    // モーダルの左端が 300px 未満なら「左メニューの上に重なっている」とみなす
+                    if (modalRect.left < 300) {
+                        reactRoot.classList.add('adv-overlap-left-menu');
+                    } else {
+                        reactRoot.classList.remove('adv-overlap-left-menu');
+                    }
+                }
             } else if (e.type === 'focusout') {
-                // サジェストクリックの猶予を持たせて元に戻す
+                // クリック猶予を持たせて元に戻す
                 setTimeout(() => {
                     modalEl.classList.remove('adv-z-lower');
                     reactRoot.classList.remove('adv-app-lifted');
+                    reactRoot.classList.remove('adv-overlap-left-menu'); //フラグ解除
                 }, 200);
             }
         };
