@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.3.1
+// @version      6.4.2
 // @description      Adds a floating modal for advanced search on X.com (Twitter). Syncs with search box and remembers position/display state. The top-right search icon is now draggable and its position persists.
 // @description:ja   X.com（Twitter）に高度な検索機能を呼び出せるフローティング・モーダルを追加します。検索ボックスと双方向で同期し、位置や表示状態も記憶します。右上の検索アイコンはドラッグで移動でき、位置は保存されます。
 // @description:en   Adds a floating modal for advanced search on X.com (formerly Twitter). Syncs with search box and remembers position/display state. The top-right search icon is draggable with persistent position.
@@ -2778,11 +2778,18 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
     const isBroadcastPath = (pathname) => /^\/i\/broadcasts\//.test(pathname);
     const isBlockedPath = (pathname) => isMediaViewPath(pathname) || isComposePath(pathname) || isProfileMediaPath(pathname) || isBroadcastPath(pathname);
 
+    // ▼ 自動的に閉じるパスかどうかを判定する関数
+    const isAutoClosePath = (pathname) => {
+        const targets = ['/messages', '/i/grok', '/settings', '/i/chat', '/i/spaces', '/i/monetization'];
+        return targets.some(t => pathname.startsWith(t));
+    };
+
     GM_addStyle(`
         :root { --modal-primary-color:#1d9bf0; --modal-primary-color-hover:#1a8cd8; --modal-primary-text-color:#fff; }
+        #layers { z-index: 6000 !important; } /* #layers (Grok/DM) をモーダルより手前に表示する設定 */
         #advanced-search-trigger { position:fixed; top:18px; right:20px; z-index:9999; background-color:var(--modal-primary-color); color:var(--modal-primary-text-color); border:none; border-radius:50%; width:50px; height:50px; font-size:24px; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; transition:transform .2s, background-color .2s; }
         #advanced-search-trigger:hover { transform:scale(1.1); background-color:var(--modal-primary-color-hover); }
-        #advanced-search-modal { position:fixed; z-index:10000; width:450px; display:none; flex-direction:column; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background-color:var(--modal-bg, #000); color:var(--modal-text-primary, #e7e9ea); border:1px solid var(--modal-border, #333); border-radius:16px; box-shadow:0 8px 24px rgba(29,155,240,.2); transition:background-color .2s,color .2s,border-color .2s; }
+        #advanced-search-modal { position:fixed; z-index: 5000; width:450px; display:none; flex-direction:column; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background-color:var(--modal-bg, #000); color:var(--modal-text-primary, #e7e9ea); border:1px solid var(--modal-border, #333); border-radius:16px; box-shadow:0 8px 24px rgba(29,155,240,.2); transition:background-color .2s,color .2s,border-color .2s; }
         .adv-modal-header{padding:12px 16px;border-bottom:1px solid var(--modal-border,#333);cursor:move;display:flex;justify-content:space-between;align-items:center}
         .adv-modal-title-left{display:flex;align-items:center;gap:8px;}
         .adv-modal-header h2{margin:0;font-size:18px;font-weight:700}
@@ -4304,6 +4311,59 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         .adv-native-search-resizer:hover {
             background: rgba(29,155,240,0.15); /* ホバー時に薄く青色を表示 */
         }
+
+        /* ▼SP時 (幅700px以下) はレイヤー調整を無視して強制最前面にする */
+        @media screen and (max-width: 700px) {
+            /* 設定モーダル等をメインモーダルと同じ最前面レイヤーに持ち上げる */
+            /* これによりDOM順序が後の設定モーダルが手前に表示される */
+            #adv-settings-modal.adv-settings-modal,
+            .ft-modal-backdrop {
+                z-index: 2147483647 !important;
+            }
+            /* モーダル本体: 画面中央に固定し、サイズを強制適用 */
+            #advanced-search-modal {
+                z-index: 2147483647 !important; /* 最前面 */
+
+                /* 位置の強制固定 (JSによるstyle属性を無視させる) */
+                position: fixed !important;
+                top: 50% !important;
+                left: 50% !important;
+                right: auto !important;
+                bottom: auto !important;
+                transform: translate(-50%, -50%) !important;
+
+                /* サイズの強制 (画面に合わせる) */
+                width: 96vw !important;
+                height: 85.5vh !important;
+                max-width: none !important;
+                max-height: none !important;
+                border-radius: 16px !important;
+            }
+
+            /* ヘッダー: ドラッグできると思わせないカーソルにする */
+            .adv-modal-header {
+                cursor: default !important;
+            }
+
+            /* リサイザー: 非表示にして操作不能にする */
+            .adv-resizer {
+                display: none !important;
+            }
+
+            /* SP時は位置を強制的に右下の投稿ボタンの上に固定 */
+            #advanced-search-trigger {
+                top: auto !important;
+                left: auto !important;
+                right: 23.5px !important; /* 画面右からの距離 */
+                bottom: 140px !important; /* 画面下からの距離（投稿ボタンの高さ+ナビバー分を考慮して上に配置） */
+                transform: none !important;
+            }
+
+            /* モーダルが開いている(bodyにクラスがある)時はトリガーを消す */
+            body.adv-modal-active #advanced-search-trigger {
+                display: none !important;
+            }
+        }
     `);
 
     const modalHTML = `
@@ -5749,7 +5809,28 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
         const modalContainer = document.createElement('div');
         modalContainer.innerHTML = modalHTML;
-        document.body.appendChild(modalContainer);
+        // bodyへの単純追加をやめ、#layers と同じ階層に挿入
+        const mountModal = () => {
+            const layers = document.getElementById('layers');
+            // #layers が見つかればその親要素に追加（layersの直前＝裏側に挿入）
+            if (layers && layers.parentNode) {
+                // まだ挿入されていない、または場所が違う場合のみ移動
+                if (modalContainer.nextSibling !== layers) {
+                    layers.parentNode.insertBefore(modalContainer, layers);
+                }
+            } else {
+                // #layers がまだない場合は body に仮置き
+                if (modalContainer.parentNode !== document.body) {
+                    document.body.appendChild(modalContainer);
+                }
+            }
+        };
+
+        // 初回配置
+        mountModal();
+
+        // X (React) が画面遷移でDOMを書き換えてモーダルが消されるのを防ぐため、定期的に配置を修正
+        setInterval(mountModal, 500);
         i18n.apply(modalContainer);
 
         const modal = document.getElementById('advanced-search-modal');
@@ -6694,6 +6775,22 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             // サイドバーおよびメインカラムの検索フォームを対象にする
             const forms = document.querySelectorAll('div[data-testid="sidebarColumn"] form[role="search"], div[data-testid="primaryColumn"] form[role="search"]');
 
+            // Exploreページ (/explore 配下) の場合は機能を除外してネイティブに戻す
+            if (location.pathname.startsWith('/explore')) {
+                forms.forEach(form => {
+                    // 幅指定を削除してX本来のCSSレイアウトに戻す
+                    if (form.style.width) {
+                        form.style.width = '';
+                    }
+                    // 既にリサイザーが付与されている場合は削除する (SPA遷移で残っている場合など)
+                    const existingResizer = form.querySelector('.adv-native-search-resizer');
+                    if (existingResizer) {
+                        existingResizer.remove();
+                    }
+                });
+                return; // ここで処理終了
+            }
+
             // 保存された幅を取得
             const savedWidth = kv.get(NATIVE_SEARCH_WIDTH_KEY, null);
 
@@ -7192,6 +7289,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         applyTabsVisibility();
 
         const saveModalRelativeState = () => {
+            // ▼ SP時は、PC用のレイアウト設定（開閉状態含む）を絶対に上書きさせない
+            // これにより「SPで閉じても、PCに戻ったら開いたまま」を実現する
+            if (window.innerWidth <= 700) return;
+
             if (modal.style.display === 'none') {
                 try {
                     const current = (()=>{
@@ -7232,6 +7333,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             } catch(e) { console.error('Failed to apply modal position:', e); }
         };
         const keepModalInViewport = () => {
+            // ▼ SP時はCSSにレイアウトを任せるため、JSによる補正を行わない
+            if (window.innerWidth <= 700) return;
+
             if (modal.style.display === 'none') return;
             const rect = modal.getBoundingClientRect();
             const winW = window.innerWidth, winH = window.innerHeight, m = 10;
@@ -7261,6 +7365,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         };
 
         const saveTriggerRelativeState = () => {
+            // ▼ SP表示時は位置を保存しない
+            if (window.innerWidth <= 700) return;
+
             const rect = trigger.getBoundingClientRect();
             const winW = window.innerWidth, winH = window.innerHeight;
             const fromRight = winW - rect.right, fromBottom = winH - rect.bottom;
@@ -7301,6 +7408,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             let isPointerDown = false, isDragging = false, start = {x:0,y:0,left:0,top:0}, suppressClick=false;
             const onPointerDown = (e) => {
                 if (e.button !== 0) return;
+                // ▼ SP時はドラッグ無効
+                if (window.innerWidth <= 700) return;
                 isPointerDown = true; isDragging = false; suppressClick=false;
                 const rect = trigger.getBoundingClientRect();
                 start = { x:e.clientX, y:e.clientY, left:rect.left, top:rect.top };
@@ -9578,6 +9687,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             const header = modal.querySelector('.adv-modal-header');
             let dragging=false, offset={x:0,y:0};
             header.addEventListener('mousedown', e=>{
+                // ▼ SP時はドラッグ開始しない
+                if (window.innerWidth <= 700) return;
+
                 if (e.target.matches('button,a') && !e.target.classList.contains('adv-secret-btn')) return;
                 dragging=true;
                 const rect = modal.getBoundingClientRect();
@@ -9604,6 +9716,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             let resizing = null;
 
             const onPointerDown = (e) => {
+                // ▼ SP時はリサイズ開始しない
+                if (window.innerWidth <= 700) return;
+
                 const h = e.target.closest('.adv-resizer');
                 if (!h) return;
                 e.preventDefault();
@@ -10502,10 +10617,20 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
         const reconcileUI = () => {
             const stored = (()=>{ try { return JSON.parse(kv.get(MODAL_STATE_KEY,'{}')); } catch{ return {}; } })();
-            const desiredVisible = !!stored.visible;
-            const blocked = isBlockedPath(location.pathname);
 
-            if (blocked) {
+            // ▼SP時は、データ上で「表示(visible:true)」になっていても強制的に false (非表示) 扱いにする
+            // PC時はデータの通りにする
+            const isSP = window.innerWidth <= 700;
+            const desiredVisible = isSP ? false : !!stored.visible;
+
+            const blocked = isBlockedPath(location.pathname);
+            const autoClose = isAutoClosePath(location.pathname);
+
+            // SPサイズ かつ パスが /i/grok から始まる場合
+            const isGrokMobile = isSP && location.pathname.startsWith('/i/grok');
+
+            // blocked（メディアビューア等）または isGrokMobile なら非表示
+            if (blocked || isGrokMobile) {
                 trigger.style.display = 'none';
             } else {
                 trigger.style.display = '';
@@ -10513,9 +10638,19 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 requestAnimationFrame(keepTriggerInViewport);
             }
 
-            const shouldShow = (!blocked) && (desiredVisible || manualOverrideOpen);
+            // SPの場合：desiredVisible は常に false なので、manualOverrideOpen (アイコンクリック) がないと表示されない
+            // PCの場合：desiredVisible が true なら、autoClose でなければ表示される
+            const shouldShow = (!blocked) && ( (desiredVisible && !autoClose) || manualOverrideOpen );
             const wasShown = (modal.style.display === 'flex');
             modal.style.display = shouldShow ? 'flex' : 'none';
+
+            // 表示状態に合わせてbodyにクラスをトグル
+            if (shouldShow) {
+                document.body.classList.add('adv-modal-active');
+            } else {
+                document.body.classList.remove('adv-modal-active');
+            }
+
             if (shouldShow) {
                 // 既に表示されている場合(wasShown=true)は、位置の強制適用をスキップする
                 if (!wasShown) {
@@ -10539,10 +10674,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             if (isVisibleNow) {
                 manualOverrideOpen = false;
                 modal.style.display = 'none';
+                document.body.classList.remove('adv-modal-active');
                 saveModalRelativeState();
             } else {
                 manualOverrideOpen = true;
                 modal.style.display = 'flex';
+                document.body.classList.add('adv-modal-active');
                 syncFromSearchBoxToModal();
                 applyScopesToControls(readScopesFromURL());
                 applyModalStoredPosition();
@@ -10556,6 +10693,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         const closeModal = () => {
             manualOverrideOpen = false;
             modal.style.display = 'none';
+            document.body.classList.remove('adv-modal-active');
             saveModalRelativeState();
         };
         closeButton.addEventListener('click', closeModal);
