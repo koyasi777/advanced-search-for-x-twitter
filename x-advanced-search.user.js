@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.3.4
+// @version      6.3.5
 // @description      Adds a floating modal for advanced search on X.com (Twitter). Syncs with search box and remembers position/display state. The top-right search icon is now draggable and its position persists.
 // @description:ja   X.com（Twitter）に高度な検索機能を呼び出せるフローティング・モーダルを追加します。検索ボックスと双方向で同期し、位置や表示状態も記憶します。右上の検索アイコンはドラッグで移動でき、位置は保存されます。
 // @description:en   Adds a floating modal for advanced search on X.com (formerly Twitter). Syncs with search box and remembers position/display state. The top-right search icon is draggable with persistent position.
@@ -6721,6 +6721,22 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         const setupNativeSearchResizer = () => {
             // サイドバーおよびメインカラムの検索フォームを対象にする
             const forms = document.querySelectorAll('div[data-testid="sidebarColumn"] form[role="search"], div[data-testid="primaryColumn"] form[role="search"]');
+
+            // Exploreページ (/explore 配下) の場合は機能を除外してネイティブに戻す
+            if (location.pathname.startsWith('/explore')) {
+                forms.forEach(form => {
+                    // 幅指定を削除してX本来のCSSレイアウトに戻す
+                    if (form.style.width) {
+                        form.style.width = '';
+                    }
+                    // 既にリサイザーが付与されている場合は削除する (SPA遷移で残っている場合など)
+                    const existingResizer = form.querySelector('.adv-native-search-resizer');
+                    if (existingResizer) {
+                        existingResizer.remove();
+                    }
+                });
+                return; // ここで処理終了
+            }
 
             // 保存された幅を取得
             const savedWidth = kv.get(NATIVE_SEARCH_WIDTH_KEY, null);
