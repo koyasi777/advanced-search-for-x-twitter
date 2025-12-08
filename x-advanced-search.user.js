@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.3.8
+// @version      6.3.9
 // @description      Adds a floating modal for advanced search on X.com (Twitter). Syncs with search box and remembers position/display state. The top-right search icon is now draggable and its position persists.
 // @description:ja   X.com（Twitter）に高度な検索機能を呼び出せるフローティング・モーダルを追加します。検索ボックスと双方向で同期し、位置や表示状態も記憶します。右上の検索アイコンはドラッグで移動でき、位置は保存されます。
 // @description:en   Adds a floating modal for advanced search on X.com (formerly Twitter). Syncs with search box and remembers position/display state. The top-right search icon is draggable with persistent position.
@@ -4314,20 +4314,41 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
         /* ▼SP時 (幅700px以下) はレイヤー調整を無視して強制最前面にする */
         @media screen and (max-width: 700px) {
-            #advanced-search-modal,
-            #advanced-search-trigger,
-            .adv-settings-modal,
-            .ft-modal-backdrop,
-            .ft-tag-dropdown {
-                /* 32bit整数の最大値を指定して、GrokやDMレイヤー(#layers: 6000)を含むあらゆる要素の上に強制配置 */
-                z-index: 2147483647 !important;
+            /* モーダル本体: 画面中央に固定し、サイズを強制適用 */
+            #advanced-search-modal {
+                z-index: 2147483647 !important; /* 最前面 */
+
+                /* 位置の強制固定 (JSによるstyle属性を無視させる) */
+                position: fixed !important;
+                top: 50% !important;
+                left: 50% !important;
+                right: auto !important;
+                bottom: auto !important;
+                transform: translate(-50%, -50%) !important;
+
+                /* サイズの強制 (画面に合わせる) */
+                width: 92vw !important;  /* 横幅いっぱいより少し余裕を持たせる */
+                height: 85vh !important; /* 縦幅も余裕を持たせる */
+                max-width: none !important;
+                max-height: none !important;
+                border-radius: 16px !important;
+            }
+
+            /* ヘッダー: ドラッグできると思わせないカーソルにする */
+            .adv-modal-header {
+                cursor: default !important;
+            }
+
+            /* リサイザー: 非表示にして操作不能にする */
+            .adv-resizer {
+                display: none !important;
             }
 
             /* SP時は位置を強制的に右下の投稿ボタンの上に固定 */
             #advanced-search-trigger {
                 top: auto !important;
                 left: auto !important;
-                right: 23.5px !important;  /* 画面右からの距離 */
+                right: 23.5px !important; /* 画面右からの距離 */
                 bottom: 140px !important; /* 画面下からの距離（投稿ボタンの高さ+ナビバー分を考慮して上に配置） */
                 transform: none !important;
             }
@@ -7262,6 +7283,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         applyTabsVisibility();
 
         const saveModalRelativeState = () => {
+            // ▼ SP時は、PC用のレイアウト設定（開閉状態含む）を絶対に上書きさせない
+            // これにより「SPで閉じても、PCに戻ったら開いたまま」を実現する
+            if (window.innerWidth <= 700) return;
+
             if (modal.style.display === 'none') {
                 try {
                     const current = (()=>{
@@ -7302,6 +7327,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             } catch(e) { console.error('Failed to apply modal position:', e); }
         };
         const keepModalInViewport = () => {
+            // ▼ SP時はCSSにレイアウトを任せるため、JSによる補正を行わない
+            if (window.innerWidth <= 700) return;
+
             if (modal.style.display === 'none') return;
             const rect = modal.getBoundingClientRect();
             const winW = window.innerWidth, winH = window.innerHeight, m = 10;
@@ -9653,6 +9681,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             const header = modal.querySelector('.adv-modal-header');
             let dragging=false, offset={x:0,y:0};
             header.addEventListener('mousedown', e=>{
+                // ▼ SP時はドラッグ開始しない
+                if (window.innerWidth <= 700) return;
+
                 if (e.target.matches('button,a') && !e.target.classList.contains('adv-secret-btn')) return;
                 dragging=true;
                 const rect = modal.getBoundingClientRect();
@@ -9679,6 +9710,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             let resizing = null;
 
             const onPointerDown = (e) => {
+                // ▼ SP時はリサイズ開始しない
+                if (window.innerWidth <= 700) return;
+
                 const h = e.target.closest('.adv-resizer');
                 if (!h) return;
                 e.preventDefault();
@@ -10577,10 +10611,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
         const reconcileUI = () => {
             const stored = (()=>{ try { return JSON.parse(kv.get(MODAL_STATE_KEY,'{}')); } catch{ return {}; } })();
-            const desiredVisible = !!stored.visible;
-            const blocked = isBlockedPath(location.pathname);
 
-            // ▼ 現在のパスが自動クローズ対象か判定
+            // ▼SP時は、データ上で「表示(visible:true)」になっていても強制的に false (非表示) 扱いにする
+            // PC時はデータの通りにする
+            const isSP = window.innerWidth <= 700;
+            const desiredVisible = isSP ? false : !!stored.visible;
+
+            const blocked = isBlockedPath(location.pathname);
             const autoClose = isAutoClosePath(location.pathname);
 
             if (blocked) {
@@ -10591,9 +10628,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 requestAnimationFrame(keepTriggerInViewport);
             }
 
-            // ▼ 自動クローズ対象の場合、手動オープン(manualOverrideOpen)されていなければ隠す
-            // desiredVisible（設定値）が true でも、autoClose エリアにいる間は無視される
-            // エリアから出れば autoClose が false になり、desiredVisible が再び有効になる（＝復活）
+            // SPの場合：desiredVisible は常に false なので、manualOverrideOpen (アイコンクリック) がないと表示されない
+            // PCの場合：desiredVisible が true なら、autoClose でなければ表示される
             const shouldShow = (!blocked) && ( (desiredVisible && !autoClose) || manualOverrideOpen );
             const wasShown = (modal.style.display === 'flex');
             modal.style.display = shouldShow ? 'flex' : 'none';
