@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.3.1
+// @version      6.3.2
 // @description      Adds a floating modal for advanced search on X.com (Twitter). Syncs with search box and remembers position/display state. The top-right search icon is now draggable and its position persists.
 // @description:ja   X.com（Twitter）に高度な検索機能を呼び出せるフローティング・モーダルを追加します。検索ボックスと双方向で同期し、位置や表示状態も記憶します。右上の検索アイコンはドラッグで移動でき、位置は保存されます。
 // @description:en   Adds a floating modal for advanced search on X.com (formerly Twitter). Syncs with search box and remembers position/display state. The top-right search icon is draggable with persistent position.
@@ -2777,6 +2777,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
     const isProfileMediaPath = (pathname) => /^\/[A-Za-z0-9_]{1,50}\/(?:photo|header_photo)\/?$/.test(pathname);
     const isBroadcastPath = (pathname) => /^\/i\/broadcasts\//.test(pathname);
     const isBlockedPath = (pathname) => isMediaViewPath(pathname) || isComposePath(pathname) || isProfileMediaPath(pathname) || isBroadcastPath(pathname);
+
+    // ▼ 自動的に閉じるパスかどうかを判定する関数
+    const isAutoClosePath = (pathname) => {
+        const targets = ['/messages', '/i/grok', '/settings', '/i/chat', '/i/spaces'];
+        return targets.some(t => pathname.startsWith(t));
+    };
 
     GM_addStyle(`
         :root { --modal-primary-color:#1d9bf0; --modal-primary-color-hover:#1a8cd8; --modal-primary-text-color:#fff; }
@@ -10505,6 +10511,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             const desiredVisible = !!stored.visible;
             const blocked = isBlockedPath(location.pathname);
 
+            // ▼ 現在のパスが自動クローズ対象か判定
+            const autoClose = isAutoClosePath(location.pathname);
+
             if (blocked) {
                 trigger.style.display = 'none';
             } else {
@@ -10513,7 +10522,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 requestAnimationFrame(keepTriggerInViewport);
             }
 
-            const shouldShow = (!blocked) && (desiredVisible || manualOverrideOpen);
+            // ▼ 自動クローズ対象の場合、手動オープン(manualOverrideOpen)されていなければ隠す
+            // desiredVisible（設定値）が true でも、autoClose エリアにいる間は無視される
+            // エリアから出れば autoClose が false になり、desiredVisible が再び有効になる（＝復活）
+            const shouldShow = (!blocked) && ( (desiredVisible && !autoClose) || manualOverrideOpen );
             const wasShown = (modal.style.display === 'flex');
             modal.style.display = shouldShow ? 'flex' : 'none';
             if (shouldShow) {
