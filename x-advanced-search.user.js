@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.3.5
+// @version      6.3.6
 // @description      Adds a floating modal for advanced search on X.com (Twitter). Syncs with search box and remembers position/display state. The top-right search icon is now draggable and its position persists.
 // @description:ja   X.com（Twitter）に高度な検索機能を呼び出せるフローティング・モーダルを追加します。検索ボックスと双方向で同期し、位置や表示状態も記憶します。右上の検索アイコンはドラッグで移動でき、位置は保存されます。
 // @description:en   Adds a floating modal for advanced search on X.com (formerly Twitter). Syncs with search box and remembers position/display state. The top-right search icon is draggable with persistent position.
@@ -4310,6 +4310,18 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         }
         .adv-native-search-resizer:hover {
             background: rgba(29,155,240,0.15); /* ホバー時に薄く青色を表示 */
+        }
+
+        /* ▼SP時 (幅700px以下) はレイヤー調整を無視して強制最前面にする */
+        @media screen and (max-width: 700px) {
+            #advanced-search-modal,
+            #advanced-search-trigger,
+            .adv-settings-modal,
+            .ft-modal-backdrop,
+            .ft-tag-dropdown {
+                /* 32bit整数の最大値を指定して、GrokやDMレイヤー(#layers: 6000)を含むあらゆる要素の上に強制配置 */
+                z-index: 2147483647 !important;
+            }
         }
     `);
 
