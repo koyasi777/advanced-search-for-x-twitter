@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.3.7
+// @version      6.3.8
 // @description      Adds a floating modal for advanced search on X.com (Twitter). Syncs with search box and remembers position/display state. The top-right search icon is now draggable and its position persists.
 // @description:ja   X.com（Twitter）に高度な検索機能を呼び出せるフローティング・モーダルを追加します。検索ボックスと双方向で同期し、位置や表示状態も記憶します。右上の検索アイコンはドラッグで移動でき、位置は保存されます。
 // @description:en   Adds a floating modal for advanced search on X.com (formerly Twitter). Syncs with search box and remembers position/display state. The top-right search icon is draggable with persistent position.
@@ -4323,6 +4323,15 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 z-index: 2147483647 !important;
             }
 
+            /* SP時は位置を強制的に右下の投稿ボタンの上に固定 */
+            #advanced-search-trigger {
+                top: auto !important;
+                left: auto !important;
+                right: 23.5px !important;  /* 画面右からの距離 */
+                bottom: 140px !important; /* 画面下からの距離（投稿ボタンの高さ+ナビバー分を考慮して上に配置） */
+                transform: none !important;
+            }
+
             /* モーダルが開いている(bodyにクラスがある)時はトリガーを消す */
             body.adv-modal-active #advanced-search-trigger {
                 display: none !important;
@@ -7322,6 +7331,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         };
 
         const saveTriggerRelativeState = () => {
+            // ▼ SP表示時は位置を保存しない
+            if (window.innerWidth <= 700) return;
+
             const rect = trigger.getBoundingClientRect();
             const winW = window.innerWidth, winH = window.innerHeight;
             const fromRight = winW - rect.right, fromBottom = winH - rect.bottom;
@@ -7362,6 +7374,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             let isPointerDown = false, isDragging = false, start = {x:0,y:0,left:0,top:0}, suppressClick=false;
             const onPointerDown = (e) => {
                 if (e.button !== 0) return;
+                // ▼ SP時はドラッグ無効
+                if (window.innerWidth <= 700) return;
                 isPointerDown = true; isDragging = false; suppressClick=false;
                 const rect = trigger.getBoundingClientRect();
                 start = { x:e.clientX, y:e.clientY, left:rect.left, top:rect.top };
