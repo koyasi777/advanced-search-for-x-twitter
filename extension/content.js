@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.4.2
+// @version      6.4.8
 // @description      Adds a floating modal for advanced search on X.com (Twitter). Syncs with search box and remembers position/display state. The top-right search icon is now draggable and its position persists.
 // @description:ja   X.com（Twitter）に高度な検索機能を呼び出せるフローティング・モーダルを追加します。検索ボックスと双方向で同期し、位置や表示状態も記憶します。右上の検索アイコンはドラッグで移動でき、位置は保存されます。
 // @description:en   Adds a floating modal for advanced search on X.com (formerly Twitter). Syncs with search box and remembers position/display state. The top-right search icon is draggable with persistent position.
@@ -2790,7 +2790,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         #advanced-search-trigger { position:fixed; top:18px; right:20px; z-index:9999; background-color:var(--modal-primary-color); color:var(--modal-primary-text-color); border:none; border-radius:50%; width:50px; height:50px; font-size:24px; cursor:pointer; box-shadow:0 4px 12px rgba(0,0,0,0.15); display:flex; align-items:center; justify-content:center; transition:transform .2s, background-color .2s; }
         #advanced-search-trigger:hover { transform:scale(1.1); background-color:var(--modal-primary-color-hover); }
         #advanced-search-modal { position:fixed; z-index: 5000; width:450px; display:none; flex-direction:column; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; background-color:var(--modal-bg, #000); color:var(--modal-text-primary, #e7e9ea); border:1px solid var(--modal-border, #333); border-radius:16px; box-shadow:0 8px 24px rgba(29,155,240,.2); transition:background-color .2s,color .2s,border-color .2s; }
-        .adv-modal-header{padding:12px 16px;border-bottom:1px solid var(--modal-border,#333);cursor:move;display:flex;justify-content:space-between;align-items:center}
+        .adv-modal-header{transform-origin:top left; padding:12px 16px;border-bottom:1px solid var(--modal-border,#333);cursor:move;display:flex;justify-content:space-between;align-items:center}
         .adv-modal-title-left{display:flex;align-items:center;gap:8px;}
         .adv-modal-header h2{margin:0;font-size:18px;font-weight:700}
         .adv-settings-btn{
@@ -2865,7 +2865,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         .adv-checkbox-item label{color:var(--modal-text-secondary,#8b98a5);margin-bottom:0}
         .adv-checkbox-item input[type="checkbox"]:disabled {opacity:0.5; cursor:not-allowed;}
         .adv-checkbox-item input[type="checkbox"]:disabled + label {opacity:0.5;cursor:not-allowed;text-decoration:line-through;}
-        .adv-modal-footer{padding:12px 16px;border-top:1px solid var(--modal-border,#333);display:flex;justify-content:flex-end;gap:12px}
+        .adv-modal-footer{transform-origin:top left; padding:12px 16px;border-top:1px solid var(--modal-border,#333);display:flex;justify-content:flex-end;gap:12px}
         .adv-modal-button{padding:5px 16px;border-radius:9999px;border:1px solid var(--modal-text-secondary,#536471);background-color:transparent;color:var(--modal-text-primary,#e7e9ea);font-weight:700;cursor:pointer;transition:background-color .2s}
         .adv-modal-button:hover{background-color:var(--modal-button-hover-bg,rgba(231,233,234,.1))}
         .adv-modal-button.primary,
@@ -2899,6 +2899,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
         .adv-tabs {
             display: flex;
+            transform-origin: top left;
             border-bottom: 1px solid var(--modal-border, #333);
             padding: 0 8px 0 6px;
             gap: 4px;
@@ -4348,15 +4349,6 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             /* リサイザー: 非表示にして操作不能にする */
             .adv-resizer {
                 display: none !important;
-            }
-
-            /* SP時は位置を強制的に右下の投稿ボタンの上に固定 */
-            #advanced-search-trigger {
-                top: auto !important;
-                left: auto !important;
-                right: 23.5px !important; /* 画面右からの距離 */
-                bottom: 140px !important; /* 画面下からの距離（投稿ボタンの高さ+ナビバー分を考慮して上に配置） */
-                transform: none !important;
             }
 
             /* モーダルが開いている(bodyにクラスがある)時はトリガーを消す */
@@ -6551,6 +6543,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
         /* タブごと保存に対応 */
         const ZOOM_KEYS = {
+          modal_ui: 'advZoom_modal_ui_v1',
+          tabs:     'advZoom_tabs_v1',
           search:  'advZoom_tab_search_v1',
           history: 'advZoom_tab_history_v1',
           saved:   'advZoom_tab_saved_v1',
@@ -6563,6 +6557,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
         /* 各タブの現在値（メモリキャッシュ） */
         const zoomByTab = {
+          modal_ui: 1.0,
+          tabs:    1.0,
           search:  1.0,
           history: 1.0,
           saved:   1.0,
@@ -6601,41 +6597,87 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         Object.keys(zoomByTab).forEach(loadZoomFor);
 
         const applyZoom = () => {
+          // 1. コンテンツエリアのズーム適用 (各タブの中身)
           const tab = getActiveTabName();
           const el = getActiveZoomRoot();
-          if (!el) return;
-          const z = zoomByTab[tab] ?? 1.0;
-
-          el.style.zoom = '';
-          el.style.transform = '';
-          el.style.width = '';
-
-          if ('zoom' in el.style) {
-            el.style.zoom = z;
-          } else {
-            el.style.transform = `scale(${z})`;
-            el.style.width = `${(100 / z).toFixed(3)}%`;
+          if (el) {
+            const z = zoomByTab[tab] ?? 1.0;
+            el.style.zoom = ''; el.style.transform = ''; el.style.width = '';
+            if ('zoom' in el.style) { el.style.zoom = z; }
+            else { el.style.transform = `scale(${z})`; el.style.width = `${(100 / z).toFixed(3)}%`; }
           }
+
+          // 2. タブバー(.adv-tabs)のズーム適用
+          const tabsEl = document.querySelector('.adv-tabs');
+          if (tabsEl) {
+            const zTabs = zoomByTab.tabs ?? 1.0; // キー 'tabs' を使用
+            tabsEl.style.zoom = ''; tabsEl.style.transform = ''; tabsEl.style.width = '';
+
+            if ('zoom' in tabsEl.style) {
+              tabsEl.style.zoom = zTabs;
+            } else {
+              tabsEl.style.transform = `scale(${zTabs})`;
+              tabsEl.style.width = `${(100 / zTabs).toFixed(3)}%`;
+            }
+          }
+
+          // 3. モーダルヘッダー & フッター (modal_ui) のズーム適用
+          const uiElements = [
+            document.querySelector('.adv-modal-header'),
+            document.querySelector('.adv-modal-footer')
+          ];
+          const zUI = zoomByTab.modal_ui ?? 1.0;
+
+          uiElements.forEach(uiEl => {
+            if (!uiEl) return;
+            uiEl.style.zoom = ''; uiEl.style.transform = ''; uiEl.style.width = '';
+
+            if ('zoom' in uiEl.style) {
+              uiEl.style.zoom = zUI;
+            } else {
+              uiEl.style.transform = `scale(${zUI})`;
+              // ヘッダー/フッターは width:100% が基本なので、scale時は幅を補正してレイアウト崩れを防ぐ
+              uiEl.style.width = `${(100 / zUI).toFixed(3)}%`;
+            }
+          });
         };
 
-        const setZoomActiveTab = (z) => {
-          const tab = getActiveTabName();
-          zoomByTab[tab] = clampZoom(z);
+        const setZoomTarget = (z, targetKey) => {
+          const key = targetKey || getActiveTabName();
+          zoomByTab[key] = clampZoom(z);
           applyZoom();
-          saveZoomFor(tab);
+          saveZoomFor(key);
         };
 
-        /* タブ見出しは拡大しない：.adv-zoom-rootの内側だけ反応 */
         const onWheelZoom = (e) => {
           const isAccel = e.ctrlKey || e.metaKey;
           if (!isAccel) return;
-          if (!e.target.closest('.adv-zoom-root')) return; // タブバー等は除外
+
+          // カーソル位置の判定
+          const isTabs    = e.target.closest('.adv-tabs');
+          const isContent = e.target.closest('.adv-zoom-root');
+          // ヘッダー(上)またはフッター(下)か判定
+          const isModalUI = e.target.closest('.adv-modal-header, .adv-modal-footer');
+
+          // どこにも該当しなければ無視
+          if (!isTabs && !isContent && !isModalUI) return;
+
           e.preventDefault();
-          const tab = getActiveTabName();
-          const cur = zoomByTab[tab] ?? 1.0;
+
+          // ターゲットキーの決定
+          let targetKey = getActiveTabName(); // デフォルトはコンテンツ
+          if (isTabs) {
+            targetKey = 'tabs';
+          } else if (isModalUI) {
+            targetKey = 'modal_ui';
+          }
+
+          const cur = zoomByTab[targetKey] ?? 1.0;
           const factor = e.deltaY > 0 ? (1 - ZOOM_STEP) : (1 + ZOOM_STEP);
-          setZoomActiveTab(cur * factor);
+
+          setZoomTarget(cur * factor, targetKey);
         };
+
         const onKeyZoom = (e) => {
           const accel = (e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey;
           if (!accel) return;
@@ -7133,6 +7175,33 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             // タブの表示状態を適用
             try { applyTabsVisibility(); } catch (_) {}
 
+            /* ▼▼▼ インポートした設定を即座に画面に反映する処理 ▼▼▼ */
+
+            // 1. ズーム設定の反映
+            // Storageからメモリ変数(zoomByTab)へ再ロードし、DOMに適用
+            try {
+                Object.keys(zoomByTab).forEach(tab => loadZoomFor(tab));
+                applyZoom();
+            } catch (_) {}
+
+            // 2. モーダル位置・サイズの反映
+            // Storageから読み込み直し、位置補正(keepModalInViewport)も含めて適用
+            try {
+                loadModalState(); // 内部で applyModalStoredPosition() が呼ばれ、座標とサイズがセットされる
+                requestAnimationFrame(keepModalInViewport);
+            } catch (_) {}
+
+            // 3. トリガーボタン位置の反映
+            try {
+                applyTriggerStoredPosition();
+                requestAnimationFrame(keepTriggerInViewport);
+            } catch (_) {}
+
+            // 4. 検索窓の幅の反映
+            try {
+                setupNativeSearchResizer();
+            } catch (_) {}
+
             showToast(i18n.t('toastImported'));
             return true;
         }
@@ -7327,9 +7396,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
                 const minW = 300, minH = 240;
                 if (s.w) modal.style.width  = `${Math.max(minW, Math.min(s.w, window.innerWidth  - 20))}px`;
-                else     modal.style.width  = '450px';
+                else     modal.style.width  = '380px';
                 if (s.h) modal.style.height = `${Math.max(minH, Math.min(s.h, window.innerHeight - 20))}px`;
-                else     modal.style.height = '';
+                else     modal.style.height = '730px';
             } catch(e) { console.error('Failed to apply modal position:', e); }
         };
         const keepModalInViewport = () => {
@@ -7364,10 +7433,16 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             }
         };
 
-        const saveTriggerRelativeState = () => {
-            // ▼ SP表示時は位置を保存しない
-            if (window.innerWidth <= 700) return;
+        // レイアウトモードの判定 (SP < 500 <= Tablet < 1000 <= PC)
+        const getTriggerLayoutMode = () => {
+            const w = window.innerWidth;
+            if (w < 500) return 'sp';
+            if (w < 1000) return 'tablet';
+            return 'pc';
+        };
 
+        const saveTriggerRelativeState = () => {
+            // SP/Tabletでも保存する。モードごとにキーを分ける。
             const rect = trigger.getBoundingClientRect();
             const winW = window.innerWidth, winH = window.innerHeight;
             const fromRight = winW - rect.right, fromBottom = winH - rect.bottom;
@@ -7375,16 +7450,71 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             const h_value  = h_anchor === 'left' ? rect.left : fromRight;
             const v_anchor = rect.top  < fromBottom ? 'top'  : 'bottom';
             const v_value  = v_anchor === 'top' ? rect.top : fromBottom;
-            const state = { h_anchor, h_value, v_anchor, v_value };
-            kv.set(TRIGGER_STATE_KEY, JSON.stringify(state));
+
+            // 全体の保存データを読み込み
+            let allStates = {};
+            try { allStates = JSON.parse(kv.get(TRIGGER_STATE_KEY, '{}')) || {}; } catch(_) {}
+
+            // 現在のモードに対して保存
+            const mode = getTriggerLayoutMode();
+            allStates[mode] = { h_anchor, h_value, v_anchor, v_value };
+
+            kv.set(TRIGGER_STATE_KEY, JSON.stringify(allStates));
         };
         const applyTriggerStoredPosition = () => {
             try {
-                const s = JSON.parse(kv.get(TRIGGER_STATE_KEY, '{}'));
-                const h_anchor = s.h_anchor || 'right';
-                const h_value  = s.h_value ?? 20;
-                const v_anchor = s.v_anchor || 'top';
-                const v_value  = s.v_value ?? 18;
+                let allStates = {};
+                try { allStates = JSON.parse(kv.get(TRIGGER_STATE_KEY, '{}')) || {}; } catch(_) {}
+
+                // 旧バージョンデータ（直下にプロパティがある場合）のマイグレーション
+                if (allStates.h_anchor && !allStates.pc) {
+                    allStates = { pc: { ...allStates }, tablet: {}, sp: {} };
+                }
+
+                const mode = getTriggerLayoutMode();
+                const s = allStates[mode] || {};
+
+                // デフォルト値の分岐
+                let defHAnchor = 'right', defHValue = 20;
+                let defVAnchor = 'top',   defVValue = 18;
+
+                if (mode === 'sp') {
+                    // SPのデフォルト: 右下 (投稿ボタンの上あたり)
+                    defHAnchor = 'right'; defHValue = 23.5;
+                    defVAnchor = 'bottom'; defVValue = 140;
+                } else if (mode === 'tablet') {
+                    // Tabletのデフォルト設定
+
+                    // 保存された位置がない（初期状態）場合、DOM上の投稿ボタンの位置を探してその下に配置する
+                    if (!s.h_anchor && !s.v_anchor) {
+                        const postBtn = document.querySelector('[data-testid="SideNav_NewTweet_Button"]');
+                        if (postBtn) {
+                            const rect = postBtn.getBoundingClientRect();
+                            // ボタンが見えていて座標が取れる場合のみ計算
+                            if (rect.width > 0 && rect.height > 0) {
+                                // トリガーのサイズ(CSSで50px)の半分を引いてセンタリング
+                                const triggerSize = 50;
+                                const centerX = rect.left + (rect.width / 2) - (triggerSize / 2);
+                                const topY = rect.bottom + 20; // ボタンの下 20px の余白
+
+                                trigger.style.left = `${centerX}px`;
+                                trigger.style.top = `${topY}px`;
+                                trigger.style.right = 'auto';
+                                trigger.style.bottom = 'auto';
+                                return; // 自動配置できたのでここで処理終了
+                            }
+                        }
+                    }
+                    // 見つからない場合や保存済みがある場合のフォールバック（右下）
+                    defHAnchor = 'right'; defHValue = 20;
+                    defVAnchor = 'bottom'; defVValue = 100;
+                }
+
+                const h_anchor = s.h_anchor || defHAnchor;
+                const h_value  = s.h_value ?? defHValue;
+                const v_anchor = s.v_anchor || defVAnchor;
+                const v_value  = s.v_value ?? defVValue;
+
                 trigger.style.left = trigger.style.right = trigger.style.top = trigger.style.bottom = 'auto';
                 if (h_anchor === 'right') trigger.style.right = `${h_value}px`; else trigger.style.left = `${h_value}px`;
                 if (v_anchor === 'bottom') trigger.style.bottom = `${v_value}px`; else trigger.style.top = `${v_value}px`;
@@ -7392,11 +7522,15 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         };
         const keepTriggerInViewport = () => {
             const rect = trigger.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return;
+
             const winW = window.innerWidth, winH = window.innerHeight, m = 6;
             let x = rect.left, y = rect.top;
             if (x < m) x = m; if (y < m) y = m;
             if (x + rect.width > winW - m) x = winW - rect.width - m;
             if (y + rect.height > winH - m) y = winH - rect.height - m;
+
+            // 補正が必要な場合のみスタイルを上書きする
             if (Math.round(x) !== Math.round(rect.left) || Math.round(y) !== Math.round(rect.top)) {
                 trigger.style.left = `${x}px`; trigger.style.top = `${y}px`;
                 trigger.style.right = 'auto'; trigger.style.bottom = 'auto';
@@ -7408,8 +7542,6 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             let isPointerDown = false, isDragging = false, start = {x:0,y:0,left:0,top:0}, suppressClick=false;
             const onPointerDown = (e) => {
                 if (e.button !== 0) return;
-                // ▼ SP時はドラッグ無効
-                if (window.innerWidth <= 700) return;
                 isPointerDown = true; isDragging = false; suppressClick=false;
                 const rect = trigger.getBoundingClientRect();
                 start = { x:e.clientX, y:e.clientY, left:rect.left, top:rect.top };
@@ -8021,6 +8153,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               modal.style.top = '';
               modal.style.bottom = '';
               loadModalState();
+              requestAnimationFrame(keepModalInViewport);
             } catch (_) {}
 
             // トリガーボタンの位置もリセット
@@ -10626,16 +10759,21 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             const blocked = isBlockedPath(location.pathname);
             const autoClose = isAutoClosePath(location.pathname);
 
-            // SPサイズ かつ パスが /i/grok から始まる場合
-            const isGrokMobile = isSP && location.pathname.startsWith('/i/grok');
+            // SPサイズ かつ パスが /i/grok または /i/chat または /messages から始まる場合
+            const isMobileHiddenPath = isSP && (
+                location.pathname.startsWith('/i/grok') ||
+                location.pathname.startsWith('/i/chat') ||
+                location.pathname.startsWith('/messages')
+            );
 
-            // blocked（メディアビューア等）または isGrokMobile なら非表示
-            if (blocked || isGrokMobile) {
+            // blocked（メディアビューア等）または isMobileHiddenPath なら非表示
+            if (blocked || isMobileHiddenPath) {
                 trigger.style.display = 'none';
             } else {
                 trigger.style.display = '';
                 applyTriggerStoredPosition();
-                requestAnimationFrame(keepTriggerInViewport);
+                // CSSの適用(右下配置)が完了するのを少し待ってから、画面外チェックを行う
+                setTimeout(() => requestAnimationFrame(keepTriggerInViewport), 100);
             }
 
             // SPの場合：desiredVisible は常に false なので、manualOverrideOpen (アイコンクリック) がないと表示されない
@@ -11415,9 +11553,19 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 setupNativeSearchResizer();
             });
         };
+        // Resizeイベントでモードが変わった際に即座に位置を切り替える
+        let lastLayoutMode = getTriggerLayoutMode();
         window.addEventListener('resize', debounce(()=>{
             if (modal.style.display === 'flex') { applyModalStoredPosition(); requestAnimationFrame(keepModalInViewport); }
-            if (trigger.style.display !== 'none') { applyTriggerStoredPosition(); requestAnimationFrame(keepTriggerInViewport); }
+
+            // トリガーの位置再適用 (モードが変わっていたら位置を切り替える)
+            const currentMode = getTriggerLayoutMode();
+            if (trigger.style.display !== 'none') {
+                // ウィンドウリサイズで座標がずれるのを補正、またはモード切替による位置変更
+                applyTriggerStoredPosition();
+                requestAnimationFrame(keepTriggerInViewport);
+            }
+            lastLayoutMode = currentMode;
         }, 100));
         loadModalState();
         reconcileUI();
