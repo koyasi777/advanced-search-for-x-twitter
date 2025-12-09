@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.4.5
+// @version      6.4.6
 // @description      Adds a floating modal for advanced search on X.com (Twitter). Syncs with search box and remembers position/display state. The top-right search icon is now draggable and its position persists.
 // @description:ja   X.com（Twitter）に高度な検索機能を呼び出せるフローティング・モーダルを追加します。検索ボックスと双方向で同期し、位置や表示状態も記憶します。右上の検索アイコンはドラッグで移動でき、位置は保存されます。
 // @description:en   Adds a floating modal for advanced search on X.com (formerly Twitter). Syncs with search box and remembers position/display state. The top-right search icon is draggable with persistent position.
@@ -7123,6 +7123,28 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
             // タブの表示状態を適用
             try { applyTabsVisibility(); } catch (_) {}
+
+            /* ▼▼▼ インポートした設定を即座に画面に反映する処理 ▼▼▼ */
+
+            // 1. ズーム設定の反映
+            // Storageからメモリ変数(zoomByTab)へ再ロードし、DOMに適用
+            try {
+                Object.keys(zoomByTab).forEach(tab => loadZoomFor(tab));
+                applyZoom();
+            } catch (_) {}
+
+            // 2. モーダル位置・サイズの反映
+            // Storageから読み込み直し、位置補正(keepModalInViewport)も含めて適用
+            try {
+                loadModalState(); // 内部で applyModalStoredPosition() が呼ばれ、座標とサイズがセットされる
+                requestAnimationFrame(keepModalInViewport);
+            } catch (_) {}
+
+            // 3. トリガーボタン位置の反映
+            try {
+                applyTriggerStoredPosition();
+                requestAnimationFrame(keepTriggerInViewport);
+            } catch (_) {}
 
             showToast(i18n.t('toastImported'));
             return true;
