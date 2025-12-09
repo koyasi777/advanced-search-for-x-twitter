@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.4.4
+// @version      6.4.5
 // @description      Adds a floating modal for advanced search on X.com (Twitter). Syncs with search box and remembers position/display state. The top-right search icon is now draggable and its position persists.
 // @description:ja   X.com（Twitter）に高度な検索機能を呼び出せるフローティング・モーダルを追加します。検索ボックスと双方向で同期し、位置や表示状態も記憶します。右上の検索アイコンはドラッグで移動でき、位置は保存されます。
 // @description:en   Adds a floating modal for advanced search on X.com (formerly Twitter). Syncs with search box and remembers position/display state. The top-right search icon is draggable with persistent position.
@@ -7318,9 +7318,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
                 const minW = 300, minH = 240;
                 if (s.w) modal.style.width  = `${Math.max(minW, Math.min(s.w, window.innerWidth  - 20))}px`;
-                else     modal.style.width  = '450px';
+                else     modal.style.width  = '380px';
                 if (s.h) modal.style.height = `${Math.max(minH, Math.min(s.h, window.innerHeight - 20))}px`;
-                else     modal.style.height = '';
+                else     modal.style.height = '730px';
             } catch(e) { console.error('Failed to apply modal position:', e); }
         };
         const keepModalInViewport = () => {
@@ -8075,6 +8075,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               modal.style.top = '';
               modal.style.bottom = '';
               loadModalState();
+              requestAnimationFrame(keepModalInViewport);
             } catch (_) {}
 
             // トリガーボタンの位置もリセット
