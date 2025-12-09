@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.4.3
+// @version      6.4.4
 // @description      Adds a floating modal for advanced search on X.com (Twitter). Syncs with search box and remembers position/display state. The top-right search icon is now draggable and its position persists.
 // @description:ja   X.com（Twitter）に高度な検索機能を呼び出せるフローティング・モーダルを追加します。検索ボックスと双方向で同期し、位置や表示状態も記憶します。右上の検索アイコンはドラッグで移動でき、位置は保存されます。
 // @description:en   Adds a floating modal for advanced search on X.com (formerly Twitter). Syncs with search box and remembers position/display state. The top-right search icon is draggable with persistent position.
@@ -4350,15 +4350,6 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 display: none !important;
             }
 
-            /* SP時は位置を強制的に右下の投稿ボタンの上に固定 */
-            #advanced-search-trigger {
-                top: auto !important;
-                left: auto !important;
-                right: 23.5px !important; /* 画面右からの距離 */
-                bottom: 140px !important; /* 画面下からの距離（投稿ボタンの高さ+ナビバー分を考慮して上に配置） */
-                transform: none !important;
-            }
-
             /* モーダルが開いている(bodyにクラスがある)時はトリガーを消す */
             body.adv-modal-active #advanced-search-trigger {
                 display: none !important;
@@ -7364,10 +7355,16 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             }
         };
 
-        const saveTriggerRelativeState = () => {
-            // ▼ SP表示時は位置を保存しない
-            if (window.innerWidth <= 700) return;
+        // レイアウトモードの判定 (SP < 500 <= Tablet < 1000 <= PC)
+        const getTriggerLayoutMode = () => {
+            const w = window.innerWidth;
+            if (w < 500) return 'sp';
+            if (w < 1000) return 'tablet';
+            return 'pc';
+        };
 
+        const saveTriggerRelativeState = () => {
+            // SP/Tabletでも保存する。モードごとにキーを分ける。
             const rect = trigger.getBoundingClientRect();
             const winW = window.innerWidth, winH = window.innerHeight;
             const fromRight = winW - rect.right, fromBottom = winH - rect.bottom;
@@ -7375,16 +7372,71 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             const h_value  = h_anchor === 'left' ? rect.left : fromRight;
             const v_anchor = rect.top  < fromBottom ? 'top'  : 'bottom';
             const v_value  = v_anchor === 'top' ? rect.top : fromBottom;
-            const state = { h_anchor, h_value, v_anchor, v_value };
-            kv.set(TRIGGER_STATE_KEY, JSON.stringify(state));
+
+            // 全体の保存データを読み込み
+            let allStates = {};
+            try { allStates = JSON.parse(kv.get(TRIGGER_STATE_KEY, '{}')) || {}; } catch(_) {}
+
+            // 現在のモードに対して保存
+            const mode = getTriggerLayoutMode();
+            allStates[mode] = { h_anchor, h_value, v_anchor, v_value };
+
+            kv.set(TRIGGER_STATE_KEY, JSON.stringify(allStates));
         };
         const applyTriggerStoredPosition = () => {
             try {
-                const s = JSON.parse(kv.get(TRIGGER_STATE_KEY, '{}'));
-                const h_anchor = s.h_anchor || 'right';
-                const h_value  = s.h_value ?? 20;
-                const v_anchor = s.v_anchor || 'top';
-                const v_value  = s.v_value ?? 18;
+                let allStates = {};
+                try { allStates = JSON.parse(kv.get(TRIGGER_STATE_KEY, '{}')) || {}; } catch(_) {}
+
+                // 旧バージョンデータ（直下にプロパティがある場合）のマイグレーション
+                if (allStates.h_anchor && !allStates.pc) {
+                    allStates = { pc: { ...allStates }, tablet: {}, sp: {} };
+                }
+
+                const mode = getTriggerLayoutMode();
+                const s = allStates[mode] || {};
+
+                // デフォルト値の分岐
+                let defHAnchor = 'right', defHValue = 20;
+                let defVAnchor = 'top',   defVValue = 18;
+
+                if (mode === 'sp') {
+                    // SPのデフォルト: 右下 (投稿ボタンの上あたり)
+                    defHAnchor = 'right'; defHValue = 23.5;
+                    defVAnchor = 'bottom'; defVValue = 140;
+                } else if (mode === 'tablet') {
+                    // Tabletのデフォルト設定
+
+                    // 保存された位置がない（初期状態）場合、DOM上の投稿ボタンの位置を探してその下に配置する
+                    if (!s.h_anchor && !s.v_anchor) {
+                        const postBtn = document.querySelector('[data-testid="SideNav_NewTweet_Button"]');
+                        if (postBtn) {
+                            const rect = postBtn.getBoundingClientRect();
+                            // ボタンが見えていて座標が取れる場合のみ計算
+                            if (rect.width > 0 && rect.height > 0) {
+                                // トリガーのサイズ(CSSで50px)の半分を引いてセンタリング
+                                const triggerSize = 50;
+                                const centerX = rect.left + (rect.width / 2) - (triggerSize / 2);
+                                const topY = rect.bottom + 20; // ボタンの下 20px の余白
+
+                                trigger.style.left = `${centerX}px`;
+                                trigger.style.top = `${topY}px`;
+                                trigger.style.right = 'auto';
+                                trigger.style.bottom = 'auto';
+                                return; // 自動配置できたのでここで処理終了
+                            }
+                        }
+                    }
+                    // 見つからない場合や保存済みがある場合のフォールバック（右下）
+                    defHAnchor = 'right'; defHValue = 20;
+                    defVAnchor = 'bottom'; defVValue = 100;
+                }
+
+                const h_anchor = s.h_anchor || defHAnchor;
+                const h_value  = s.h_value ?? defHValue;
+                const v_anchor = s.v_anchor || defVAnchor;
+                const v_value  = s.v_value ?? defVValue;
+
                 trigger.style.left = trigger.style.right = trigger.style.top = trigger.style.bottom = 'auto';
                 if (h_anchor === 'right') trigger.style.right = `${h_value}px`; else trigger.style.left = `${h_value}px`;
                 if (v_anchor === 'bottom') trigger.style.bottom = `${v_value}px`; else trigger.style.top = `${v_value}px`;
@@ -7392,11 +7444,15 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         };
         const keepTriggerInViewport = () => {
             const rect = trigger.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return;
+
             const winW = window.innerWidth, winH = window.innerHeight, m = 6;
             let x = rect.left, y = rect.top;
             if (x < m) x = m; if (y < m) y = m;
             if (x + rect.width > winW - m) x = winW - rect.width - m;
             if (y + rect.height > winH - m) y = winH - rect.height - m;
+
+            // 補正が必要な場合のみスタイルを上書きする
             if (Math.round(x) !== Math.round(rect.left) || Math.round(y) !== Math.round(rect.top)) {
                 trigger.style.left = `${x}px`; trigger.style.top = `${y}px`;
                 trigger.style.right = 'auto'; trigger.style.bottom = 'auto';
@@ -7408,8 +7464,6 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             let isPointerDown = false, isDragging = false, start = {x:0,y:0,left:0,top:0}, suppressClick=false;
             const onPointerDown = (e) => {
                 if (e.button !== 0) return;
-                // ▼ SP時はドラッグ無効
-                if (window.innerWidth <= 700) return;
                 isPointerDown = true; isDragging = false; suppressClick=false;
                 const rect = trigger.getBoundingClientRect();
                 start = { x:e.clientX, y:e.clientY, left:rect.left, top:rect.top };
@@ -10639,7 +10693,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             } else {
                 trigger.style.display = '';
                 applyTriggerStoredPosition();
-                requestAnimationFrame(keepTriggerInViewport);
+                // CSSの適用(右下配置)が完了するのを少し待ってから、画面外チェックを行う
+                setTimeout(() => requestAnimationFrame(keepTriggerInViewport), 100);
             }
 
             // SPの場合：desiredVisible は常に false なので、manualOverrideOpen (アイコンクリック) がないと表示されない
@@ -11419,9 +11474,19 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 setupNativeSearchResizer();
             });
         };
+        // Resizeイベントでモードが変わった際に即座に位置を切り替える
+        let lastLayoutMode = getTriggerLayoutMode();
         window.addEventListener('resize', debounce(()=>{
             if (modal.style.display === 'flex') { applyModalStoredPosition(); requestAnimationFrame(keepModalInViewport); }
-            if (trigger.style.display !== 'none') { applyTriggerStoredPosition(); requestAnimationFrame(keepTriggerInViewport); }
+
+            // トリガーの位置再適用 (モードが変わっていたら位置を切り替える)
+            const currentMode = getTriggerLayoutMode();
+            if (trigger.style.display !== 'none') {
+                // ウィンドウリサイズで座標がずれるのを補正、またはモード切替による位置変更
+                applyTriggerStoredPosition();
+                requestAnimationFrame(keepTriggerInViewport);
+            }
+            lastLayoutMode = currentMode;
         }, 100));
         loadModalState();
         reconcileUI();
