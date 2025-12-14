@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.5.2
+// @version      6.5.3
 // @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
 // @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
 // @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
@@ -11463,6 +11463,63 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             shareContainer.appendChild(btn);
         }
 
+        // ▼▼▼ 「さらに表示」を自動展開する非同期ヘルパー ▼▼▼
+        async function ft_expandTweetTextIfNeeded(article) {
+            // 1. 記事内の全ての「さらに表示」ボタンを取得
+            const allButtons = article.querySelectorAll('[data-testid="tweet-text-show-more-link"]');
+            let targetBtn = null;
+
+            // 2. メイン投稿のボタンだけを特定する
+            for (const btn of allButtons) {
+                // ボタンの親を遡り、div[role="link"] (引用ツイートのコンテナ) があるか確認
+                // もしあれば、それは引用内のボタンなので無視する
+                if (btn.closest('div[role="link"]')) {
+                    continue;
+                }
+
+                // 引用内ではないボタンが見つかったら、それがメイン投稿のボタン
+                targetBtn = btn;
+                break;
+            }
+
+            // メイン投稿に展開ボタンがなければ何もしない（引用にあっても無視）
+            if (!targetBtn) return;
+
+            const textContainer = article.querySelector('[data-testid="tweetText"]');
+
+            // 例外ケース：テキストコンテナが見つからない場合はクリックだけして少し待つ
+            if (!textContainer) {
+                targetBtn.click();
+                return new Promise(r => setTimeout(r, 300));
+            }
+
+            // MutationObserverでテキストコンテナの変化（展開）を待機する
+            return new Promise(resolve => {
+                let resolved = false;
+                const cleanup = () => {
+                    if (resolved) return;
+                    resolved = true;
+                    observer.disconnect();
+                    clearTimeout(timer);
+                    resolve();
+                };
+
+                // 万が一変化しなかった場合のタイムアウト（2秒）
+                const timer = setTimeout(cleanup, 2000);
+
+                const observer = new MutationObserver(() => {
+                    // DOMが変われば展開完了とみなす
+                    cleanup();
+                });
+
+                // テキストコンテナの中身の変化を監視
+                observer.observe(textContainer, { childList: true, subtree: true, characterData: true });
+
+                // 監視を開始してから、特定したボタンをクリック
+                targetBtn.click();
+            });
+        }
+
         // ボタン生成ロジックを分離（共通化）
         function createFavButtonElement(article, tweetId, sourceBtn) {
             const btn = document.createElement('button');
@@ -11484,10 +11541,20 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             };
             updateState();
 
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+
+                // 現在の状態を確認
+                const isAlreadyFav = isFavorited(tweetId);
+
+                // まだお気に入りしていない（＝これから保存する）場合のみ、全文展開を行う
+                if (!isAlreadyFav) {
+                    await ft_expandTweetTextIfNeeded(article);
+                }
+
                 const meta = ft_extractTweetMeta(article, tweetId);
+
                 toggleFavorite(meta);
                 updateState();
                 ft_processTweetArticle(article);
