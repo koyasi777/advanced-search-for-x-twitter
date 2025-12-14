@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.5.4
+// @version      6.5.5
 // @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
 // @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
 // @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
@@ -9200,21 +9200,22 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         }
 
-        // テキスト内のURLをリンク化する（HTMLエスケープ済みテキストに対して適用）
+        // テキスト内のURL、メンション、ハッシュタグをリンク化する
         function safeLinkify(text) {
             if (!text) return '';
             let escaped = escapeHTML(text);
 
             // Xの仕様で https:// の直後に不可視な空白や改行が含まれる場合があるため除去
-            // これにより "https:// amzn.to" が "https://amzn.to" に結合され、全体が正しくリンク化されます
             escaped = escaped.replace(/(https?:\/\/)\s+/gi, '$1');
 
-            // URL正規表現
+            // 1. URL (外部リンク: adv-content-link)
             // Group 1: http/https/www で始まるURL
-            // Group 2: プロトコルなしのドメイン (誤検知防止の後読み付き)
+            // Group 2: プロトコルなしのドメイン
             const urlRegex = /((?:https?:\/\/|www\.)[^\s]+)|((?<![@\w.:/\-])\b[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/gi;
 
-            return escaped.replace(urlRegex, (match) => {
+            // URL置換を先に行い、プレースホルダーに置き換える（メンション/ハッシュタグ誤爆防止）
+            const placeholders = [];
+            escaped = escaped.replace(urlRegex, (match) => {
                 let cleanUrl = match;
                 let suffix = '';
                 const trailingMatch = cleanUrl.match(/[.,;:)\]]+$/);
@@ -9228,8 +9229,25 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                      href = 'https://' + href;
                 }
 
-                return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="adv-content-link">${cleanUrl}</a>${suffix}`;
+                placeholders.push(`<a href="${href}" target="_blank" rel="noopener noreferrer" class="adv-content-link">${cleanUrl}</a>${suffix}`);
+                return `__URL_PLACEHOLDER_${placeholders.length - 1}__`;
             });
+
+            // 2. Mentions (@username) -> SPA遷移 (adv-link)
+            // 前後に英数字がない @ + 英数字アンダースコア
+            escaped = escaped.replace(/(^|[^a-zA-Z0-9_!#$%&*@＠\/])@([a-zA-Z0-9_]{1,50})/g, (match, prefix, handle) => {
+                return `${prefix}<a href="/${handle}" class="adv-link" style="color:var(--modal-primary-color)">@${handle}</a>`;
+            });
+
+            // 3. Hashtags (#tag) -> SPA遷移 (adv-link)
+            escaped = escaped.replace(/(^|[^a-zA-Z0-9_!#$%&*@＠\/])#([^\s!@#$%^&*(),.?":{}|<>]+)/g, (match, prefix, tag) => {
+                return `${prefix}<a href="/hashtag/${tag}" class="adv-link" style="color:var(--modal-primary-color)">#${tag}</a>`;
+            });
+
+            // URLプレースホルダーを復元
+            escaped = escaped.replace(/__URL_PLACEHOLDER_(\d+)__/g, (_, index) => placeholders[index]);
+
+            return escaped;
         }
 
         function escapeAttr(s) {
