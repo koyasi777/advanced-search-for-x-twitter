@@ -10,18 +10,18 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.4.8
-// @description      Adds a floating modal for advanced search on X.com (Twitter). Syncs with search box and remembers position/display state. The top-right search icon is now draggable and its position persists.
-// @description:ja   X.com（Twitter）に高度な検索機能を呼び出せるフローティング・モーダルを追加します。検索ボックスと双方向で同期し、位置や表示状態も記憶します。右上の検索アイコンはドラッグで移動でき、位置は保存されます。
-// @description:en   Adds a floating modal for advanced search on X.com (formerly Twitter). Syncs with search box and remembers position/display state. The top-right search icon is draggable with persistent position.
-// @description:zh-CN 为X.com（Twitter）添加高级搜索浮动模态框，支持与搜索框双向同步并记住位置与显示状态。右上角的搜索图标可拖动，并会记住位置。
-// @description:zh-TW 為 X.com（Twitter）增加高級搜尋模態框，支援與搜尋框雙向同步並記住位置與顯示狀態。右上角搜尋圖示可拖曳，位置會被保存。
-// @description:ko   X.com(Twitter)에 고급 검색 모달을 추가합니다. 검색창과 양방향 동기화하며 위치와 표시 상태를 기억합니다. 우상단 검색 아이콘은 드래그 이동 및 위치 저장이 가능합니다.
-// @description:fr   Ajoute une fenêtre modale de recherche avancée à X.com (Twitter), synchronisée avec la barre de recherche et mémorise de l’état d’affichage. L’icône de recherche en haut à droite est déplaçable.
-// @description:es   Agrega un modal flotante de búsqueda avanzada en X.com (Twitter), sincronizado con la caja de búsqueda y con estado persistente.
-// @description:de   Fügt X.com (Twitter) ein modales Fenster für erweiterte Suche hinzu, synchronisiert mit der Suchleiste und speichert Position/Zustand. Das Suchsymbol oben rechts ist per Drag & Drop verschiebbar und bleibt gespeichert.
-// @description:pt-BR Adiciona um modal de busca avançada flutuante no X.com (Twitter), sincronizado com a caixa de busca e com estado salvo. O ícone de busca no canto superior direito é arrastável com posição persistente.
-// @description:ru   Добавляет модальное окно расширенного поиска на X.com (Twitter). Синхронизируется с поисковой строкой и запоминает состояние. Кнопку поиска в правом верхнем углу можно перетаскивать; её положение сохраняется.
+// @version      6.5.7
+// @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
+// @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
+// @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
+// @description:zh-CN 无需再死记硬背搜索命令。为 X.com（Twitter）添加一个超多功能浮动窗口，集成易用的高级搜索界面、搜索历史、已保存的搜索条件、支持为帖子（推文）添加标签的本地收藏、基于正则表达式的屏蔽，以及支持按文件夹管理的账号和列表功能。
+// @description:zh-TW 無需再死記硬背搜尋指令。為 X.com（Twitter）增加一個超多功能懸浮視窗，整合易用的高級搜尋介面、搜尋紀錄、已保存的搜尋條件、可用標籤管理貼文（推文）的本地收藏、正則表示式過濾，以及支援以資料夾分類的帳號和列表管理功能。
+// @description:ko   더 이상 검색 명령어를 외울 필요 없습니다. X.com(Twitter)에 누구나 쉽게 사용할 수 있는 고급 검색 UI, 검색 기록, 검색 조건 저장, 게시글(트윗)을 태그로 관리할 수 있는 로컬 즐겨찾기 기능, 정규식 음소거, 폴더 분류가 가능한 계정 및 리스트 관리 기능 등을 통합한 다기능 플로팅 창을 추가합니다.
+// @description:fr   Plus besoin de mémoriser les commandes de recherche. Ajoute à X.com (Twitter) une fenêtre flottante très complète regroupant une interface de recherche avancée et facile à utiliser, l’historique, les recherches enregistrées, des favoris locaux pour les publications (tweets) avec tags, un masquage par expressions régulières (regex) et une gestion des comptes et listes avec classement par dossiers.
+// @description:es   ¡Olvídate de memorizar comandos de búsqueda! Añade a X.com (Twitter) una ventana flotante multifuncional con una interfaz de búsqueda avanzada y fácil de usar, historial, búsquedas guardadas, favoritos locales de publicaciones (tuits) con etiquetas, silenciado mediante expresiones regulares (regex) y gestión de cuentas y listas con organización por carpetas.
+// @description:de   Kein Auswendiglernen von Suchbefehlen mehr! Fügt X.com (Twitter) ein multifunktionales schwebendes Fenster hinzu, das eine leicht zu bedienende erweiterte Suchoberfläche, Suchverlauf, gespeicherte Suchanfragen, lokale Lesezeichen für Posts (Tweets) mit Tags, Stummschaltung per regulären Ausdrücken (Regex) und eine ordnerbasierte Konten- und Listenverwaltung vereint.
+// @description:pt-BR Não precisa mais decorar comandos de busca! Adiciona ao X.com (Twitter) uma janela flutuante multifuncional com uma interface de busca avançada e fácil de usar, histórico, buscas salvas, favoritos locais de posts (tweets) com tags, silenciamento por expressões regulares (regex) e gestão de contas e listas com organização em pastas.
+// @description:ru   Больше не нужно запоминать поисковые команды! Добавляет на X.com (Twitter) многофункциональное плавающее окно с удобным интерфейсом расширенного поиска, историей, сохранёнными запросами, локальными закладками постов (твитов) с тегами, фильтрацией по регулярным выражениям (regex) и управлением аккаунтами и списками с организацией по папкам.
 // @namespace    https://github.com/koyasi777/advanced-search-for-x-twitter
 // @author       koyasi777
 // @match        https://x.com/*
@@ -2994,7 +2994,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         .adv-item-avatar-link { display:inline-block; border-radius:9999px; }
         .adv-item-main { flex:1; min-width:0; }
 
-        .adv-item-title { font-size:14px; font-weight:700; color:var(--modal-text-primary,#e7e9ea); word-break:break-word; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+        .adv-item-title { font-size:14px; font-weight:700; color:var(--modal-text-primary,#e7e9ea); word-break:break-word; display: block; line-height: 1.5; }
         .adv-item-sub { font-size:12px; color:var(--modal-text-secondary,#8b98a5); margin-top:2px; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
         .adv-item-actions { display:flex; gap:6px; align-items:center; align-self:center; }
         .adv-chip { border:1px solid var(--modal-input-border,#38444d); background:transparent; color:var(--modal-text-primary,#e7e9ea); padding:4px 8px; border-radius:9999px; font-size:12px; cursor:pointer; }
@@ -3607,24 +3607,29 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         /* Tag chip on tweet header */
         .ft-tag-chip {
           display: inline-flex;
-          align-items: center;
-          margin-left: 4px; /* JS (ft_attachTagChipToArticle) 側の gap: 4px と連動 */
-          padding: 1px 8px;
+          align-items: center;     /* ボタン内の文字を縦中央に */
+          justify-content: center; /* ボタン内の文字を横中央に */
+          margin-left: 7px;
+          padding: 0 8px;
+          height: 20px;
           border-radius: 9999px;
           border: 1px solid currentColor;
           font-size: 11px;
-          line-height: 1.4;
+          line-height: 1;
           cursor: pointer;
           user-select: none;
           white-space: nowrap;
-          background: rgba(255, 255, 255, 0.03); /* これは静的なまま (ほぼ透明なので) */
+          background: rgba(255, 255, 255, 0.03);
           flex: 0 0 auto;
           order: 9999;
+          align-self: center;
+          vertical-align: middle;
         }
         .ft-tag-chip-label {
           max-width: 150px;
           overflow: hidden;
           text-overflow: ellipsis;
+          padding-bottom: 0.4px;
         }
         .ft-tag-chip-uncategorized {
           opacity: 0.7;
@@ -3705,6 +3710,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         }
         .ft-tag-dropdown-new-input {
           flex: 1;
+          min-width: 0;
+          box-sizing: border-box;
           background: var(--ft-input-bg);
           border: 1px solid var(--ft-input-border);
           border-radius: 6px;
@@ -3714,6 +3721,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         .ft-tag-dropdown-new-color {
           width: 36px;
           padding: 0;
+          box-sizing: border-box;
           border-radius: 6px;
           border: 1px solid var(--ft-input-border);
           background: transparent;
@@ -3726,6 +3734,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           padding: 2px 6px;
           font-size: 12px;
           cursor: pointer;
+          white-space: nowrap;
         }
         .ft-tag-dropdown-new-button:hover {
           background: var(--ft-hover-bg);
@@ -4151,10 +4160,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         }
         /* Favorites Item Tag Container */
         .adv-fav-tag-container {
-           margin-top:0.7px;
-           margin-left: 2px;
-           display: inline-flex;
-           align-items: center;
+            display: inline-block;
+            margin-left: -2px;
+            margin-bottom: 1px;
+            vertical-align: middle;
+            transform: translateY(-2.5px);
         }
 
         /* --- Mute Collapse Styles --- */
@@ -5087,44 +5097,51 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
         // タグチップの挿入場所（ヘッダーメタ情報行）を特定する関数
         function ft_findHeaderMetaContainer(article) {
-            // 1. User-Name を起点にする (タイムラインでも詳細表示でも必ずヘッダーに存在する)
+            // 1. 記事内のメインとなる time 要素を探す（引用ツイート内の time は除外）
+            const allTimes = Array.from(article.querySelectorAll('time'));
+            const mainTime = allTimes.find(t => !t.closest('div[role="link"]'));
+
+            // 2. 記事内の User-Name 要素を探す
             const userName = article.querySelector('[data-testid="User-Name"]');
 
-            if (userName) {
-                // User-Name の親を遡り、ハンドルネーム(@...)や時間表示を含む「行コンテナ」を探す
-                // 構造: [Container] -> [NameWrapper] -> [User-Name]
-                //             L-> [HandleWrapper] -> [@handle]
+            // --- パターンA: タイムライン表示 ---
+            // 「User-Name」と「Time」が同じ行コンテナに同居している場合、そこがヘッダー行。
+            if (userName && mainTime) {
                 let p = userName.parentElement;
-
-                // 親を数回遡って、兄弟要素に「@から始まるテキスト（ハンドル）」を含むコンテナを探す
-                // ※通常は2～3階層上
                 while (p && p !== article) {
-                    // 自分の親の直下(兄弟要素)に、自分以外で「@」から始まるテキストを持つ要素があるか確認
-                    const hasHandleSibling = Array.from(p.children).some(sib => {
-                        // 自分自身のラッパーは除外
-                        if (sib.contains(userName)) return false;
-                        // テキストを取得して @ で始まっているか判定
-                        const txt = sib.innerText || '';
-                        return txt.trim().startsWith('@');
-                    });
-
-                    if (hasHandleSibling) {
-                        // ハンドルネームと並んでいるコンテナが見つかったら、ここが挿入場所
+                    // flex-row (r-18u37iz) であり、かつ mainTime を含んでいるか確認
+                    if (p.classList.contains('r-18u37iz') && p.contains(mainTime)) {
                         return p;
                     }
                     p = p.parentElement;
                 }
             }
 
-            // 2. フォールバック: 従来のTime検索 (ただし引用ツイート内のTimeは厳密に除外する)
-            const allTimes = article.querySelectorAll('time');
-            for (const timeEl of allTimes) {
-                // 引用(role="link")の中にあるtimeは無視してスキップ
-                if (timeEl.closest('div[role="link"]')) continue;
+            // --- パターンB: 詳細ページ (単独表示) ---
+            // User-Name と Time が離れている場合、詳細ページとみなして「Time」がある行を探す。
+            // (ここに「〇〇件の表示」も含まれています)
+            if (mainTime) {
+                let p = mainTime.parentElement;
+                while (p && p !== article) {
+                    // r-18u37iz (flex-row) であり、かつ子要素が複数ある（日付 + 中黒 + Views など）
+                    if (p.classList.contains('r-18u37iz') && p.childElementCount > 1) {
+                        return p;
+                    }
+                    p = p.parentElement;
+                }
+            }
 
-                const anchor = timeEl.closest('a');
-                if (anchor && anchor.parentElement && anchor.parentElement.parentElement) {
-                    return anchor.parentElement.parentElement;
+            // --- パターンC: フォールバック ---
+            // 上記で見つからない場合（Timeがないプロモーションなど）、User-Name の横に @handle がある行を探す
+            if (userName) {
+                let p = userName.parentElement;
+                while (p && p !== article) {
+                    const hasHandleSibling = Array.from(p.children).some(sib => {
+                        if (sib.contains(userName)) return false;
+                        return sib.innerText && sib.innerText.trim().startsWith('@');
+                    });
+                    if (hasHandleSibling) return p;
+                    p = p.parentElement;
                 }
             }
 
@@ -5163,26 +5180,40 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             const headerRow = ft_findHeaderMetaContainer(article);
             if (!headerRow) return;
 
-            // ▼▼▼ スタイルの適用 ▼▼▼
-            headerRow.style.display = 'flex';
-            headerRow.style.flexDirection = 'row';
-            headerRow.style.alignItems = 'center';
-            headerRow.style.justifyContent = 'flex-start';
-            headerRow.style.columnGap = '4px';
-
-            // スペースが足りない場合に折り返しを許可する
-            headerRow.style.flexWrap = 'wrap';
-            // 折り返した際、上下の行に隙間を作る
-            headerRow.style.rowGap = '8px';
-
+            // 既存のタグがあれば取得、なければ新規作成
             let existing = headerRow.querySelector('.ft-tag-chip');
             const chip = ft_buildTagChip(tweetId);
+
+            // 念のため CSS order も最大にしておく
+            chip.style.order = "9999999";
+
             if (existing) {
                 existing.replaceWith(chip);
             } else {
                 headerRow.appendChild(chip);
             }
+
             article.classList.add('ft-chip-attached');
+
+            // 監視ロジック
+            // この行(headerRow)に他の拡張機能が要素を追加してきたら、タグを再び最後尾へ移動させる
+            if (!headerRow.dataset.ftObserverAttached) {
+                headerRow.dataset.ftObserverAttached = '1';
+
+                const observer = new MutationObserver((mutations) => {
+                    // タグチップを取得（クロージャ内の chip 変数だと古い可能性があるためDOMから取る）
+                    const currentChip = headerRow.querySelector('.ft-tag-chip');
+
+                    // タグが存在し、かつ「最後の要素」ではなくなっている場合
+                    if (currentChip && headerRow.lastElementChild !== currentChip) {
+                        // 自分自身(タグ)を再追加することで、DOM順序の一番後ろへ移動する
+                        headerRow.appendChild(currentChip);
+                    }
+                });
+
+                // 子要素の追加・削除を監視する
+                observer.observe(headerRow, { childList: true });
+            }
         }
 
         function ft_removeTagChipFromArticle(article) {
@@ -6289,11 +6320,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         }
 
         // 行レンダリング
-        // addEventListener を全削除し、純粋なDOM生成のみにする
         function renderFavoriteRow(item) {
             const row = document.createElement('div');
             row.className = 'adv-item';
-            // お気に入りタブだけはボタンが絶対配置なので、右余白を個別に確保する
             row.style.paddingRight = '60px';
             row.dataset.id = item.id;
 
@@ -6301,7 +6330,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             const bodyHtml = safeLinkify(text);
             const displayTime = item.postedAt ? fmtTime(item.postedAt) : fmtTime(item.ts);
 
-            // --- メディアHTML生成 ---
+            // メディアHTML生成
             const buildMediaHtml = (mediaList, isQuote = false) => {
                 if (!mediaList || mediaList.length === 0) return '';
                 let html = '<div class="adv-item-media-row">';
@@ -6316,7 +6345,6 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     if (isQuote && item.quote && !item.quote.id) {
                          styleAttr = 'style="cursor:default"';
                     }
-
                     html += `<div class="adv-media-wrap">
                                 <img src="${escapeAttr(m.url)}"
                                      data-type="${mediaType}"
@@ -6338,7 +6366,14 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 const q = item.quote;
                 const qUserUrl = `/${escapeAttr(q.user.handle)}`;
                 const qMediaHtml = buildMediaHtml(q.media, true);
-                const qBodyHtml = safeLinkify(q.text);
+
+                let qBodyHtml = safeLinkify(q.text);
+
+                if (q.showMore && q.showMore.url) {
+                    // class="adv-link" を付けることで、下部の addEventListener ループが適用されSPA遷移になる
+                    qBodyHtml += ` <a href="${escapeAttr(q.showMore.url)}" class="adv-link" style="color:var(--modal-primary-color); white-space:nowrap;">${escapeHTML(q.showMore.text)}</a>`;
+                }
+
                 quoteHtml = `
                     <div class="adv-quote-box">
                         <div class="adv-quote-header">
@@ -6383,21 +6418,132 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 <button class="adv-chip danger adv-fav-btn-pos adv-fav-btn-bottom" data-action="delete">${i18n.t('delete')}</button>
             `;
 
-            // タグチップの生成と挿入
+            // 既存コードにあるこの処理が、adv-link クラスを持つ要素にSPA遷移イベントを一括登録
+            row.querySelectorAll('a.adv-link').forEach(a => {
+                a.addEventListener('click', (ev) => {
+                    if (ev.defaultPrevented || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+                    ev.preventDefault();
+                    const href = a.getAttribute('href') || `/${item.user.handle}`;
+                    spaNavigate(href, { ctrlMeta: false });
+                    if (window.innerWidth <= 700) {
+                        closeModal();
+                    }
+                });
+            });
+
             const tagContainer = row.querySelector('.adv-fav-tag-container');
             if (tagContainer && typeof ft_buildTagChip === 'function') {
                 const chip = ft_buildTagChip(item.id);
-                // 注記: ここは ft_installGlobalListeners で委譲されているため、個別の addEventListener は不要です
-                // もし ft_buildTagChip 内でイベントを付けている場合はそのまま機能します
                 tagContainer.appendChild(chip);
             }
 
             return row;
         }
 
+        /* --- ▼▼▼ 汎用ページネーション関数 ▼▼▼ */
+        const PAGINATION_STATE = {}; // { [key]: { list, cursor, observer, renderer, container, sentinelClass } }
+        const PAGE_SIZE = 50;
+
         // お気に入りタブ専用の現在の絞り込み状態（メモリ保持）
         let favFilterTagId = 'ALL'; // 'ALL', 'UNCAT', or tagId
         let favSearchQuery = '';
+
+        function renderPagedList(key, container, items, rowRenderer, emptyEl, emptyMsg) {
+            if (!container) return;
+
+            // 状態初期化 or 取得
+            if (!PAGINATION_STATE[key]) {
+                PAGINATION_STATE[key] = { observer: null };
+            }
+            const state = PAGINATION_STATE[key];
+
+            // 以前のObserverがあれば解除
+            if (state.observer) {
+                state.observer.disconnect();
+                state.observer = null;
+            }
+
+            // 状態更新
+            state.list = items;
+            state.cursor = 0;
+            state.renderer = rowRenderer;
+            state.container = container;
+            state.sentinelClass = `adv-sentinel-${key}`;
+
+            // 表示クリア
+            container.innerHTML = '';
+
+            // 空の場合
+            if (items.length === 0) {
+                if (emptyEl) {
+                    emptyEl.textContent = emptyMsg || '';
+                    emptyEl.style.display = 'block';
+                }
+                return;
+            } else {
+                if (emptyEl) emptyEl.style.display = 'none';
+            }
+
+            // バッチ処理関数
+            const renderBatch = () => {
+                const nextBatch = state.list.slice(state.cursor, state.cursor + PAGE_SIZE);
+                if (nextBatch.length === 0) return;
+
+                const frag = document.createDocumentFragment();
+                nextBatch.forEach(item => {
+                    frag.appendChild(state.renderer(item));
+                });
+
+                // センチネル管理
+                let sentinel = container.querySelector(`.${state.sentinelClass}`);
+                if (!sentinel) {
+                    sentinel = document.createElement('div');
+                    sentinel.className = state.sentinelClass;
+                    sentinel.style.height = '40px';
+                    sentinel.style.margin = '10px 0';
+                    // まだDOMに無いなら、フラグメントの後ろに追加予定（後述）
+                }
+
+                // リストへの挿入
+                if (container.contains(sentinel)) {
+                    container.insertBefore(frag, sentinel);
+                } else {
+                    container.appendChild(frag);
+                    container.appendChild(sentinel);
+                }
+
+                state.cursor += nextBatch.length;
+                updateSentinel(sentinel);
+            };
+
+            // センチネルの状態更新と監視
+            const updateSentinel = (sentinel) => {
+                const hasMore = state.cursor < state.list.length;
+                if (hasMore) {
+                    sentinel.style.display = 'block';
+                    // Observer設定
+                    if (!state.observer) {
+                        state.observer = new IntersectionObserver((entries) => {
+                            if (entries[0].isIntersecting) {
+                                // 連続発火防止のため一旦監視解除
+                                state.observer.unobserve(entries[0].target);
+                                setTimeout(renderBatch, 50);
+                            }
+                        }, {
+                            root: container.closest('.adv-modal-body'), // スクロール親要素
+                            rootMargin: '200px'
+                        });
+                    }
+                    state.observer.observe(sentinel);
+                } else {
+                    sentinel.style.display = 'none';
+                    if (state.observer) state.observer.unobserve(sentinel);
+                }
+            };
+
+            // 初回バッチ実行
+            renderBatch();
+        }
 
         function renderFavorites() {
             const listEl = document.getElementById('adv-favorites-list');
@@ -6489,7 +6635,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             // 3. データのロードとフィルタリング
             const allItems = loadFavorites(); // { id, text, user, postedAt, ts, ... }
 
-            let filtered = allItems.filter(item => {
+            // フィルタ結果をローカル変数に
+            let filteredList = allItems.filter(item => {
                 // A. テキスト検索
                 const q = favSearchQuery.trim().toLowerCase(); // 検索時に初めて正規化する
                 if (q) {
@@ -6509,12 +6656,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             // 4. ソート適用
             // ts: 追加日時, postedAt: 投稿日時
             // postedAt が無い古いデータは ts をフォールバックとして使う
-            filtered.sort((a, b) => {
+            filteredList.sort((a, b) => {
                 const tsA = a.ts || 0;
                 const tsB = b.ts || 0;
                 const postedA = a.postedAt || tsA; // fallback
                 const postedB = b.postedAt || tsB; // fallback
-
                 switch (currentSort) {
                     case 'saved_oldest':  return tsA - tsB;
                     case 'posted_newest': return postedB - postedA;
@@ -6524,21 +6670,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 }
             });
 
-            // 5. リスト描画
-            listEl.innerHTML = '';
-
-            // 全データ(allItems)が空の時だけメッセージを出す。
-            // 検索やフィルタでヒットしなかっただけなら、メッセージは出さずに空欄にする。
-            if (allItems.length === 0) {
-                emptyEl.textContent = i18n.t('emptyFavorites');
-                emptyEl.style.display = 'block';
-            } else {
-                emptyEl.style.display = 'none';
-                filtered.forEach(item => {
-                    const row = renderFavoriteRow(item);
-                    listEl.appendChild(row);
-                });
-            }
+            // 5. 汎用ページネーション関数で描画
+            renderPagedList('favorites', listEl, filteredList, renderFavoriteRow, emptyEl, i18n.t('emptyFavorites'));
         }
 
         /* タブごと保存に対応 */
@@ -8378,68 +8511,65 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         const historySortEl = document.getElementById('adv-history-sort');
 
         const renderHistory = () => {
-          const listAll = migrateList(loadJSON(HISTORY_KEY, []));
+            const listAll = migrateList(loadJSON(HISTORY_KEY, []));
 
-          // 1. Get filter/sort values
-          const q = (historySearchEl?.value || '').toLowerCase().trim();
-          const sort = historySortEl?.value || kv.get(HISTORY_SORT_KEY, 'newest');
-          if (historySortEl && historySortEl.value !== sort) {
-            historySortEl.value = sort;
-          }
-
-          // 2. Filter
-          const listFiltered = q
-            ? listAll.filter(item => (item.q || '').toLowerCase().includes(q))
-            : listAll;
-
-          // 3. Sort
-          const listSorted = listFiltered.sort((a, b) => {
-            switch (sort) {
-              case 'oldest': return (a.ts || 0) - (b.ts || 0);
-              case 'name_asc': return (a.q || '').localeCompare(b.q || '');
-              case 'name_desc': return (b.q || '').localeCompare(a.q || '');
-              case 'newest':
-              default:
-                return (b.ts || 0) - (a.ts || 0);
+            // 1. Get filter/sort values
+            const q = (historySearchEl?.value || '').toLowerCase().trim();
+            const sort = historySortEl?.value || kv.get(HISTORY_SORT_KEY, 'newest');
+            if (historySortEl && historySortEl.value !== sort) {
+                historySortEl.value = sort;
             }
-          });
 
-          // 4. Render
-          historyListEl.innerHTML = '';
-          historyEmptyEl.textContent = listAll.length === 0 ? i18n.t('emptyHistory') : '';
+            // 2. Filter
+            const listFiltered = q
+                ? listAll.filter(item => (item.q || '').toLowerCase().includes(q))
+                : listAll;
 
-          listSorted.forEach(item => {
-            const row = document.createElement('div');
-            row.className = 'adv-item';
-            row.dataset.id = item.id;
-
-            row.innerHTML = `
-              <div class="adv-item-main">
-                <div class="adv-item-title">${escapeHTML(item.q)}</div>
-                <div class="adv-item-sub">
-                  <span>${fmtTime(item.ts)}</span>
-                  ${scopeChipsHTML(!!item.pf, !!item.lf)}
-                </div>
-              </div>
-              <div class="adv-item-actions">
-                <button class="adv-chip primary" data-action="run">${i18n.t('run')}</button>
-                <button class="adv-chip danger" data-action="delete">${i18n.t('delete')}</button>
-              </div>
-            `;
-
-            row.querySelector('[data-action="run"]').addEventListener('click', () => {
-              parseQueryAndApplyToModal(item.q);
-              applyScopesToControls({ pf: !!item.pf, lf: !!item.lf });
-              // activateTab('search');
-              executeSearch({ pf: item.pf, lf: item.lf });
+            // 3. Sort
+            const listSorted = listFiltered.sort((a, b) => {
+                switch (sort) {
+                    case 'oldest': return (a.ts || 0) - (b.ts || 0);
+                    case 'name_asc': return (a.q || '').localeCompare(b.q || '');
+                    case 'name_desc': return (b.q || '').localeCompare(a.q || '');
+                    case 'newest':
+                    default:
+                        return (b.ts || 0) - (a.ts || 0);
+                }
             });
 
-            row.querySelector('[data-action="delete"]').addEventListener('click', () => {
-              deleteHistory(item.id);
-            });
+            // 4. Render with Pagination
+            const renderHistoryRow = (item) => {
+                const row = document.createElement('div');
+                row.className = 'adv-item';
+                row.dataset.id = item.id;
 
-            historyListEl.appendChild(row);
-          });
+                row.innerHTML = `
+                  <div class="adv-item-main">
+                    <div class="adv-item-title">${escapeHTML(item.q)}</div>
+                    <div class="adv-item-sub">
+                      <span>${fmtTime(item.ts)}</span>
+                      ${scopeChipsHTML(!!item.pf, !!item.lf)}
+                    </div>
+                  </div>
+                  <div class="adv-item-actions">
+                    <button class="adv-chip primary" data-action="run">${i18n.t('run')}</button>
+                    <button class="adv-chip danger" data-action="delete">${i18n.t('delete')}</button>
+                  </div>
+                `;
+
+                row.querySelector('[data-action="run"]').addEventListener('click', () => {
+                    parseQueryAndApplyToModal(item.q);
+                    applyScopesToControls({ pf: !!item.pf, lf: !!item.lf });
+                    executeSearch({ pf: item.pf, lf: item.lf });
+                });
+
+                row.querySelector('[data-action="delete"]').addEventListener('click', () => {
+                    deleteHistory(item.id);
+                });
+                return row;
+            };
+
+            renderPagedList('history', historyListEl, listSorted, renderHistoryRow, historyEmptyEl, i18n.t('emptyHistory'));
         };
 
         historyClearAllBtn.addEventListener('click', clearAllHistory);
@@ -9071,21 +9201,22 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         }
 
-        // テキスト内のURLをリンク化する（HTMLエスケープ済みテキストに対して適用）
+        // テキスト内のURL、メンション、ハッシュタグをリンク化する
         function safeLinkify(text) {
             if (!text) return '';
             let escaped = escapeHTML(text);
 
             // Xの仕様で https:// の直後に不可視な空白や改行が含まれる場合があるため除去
-            // これにより "https:// amzn.to" が "https://amzn.to" に結合され、全体が正しくリンク化されます
             escaped = escaped.replace(/(https?:\/\/)\s+/gi, '$1');
 
-            // URL正規表現
+            // 1. URL (外部リンク: adv-content-link)
             // Group 1: http/https/www で始まるURL
-            // Group 2: プロトコルなしのドメイン (誤検知防止の後読み付き)
-            const urlRegex = /((?:https?:\/\/|www\.)[^\s]+)|((?<![@\w.:/\-])\b[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/gi;
+            // Group 2: プロトコルなしのドメイン
+            const urlRegex = /((?:https?:\/\/|www\.)[^\s\u0080-\uFFFF]+)|((?<![@\w.:/\-])\b(?:[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]\.)+[a-zA-Z]{2,}(?:\/[^\s\u0080-\uFFFF]*)?)/gi;
 
-            return escaped.replace(urlRegex, (match) => {
+            // URL置換を先に行い、プレースホルダーに置き換える（メンション/ハッシュタグ誤爆防止）
+            const placeholders = [];
+            escaped = escaped.replace(urlRegex, (match) => {
                 let cleanUrl = match;
                 let suffix = '';
                 const trailingMatch = cleanUrl.match(/[.,;:)\]]+$/);
@@ -9099,8 +9230,25 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                      href = 'https://' + href;
                 }
 
-                return `<a href="${href}" target="_blank" rel="noopener noreferrer" class="adv-content-link">${cleanUrl}</a>${suffix}`;
+                placeholders.push(`<a href="${href}" target="_blank" rel="noopener noreferrer nofollow" class="adv-content-link">${cleanUrl}</a>${suffix}`);
+                return `__URL_PLACEHOLDER_${placeholders.length - 1}__`;
             });
+
+            // 2. Mentions (@username) -> SPA遷移 (adv-link)
+            // 前後に英数字がない @ + 英数字アンダースコア
+            escaped = escaped.replace(/(^|[^a-zA-Z0-9_!#$%&*@＠\/])@([a-zA-Z0-9_]{1,50})/g, (match, prefix, handle) => {
+                return `${prefix}<a href="/${handle}" class="adv-link" style="color:var(--modal-primary-color)">@${handle}</a>`;
+            });
+
+            // 3. Hashtags (#tag) -> SPA遷移 (adv-link)
+            escaped = escaped.replace(/(^|[^a-zA-Z0-9_!#$%&*@＠\/])#([^\s!@#$%^&*(),.?":{}|<>]+)/g, (match, prefix, tag) => {
+                return `${prefix}<a href="/hashtag/${tag}" class="adv-link" style="color:var(--modal-primary-color)">#${tag}</a>`;
+            });
+
+            // URLプレースホルダーを復元
+            escaped = escaped.replace(/__URL_PLACEHOLDER_(\d+)__/g, (_, index) => placeholders[index]);
+
+            return escaped;
         }
 
         function escapeAttr(s) {
@@ -11003,48 +11151,49 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         }
 
         const renderMuted = () => {
-          let list = loadMuted();
-          // 検索ボックスに値があればフィルタリング
-          if (muteFilterEl) {
-              const q = muteFilterEl.value.trim().toLowerCase();
-              if (q) {
-                  list = list.filter(item => item.word.toLowerCase().includes(q));
-              }
-          }
-          muteListEl.innerHTML = '';
-          muteEmptyEl.textContent = list.length ? '' : i18n.t('emptyMuted');
-          list.forEach(item => {
-            const row = document.createElement('div');
-            row.className = 'adv-mute-item';
-            if (!item.enabled) row.classList.add('disabled');
-            row.innerHTML = `
-              <div class="adv-mute-content-left">
-                  <div class="adv-mute-word">${escapeHTML(item.word)}</div>
-                  <div class="adv-mute-options-row">
-                    <label class="adv-toggle">
-                      <input type="checkbox" ${item.enabled ? 'checked' : ''} data-action="toggle-enabled">
-                      <span data-i18n="labelEnabled">${i18n.t('labelEnabled')}</span>
-                    </label>
-                    <label class="adv-toggle">
-                      <input type="checkbox" ${item.wb ? 'checked' : ''} data-action="toggle-wb">
-                      <span data-i18n="labelWordBoundary">${i18n.t('labelWordBoundary')}</span>
-                    </label>
-                    <label class="adv-toggle">
-                      <input type="checkbox" ${item.cs ? 'checked' : ''} data-action="toggle-cs">
-                      <span data-i18n="labelCaseSensitive">${i18n.t('labelCaseSensitive')}</span>
-                    </label>
+            let list = loadMuted();
+            // 検索ボックスに値があればフィルタリング
+            if (muteFilterEl) {
+                const q = muteFilterEl.value.trim().toLowerCase();
+                if (q) {
+                    list = list.filter(item => item.word.toLowerCase().includes(q));
+                }
+            }
+
+            const renderMuteRow = (item) => {
+                const row = document.createElement('div');
+                row.className = 'adv-mute-item';
+                if (!item.enabled) row.classList.add('disabled');
+                row.innerHTML = `
+                  <div class="adv-mute-content-left">
+                      <div class="adv-mute-word">${escapeHTML(item.word)}</div>
+                      <div class="adv-mute-options-row">
+                        <label class="adv-toggle">
+                          <input type="checkbox" ${item.enabled ? 'checked' : ''} data-action="toggle-enabled">
+                          <span data-i18n="labelEnabled">${i18n.t('labelEnabled')}</span>
+                        </label>
+                        <label class="adv-toggle">
+                          <input type="checkbox" ${item.wb ? 'checked' : ''} data-action="toggle-wb">
+                          <span data-i18n="labelWordBoundary">${i18n.t('labelWordBoundary')}</span>
+                        </label>
+                        <label class="adv-toggle">
+                          <input type="checkbox" ${item.cs ? 'checked' : ''} data-action="toggle-cs">
+                          <span data-i18n="labelCaseSensitive">${i18n.t('labelCaseSensitive')}</span>
+                        </label>
+                      </div>
                   </div>
-              </div>
-              <div class="adv-mute-actions-right">
-                <button class="adv-chip danger" data-action="delete" style="padding:2px 8px; font-size:11px;">${i18n.t('delete')}</button>
-              </div>
-            `;
-            row.querySelector('[data-action="toggle-enabled"]').addEventListener('change', () => toggleMutedEnabled(item.id));
-            row.querySelector('[data-action="toggle-cs"]').addEventListener('change', () => toggleMutedCS(item.id));
-            row.querySelector('[data-action="toggle-wb"]').addEventListener('change', () => toggleMutedWB(item.id));
-            row.querySelector('[data-action="delete"]').addEventListener('click', () => deleteMuted(item.id));
-            muteListEl.appendChild(row);
-          });
+                  <div class="adv-mute-actions-right">
+                    <button class="adv-chip danger" data-action="delete" style="padding:2px 8px; font-size:11px;">${i18n.t('delete')}</button>
+                  </div>
+                `;
+                row.querySelector('[data-action="toggle-enabled"]').addEventListener('change', () => toggleMutedEnabled(item.id));
+                row.querySelector('[data-action="toggle-cs"]').addEventListener('change', () => toggleMutedCS(item.id));
+                row.querySelector('[data-action="toggle-wb"]').addEventListener('change', () => toggleMutedWB(item.id));
+                row.querySelector('[data-action="delete"]').addEventListener('click', () => deleteMuted(item.id));
+                return row;
+            };
+
+            renderPagedList('mute', muteListEl, list, renderMuteRow, muteEmptyEl, i18n.t('emptyMuted'));
         };
 
         function applyMuteVisualState() {
@@ -11167,9 +11316,56 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             return fireIfChanged;
         };
 
+        // ▼▼▼ ツイート本文をきれいに取得するヘルパー ▼▼▼
+        function ft_getCleanTweetText(root) {
+            if (!root) return '';
+            // DOMを破壊しないようにクローンして操作
+            const clone = root.cloneNode(true);
+
+            // 1. 画像(絵文字)を alt テキストに置換
+            clone.querySelectorAll('img').forEach(img => {
+                if (img.alt) img.replaceWith(document.createTextNode(img.alt));
+            });
+
+            // 2. リンクの処理
+            clone.querySelectorAll('a').forEach(a => {
+                const href = a.getAttribute('href');
+
+                // 外部リンク（http/httpsで始まる）の場合
+                // DOMの見た目（省略されている可能性がある）ではなく、href（実体）を採用する
+                if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+                    // プロトコル(https://)を削除して見た目をスッキリさせる
+                    let displayText = href.replace(/^https?:\/\//, '');
+
+                    // 末尾の / は削除する（見た目のノイズ軽減のため）
+                    if (displayText.endsWith('/')) {
+                        displayText = displayText.slice(0, -1);
+                    }
+
+                    // テキストノードとして置換
+                    a.replaceWith(document.createTextNode(displayText));
+                } else {
+                    // メンション(@user)やハッシュタグ(#tag)などの内部リンクは
+                    // 見た目のテキストをそのまま採用する
+                    const text = a.textContent || '';
+                    a.replaceWith(document.createTextNode(text));
+                }
+            });
+
+            // 3. <br> を改行コードに置換 (textContent は br を無視するため)
+            clone.querySelectorAll('br').forEach(br => {
+                br.replaceWith(document.createTextNode('\n'));
+            });
+
+            // 4. 全体のテキストを取得 (これで分割されたURLも繋がり、改行も保持される)
+            return clone.textContent;
+        }
+
         // ツイートのDOMから保存用データを抽出
         function ft_extractTweetMeta(article, tweetId) {
-            const text = article.querySelector('[data-testid="tweetText"]')?.innerText || '';
+            // メインテキスト抽出
+            const textEl = article.querySelector('[data-testid="tweetText"]');
+            const text = ft_getCleanTweetText(textEl);
             const userRow = article.querySelector('[data-testid="User-Name"]');
             let name = '', handle = '', avatar = '';
 
@@ -11229,7 +11425,20 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
             let quote = null;
             if (quoteContainer) {
-                const qText = quoteContainer.querySelector('[data-testid="tweetText"]')?.innerText || '';
+                // 引用テキスト抽出
+                const qTextEl = quoteContainer.querySelector('[data-testid="tweetText"]');
+                const qText = ft_getCleanTweetText(qTextEl);
+
+                // ▼▼▼ 引用内の「さらに表示」リンクを抽出 ▼▼▼
+                let qShowMore = null;
+                const showMoreBtn = quoteContainer.querySelector('[data-testid="tweet-text-show-more-link"]');
+                if (showMoreBtn) {
+                    qShowMore = {
+                        text: showMoreBtn.innerText || 'Show more', // "さらに表示" 等
+                        url: showMoreBtn.getAttribute('href') || ''
+                    };
+                }
+
                 let qName = '', qHandle = '', qAvatar = '';
                 const qUserRow = quoteContainer.querySelector('[data-testid="User-Name"]');
                 if (qUserRow) {
@@ -11241,10 +11450,16 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 if (qImg) qAvatar = qImg.src;
 
                 let qTweetId = '';
+                // 引用ID特定ロジック
                 const photoLink = quoteContainer.querySelector('a[href*="/status/"][href*="/photo/"]');
                 if (photoLink) {
                     const m = photoLink.getAttribute('href').match(/\/status\/(\d+)/);
                     if (m) qTweetId = m[1];
+                }
+                // もし「さらに表示」リンクがあれば、そこからIDが取れる場合もあるので補完
+                if (!qTweetId && qShowMore && qShowMore.url) {
+                     const m = qShowMore.url.match(/\/status\/(\d+)/);
+                     if (m) qTweetId = m[1];
                 }
 
                 const qMedia = extractMedia(quoteContainer, null);
@@ -11253,7 +11468,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     id: qTweetId,
                     text: qText,
                     user: { name: qName, handle: qHandle, avatar: qAvatar },
-                    media: qMedia
+                    media: qMedia,
+                    showMore: qShowMore
                 };
             }
 
@@ -11347,6 +11563,63 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             shareContainer.appendChild(btn);
         }
 
+        // ▼▼▼ 「さらに表示」を自動展開する非同期ヘルパー ▼▼▼
+        async function ft_expandTweetTextIfNeeded(article) {
+            // 1. 記事内の全ての「さらに表示」ボタンを取得
+            const allButtons = article.querySelectorAll('[data-testid="tweet-text-show-more-link"]');
+            let targetBtn = null;
+
+            // 2. メイン投稿のボタンだけを特定する
+            for (const btn of allButtons) {
+                // ボタンの親を遡り、div[role="link"] (引用ツイートのコンテナ) があるか確認
+                // もしあれば、それは引用内のボタンなので無視する
+                if (btn.closest('div[role="link"]')) {
+                    continue;
+                }
+
+                // 引用内ではないボタンが見つかったら、それがメイン投稿のボタン
+                targetBtn = btn;
+                break;
+            }
+
+            // メイン投稿に展開ボタンがなければ何もしない（引用にあっても無視）
+            if (!targetBtn) return;
+
+            const textContainer = article.querySelector('[data-testid="tweetText"]');
+
+            // 例外ケース：テキストコンテナが見つからない場合はクリックだけして少し待つ
+            if (!textContainer) {
+                targetBtn.click();
+                return new Promise(r => setTimeout(r, 300));
+            }
+
+            // MutationObserverでテキストコンテナの変化（展開）を待機する
+            return new Promise(resolve => {
+                let resolved = false;
+                const cleanup = () => {
+                    if (resolved) return;
+                    resolved = true;
+                    observer.disconnect();
+                    clearTimeout(timer);
+                    resolve();
+                };
+
+                // 万が一変化しなかった場合のタイムアウト（2秒）
+                const timer = setTimeout(cleanup, 2000);
+
+                const observer = new MutationObserver(() => {
+                    // DOMが変われば展開完了とみなす
+                    cleanup();
+                });
+
+                // テキストコンテナの中身の変化を監視
+                observer.observe(textContainer, { childList: true, subtree: true, characterData: true });
+
+                // 監視を開始してから、特定したボタンをクリック
+                targetBtn.click();
+            });
+        }
+
         // ボタン生成ロジックを分離（共通化）
         function createFavButtonElement(article, tweetId, sourceBtn) {
             const btn = document.createElement('button');
@@ -11368,10 +11641,20 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             };
             updateState();
 
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+
+                // 現在の状態を確認
+                const isAlreadyFav = isFavorited(tweetId);
+
+                // まだお気に入りしていない（＝これから保存する）場合のみ、全文展開を行う
+                if (!isAlreadyFav) {
+                    await ft_expandTweetTextIfNeeded(article);
+                }
+
                 const meta = ft_extractTweetMeta(article, tweetId);
+
                 toggleFavorite(meta);
                 updateState();
                 ft_processTweetArticle(article);
@@ -11700,11 +11983,6 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         }
 
         setupFavoritesDelegation();
-        renderFavorites(); // 初期描画 (これで ft_state がある状態で走る)
-        renderHistory();
-        renderSaved();
-        renderAccounts();
-        renderMuted();
         // スマホ対応用：タッチ操作をドラッグ操作へ変換するリスナーを登録
         enableMobileDragSupport();
         // 保存された最後のタブを読み込んでアクティブにする
