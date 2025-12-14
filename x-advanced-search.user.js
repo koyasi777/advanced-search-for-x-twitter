@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.5.3
+// @version      6.5.4
 // @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
 // @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
 // @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
@@ -6319,11 +6319,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         }
 
         // 行レンダリング
-        // addEventListener を全削除し、純粋なDOM生成のみにする
         function renderFavoriteRow(item) {
             const row = document.createElement('div');
             row.className = 'adv-item';
-            // お気に入りタブだけはボタンが絶対配置なので、右余白を個別に確保する
             row.style.paddingRight = '60px';
             row.dataset.id = item.id;
 
@@ -6331,7 +6329,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             const bodyHtml = safeLinkify(text);
             const displayTime = item.postedAt ? fmtTime(item.postedAt) : fmtTime(item.ts);
 
-            // --- メディアHTML生成 ---
+            // メディアHTML生成
             const buildMediaHtml = (mediaList, isQuote = false) => {
                 if (!mediaList || mediaList.length === 0) return '';
                 let html = '<div class="adv-item-media-row">';
@@ -6346,7 +6344,6 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     if (isQuote && item.quote && !item.quote.id) {
                          styleAttr = 'style="cursor:default"';
                     }
-
                     html += `<div class="adv-media-wrap">
                                 <img src="${escapeAttr(m.url)}"
                                      data-type="${mediaType}"
@@ -6368,7 +6365,14 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 const q = item.quote;
                 const qUserUrl = `/${escapeAttr(q.user.handle)}`;
                 const qMediaHtml = buildMediaHtml(q.media, true);
-                const qBodyHtml = safeLinkify(q.text);
+
+                let qBodyHtml = safeLinkify(q.text);
+
+                if (q.showMore && q.showMore.url) {
+                    // class="adv-link" を付けることで、下部の addEventListener ループが適用されSPA遷移になる
+                    qBodyHtml += ` <a href="${escapeAttr(q.showMore.url)}" class="adv-link" style="color:var(--modal-primary-color); white-space:nowrap;">${escapeHTML(q.showMore.text)}</a>`;
+                }
+
                 quoteHtml = `
                     <div class="adv-quote-box">
                         <div class="adv-quote-header">
@@ -6413,12 +6417,22 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 <button class="adv-chip danger adv-fav-btn-pos adv-fav-btn-bottom" data-action="delete">${i18n.t('delete')}</button>
             `;
 
-            // タグチップの生成と挿入
+            // 既存コードにあるこの処理が、adv-link クラスを持つ要素にSPA遷移イベントを一括登録
+            row.querySelectorAll('a.adv-link').forEach(a => {
+                a.addEventListener('click', (ev) => {
+                    if (ev.defaultPrevented || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+                    ev.preventDefault();
+                    const href = a.getAttribute('href') || `/${item.user.handle}`;
+                    spaNavigate(href, { ctrlMeta: false });
+                    if (window.innerWidth <= 700) {
+                        closeModal();
+                    }
+                });
+            });
+
             const tagContainer = row.querySelector('.adv-fav-tag-container');
             if (tagContainer && typeof ft_buildTagChip === 'function') {
                 const chip = ft_buildTagChip(item.id);
-                // 注記: ここは ft_installGlobalListeners で委譲されているため、個別の addEventListener は不要です
-                // もし ft_buildTagChip 内でイベントを付けている場合はそのまま機能します
                 tagContainer.appendChild(chip);
             }
 
@@ -11285,6 +11299,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
         // ツイートのDOMから保存用データを抽出
         function ft_extractTweetMeta(article, tweetId) {
+            // メインテキスト抽出
             const text = article.querySelector('[data-testid="tweetText"]')?.innerText || '';
             const userRow = article.querySelector('[data-testid="User-Name"]');
             let name = '', handle = '', avatar = '';
@@ -11345,7 +11360,19 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
             let quote = null;
             if (quoteContainer) {
+                // 引用テキスト抽出
                 const qText = quoteContainer.querySelector('[data-testid="tweetText"]')?.innerText || '';
+
+                // ▼▼▼ 引用内の「さらに表示」リンクを抽出 ▼▼▼
+                let qShowMore = null;
+                const showMoreBtn = quoteContainer.querySelector('[data-testid="tweet-text-show-more-link"]');
+                if (showMoreBtn) {
+                    qShowMore = {
+                        text: showMoreBtn.innerText || 'Show more', // "さらに表示" 等
+                        url: showMoreBtn.getAttribute('href') || ''
+                    };
+                }
+
                 let qName = '', qHandle = '', qAvatar = '';
                 const qUserRow = quoteContainer.querySelector('[data-testid="User-Name"]');
                 if (qUserRow) {
@@ -11357,10 +11384,16 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 if (qImg) qAvatar = qImg.src;
 
                 let qTweetId = '';
+                // 引用ID特定ロジック
                 const photoLink = quoteContainer.querySelector('a[href*="/status/"][href*="/photo/"]');
                 if (photoLink) {
                     const m = photoLink.getAttribute('href').match(/\/status\/(\d+)/);
                     if (m) qTweetId = m[1];
+                }
+                // もし「さらに表示」リンクがあれば、そこからIDが取れる場合もあるので補完
+                if (!qTweetId && qShowMore && qShowMore.url) {
+                     const m = qShowMore.url.match(/\/status\/(\d+)/);
+                     if (m) qTweetId = m[1];
                 }
 
                 const qMedia = extractMedia(quoteContainer, null);
@@ -11369,7 +11402,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     id: qTweetId,
                     text: qText,
                     user: { name: qName, handle: qHandle, avatar: qAvatar },
-                    media: qMedia
+                    media: qMedia,
+                    showMore: qShowMore
                 };
             }
 
