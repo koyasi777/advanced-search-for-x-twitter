@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.5.5
+// @version      6.5.6
 // @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
 // @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
 // @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
@@ -9211,7 +9211,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             // 1. URL (外部リンク: adv-content-link)
             // Group 1: http/https/www で始まるURL
             // Group 2: プロトコルなしのドメイン
-            const urlRegex = /((?:https?:\/\/|www\.)[^\s]+)|((?<![@\w.:/\-])\b[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/gi;
+            const urlRegex = /((?:https?:\/\/|www\.)[^\s\u0080-\uFFFF]+)|((?<![@\w.:/\-])\b(?:[a-zA-Z0-9][a-zA-Z0-9-]{0,61}[a-zA-Z0-9]\.)+[a-zA-Z]{2,}(?:\/[^\s\u0080-\uFFFF]*)?)/gi;
 
             // URL置換を先に行い、プレースホルダーに置き換える（メンション/ハッシュタグ誤爆防止）
             const placeholders = [];
@@ -9229,7 +9229,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                      href = 'https://' + href;
                 }
 
-                placeholders.push(`<a href="${href}" target="_blank" rel="noopener noreferrer" class="adv-content-link">${cleanUrl}</a>${suffix}`);
+                placeholders.push(`<a href="${href}" target="_blank" rel="noopener noreferrer nofollow" class="adv-content-link">${cleanUrl}</a>${suffix}`);
                 return `__URL_PLACEHOLDER_${placeholders.length - 1}__`;
             });
 
@@ -11315,10 +11315,56 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             return fireIfChanged;
         };
 
+        // ▼▼▼ ツイート本文をきれいに取得するヘルパー ▼▼▼
+        function ft_getCleanTweetText(root) {
+            if (!root) return '';
+            // DOMを破壊しないようにクローンして操作
+            const clone = root.cloneNode(true);
+
+            // 1. 画像(絵文字)を alt テキストに置換
+            clone.querySelectorAll('img').forEach(img => {
+                if (img.alt) img.replaceWith(document.createTextNode(img.alt));
+            });
+
+            // 2. リンクの処理
+            clone.querySelectorAll('a').forEach(a => {
+                const href = a.getAttribute('href');
+
+                // 外部リンク（http/httpsで始まる）の場合
+                // DOMの見た目（省略されている可能性がある）ではなく、href（実体）を採用する
+                if (href && (href.startsWith('http://') || href.startsWith('https://'))) {
+                    // プロトコル(https://)を削除して見た目をスッキリさせる
+                    let displayText = href.replace(/^https?:\/\//, '');
+
+                    // 末尾の / は削除する（見た目のノイズ軽減のため）
+                    if (displayText.endsWith('/')) {
+                        displayText = displayText.slice(0, -1);
+                    }
+
+                    // テキストノードとして置換
+                    a.replaceWith(document.createTextNode(displayText));
+                } else {
+                    // メンション(@user)やハッシュタグ(#tag)などの内部リンクは
+                    // 見た目のテキストをそのまま採用する
+                    const text = a.textContent || '';
+                    a.replaceWith(document.createTextNode(text));
+                }
+            });
+
+            // 3. <br> を改行コードに置換 (textContent は br を無視するため)
+            clone.querySelectorAll('br').forEach(br => {
+                br.replaceWith(document.createTextNode('\n'));
+            });
+
+            // 4. 全体のテキストを取得 (これで分割されたURLも繋がり、改行も保持される)
+            return clone.textContent;
+        }
+
         // ツイートのDOMから保存用データを抽出
         function ft_extractTweetMeta(article, tweetId) {
             // メインテキスト抽出
-            const text = article.querySelector('[data-testid="tweetText"]')?.innerText || '';
+            const textEl = article.querySelector('[data-testid="tweetText"]');
+            const text = ft_getCleanTweetText(textEl);
             const userRow = article.querySelector('[data-testid="User-Name"]');
             let name = '', handle = '', avatar = '';
 
@@ -11379,7 +11425,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             let quote = null;
             if (quoteContainer) {
                 // 引用テキスト抽出
-                const qText = quoteContainer.querySelector('[data-testid="tweetText"]')?.innerText || '';
+                const qTextEl = quoteContainer.querySelector('[data-testid="tweetText"]');
+                const qText = ft_getCleanTweetText(qTextEl);
 
                 // ▼▼▼ 引用内の「さらに表示」リンクを抽出 ▼▼▼
                 let qShowMore = null;
