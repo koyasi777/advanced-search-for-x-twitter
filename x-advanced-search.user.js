@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.5.0
+// @version      6.5.1
 // @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
 // @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
 // @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
@@ -3607,24 +3607,29 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         /* Tag chip on tweet header */
         .ft-tag-chip {
           display: inline-flex;
-          align-items: center;
-          margin-left: 4px; /* JS (ft_attachTagChipToArticle) 側の gap: 4px と連動 */
-          padding: 1px 8px;
+          align-items: center;     /* ボタン内の文字を縦中央に */
+          justify-content: center; /* ボタン内の文字を横中央に */
+          margin-left: 7px;
+          padding: 0 8px;
+          height: 20px;
           border-radius: 9999px;
           border: 1px solid currentColor;
           font-size: 11px;
-          line-height: 1.4;
+          line-height: 20px;
           cursor: pointer;
           user-select: none;
           white-space: nowrap;
-          background: rgba(255, 255, 255, 0.03); /* これは静的なまま (ほぼ透明なので) */
+          background: rgba(255, 255, 255, 0.03);
           flex: 0 0 auto;
           order: 9999;
+          align-self: center;
+          vertical-align: middle;
         }
         .ft-tag-chip-label {
           max-width: 150px;
           overflow: hidden;
           text-overflow: ellipsis;
+          padding-bottom: 1px;
         }
         .ft-tag-chip-uncategorized {
           opacity: 0.7;
@@ -3726,6 +3731,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           padding: 2px 6px;
           font-size: 12px;
           cursor: pointer;
+          white-space: nowrap;
         }
         .ft-tag-dropdown-new-button:hover {
           background: var(--ft-hover-bg);
@@ -5087,44 +5093,51 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
         // タグチップの挿入場所（ヘッダーメタ情報行）を特定する関数
         function ft_findHeaderMetaContainer(article) {
-            // 1. User-Name を起点にする (タイムラインでも詳細表示でも必ずヘッダーに存在する)
+            // 1. 記事内のメインとなる time 要素を探す（引用ツイート内の time は除外）
+            const allTimes = Array.from(article.querySelectorAll('time'));
+            const mainTime = allTimes.find(t => !t.closest('div[role="link"]'));
+
+            // 2. 記事内の User-Name 要素を探す
             const userName = article.querySelector('[data-testid="User-Name"]');
 
-            if (userName) {
-                // User-Name の親を遡り、ハンドルネーム(@...)や時間表示を含む「行コンテナ」を探す
-                // 構造: [Container] -> [NameWrapper] -> [User-Name]
-                //             L-> [HandleWrapper] -> [@handle]
+            // --- パターンA: タイムライン表示 ---
+            // 「User-Name」と「Time」が同じ行コンテナに同居している場合、そこがヘッダー行。
+            if (userName && mainTime) {
                 let p = userName.parentElement;
-
-                // 親を数回遡って、兄弟要素に「@から始まるテキスト（ハンドル）」を含むコンテナを探す
-                // ※通常は2～3階層上
                 while (p && p !== article) {
-                    // 自分の親の直下(兄弟要素)に、自分以外で「@」から始まるテキストを持つ要素があるか確認
-                    const hasHandleSibling = Array.from(p.children).some(sib => {
-                        // 自分自身のラッパーは除外
-                        if (sib.contains(userName)) return false;
-                        // テキストを取得して @ で始まっているか判定
-                        const txt = sib.innerText || '';
-                        return txt.trim().startsWith('@');
-                    });
-
-                    if (hasHandleSibling) {
-                        // ハンドルネームと並んでいるコンテナが見つかったら、ここが挿入場所
+                    // flex-row (r-18u37iz) であり、かつ mainTime を含んでいるか確認
+                    if (p.classList.contains('r-18u37iz') && p.contains(mainTime)) {
                         return p;
                     }
                     p = p.parentElement;
                 }
             }
 
-            // 2. フォールバック: 従来のTime検索 (ただし引用ツイート内のTimeは厳密に除外する)
-            const allTimes = article.querySelectorAll('time');
-            for (const timeEl of allTimes) {
-                // 引用(role="link")の中にあるtimeは無視してスキップ
-                if (timeEl.closest('div[role="link"]')) continue;
+            // --- パターンB: 詳細ページ (単独表示) ---
+            // User-Name と Time が離れている場合、詳細ページとみなして「Time」がある行を探す。
+            // (ここに「〇〇件の表示」も含まれています)
+            if (mainTime) {
+                let p = mainTime.parentElement;
+                while (p && p !== article) {
+                    // r-18u37iz (flex-row) であり、かつ子要素が複数ある（日付 + 中黒 + Views など）
+                    if (p.classList.contains('r-18u37iz') && p.childElementCount > 1) {
+                        return p;
+                    }
+                    p = p.parentElement;
+                }
+            }
 
-                const anchor = timeEl.closest('a');
-                if (anchor && anchor.parentElement && anchor.parentElement.parentElement) {
-                    return anchor.parentElement.parentElement;
+            // --- パターンC: フォールバック ---
+            // 上記で見つからない場合（Timeがないプロモーションなど）、User-Name の横に @handle がある行を探す
+            if (userName) {
+                let p = userName.parentElement;
+                while (p && p !== article) {
+                    const hasHandleSibling = Array.from(p.children).some(sib => {
+                        if (sib.contains(userName)) return false;
+                        return sib.innerText && sib.innerText.trim().startsWith('@');
+                    });
+                    if (hasHandleSibling) return p;
+                    p = p.parentElement;
                 }
             }
 
@@ -5163,26 +5176,40 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             const headerRow = ft_findHeaderMetaContainer(article);
             if (!headerRow) return;
 
-            // ▼▼▼ スタイルの適用 ▼▼▼
-            headerRow.style.display = 'flex';
-            headerRow.style.flexDirection = 'row';
-            headerRow.style.alignItems = 'center';
-            headerRow.style.justifyContent = 'flex-start';
-            headerRow.style.columnGap = '4px';
-
-            // スペースが足りない場合に折り返しを許可する
-            headerRow.style.flexWrap = 'wrap';
-            // 折り返した際、上下の行に隙間を作る
-            headerRow.style.rowGap = '8px';
-
+            // 既存のタグがあれば取得、なければ新規作成
             let existing = headerRow.querySelector('.ft-tag-chip');
             const chip = ft_buildTagChip(tweetId);
+
+            // 念のため CSS order も最大にしておく
+            chip.style.order = "9999999";
+
             if (existing) {
                 existing.replaceWith(chip);
             } else {
                 headerRow.appendChild(chip);
             }
+
             article.classList.add('ft-chip-attached');
+
+            // 監視ロジック
+            // この行(headerRow)に他の拡張機能が要素を追加してきたら、タグを再び最後尾へ移動させる
+            if (!headerRow.dataset.ftObserverAttached) {
+                headerRow.dataset.ftObserverAttached = '1';
+
+                const observer = new MutationObserver((mutations) => {
+                    // タグチップを取得（クロージャ内の chip 変数だと古い可能性があるためDOMから取る）
+                    const currentChip = headerRow.querySelector('.ft-tag-chip');
+
+                    // タグが存在し、かつ「最後の要素」ではなくなっている場合
+                    if (currentChip && headerRow.lastElementChild !== currentChip) {
+                        // 自分自身(タグ)を再追加することで、DOM順序の一番後ろへ移動する
+                        headerRow.appendChild(currentChip);
+                    }
+                });
+
+                // 子要素の追加・削除を監視する
+                observer.observe(headerRow, { childList: true });
+            }
         }
 
         function ft_removeTagChipFromArticle(article) {
