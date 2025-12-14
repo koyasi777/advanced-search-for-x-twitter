@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.5.6
+// @version      6.5.7
 // @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
 // @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
 // @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
@@ -2994,7 +2994,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         .adv-item-avatar-link { display:inline-block; border-radius:9999px; }
         .adv-item-main { flex:1; min-width:0; }
 
-        .adv-item-title { font-size:14px; font-weight:700; color:var(--modal-text-primary,#e7e9ea); word-break:break-word; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+        .adv-item-title { font-size:14px; font-weight:700; color:var(--modal-text-primary,#e7e9ea); word-break:break-word; display: block; line-height: 1.5; }
         .adv-item-sub { font-size:12px; color:var(--modal-text-secondary,#8b98a5); margin-top:2px; display:flex; gap:6px; flex-wrap:wrap; align-items:center; }
         .adv-item-actions { display:flex; gap:6px; align-items:center; align-self:center; }
         .adv-chip { border:1px solid var(--modal-input-border,#38444d); background:transparent; color:var(--modal-text-primary,#e7e9ea); padding:4px 8px; border-radius:9999px; font-size:12px; cursor:pointer; }
@@ -4160,10 +4160,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         }
         /* Favorites Item Tag Container */
         .adv-fav-tag-container {
-           margin-top:0.7px;
-           margin-left: 2px;
-           display: inline-flex;
-           align-items: center;
+            display: inline-block;
+            margin-left: -2px;
+            margin-bottom: 1px;
+            vertical-align: middle;
+            transform: translateY(-2.5px);
         }
 
         /* --- Mute Collapse Styles --- */
