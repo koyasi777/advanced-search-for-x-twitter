@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.4.9
+// @version      6.5.0
 // @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
 // @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
 // @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
@@ -6395,9 +6395,110 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             return row;
         }
 
+        /* --- ▼▼▼ 汎用ページネーション関数 ▼▼▼ */
+        const PAGINATION_STATE = {}; // { [key]: { list, cursor, observer, renderer, container, sentinelClass } }
+        const PAGE_SIZE = 50;
+
         // お気に入りタブ専用の現在の絞り込み状態（メモリ保持）
         let favFilterTagId = 'ALL'; // 'ALL', 'UNCAT', or tagId
         let favSearchQuery = '';
+
+        function renderPagedList(key, container, items, rowRenderer, emptyEl, emptyMsg) {
+            if (!container) return;
+
+            // 状態初期化 or 取得
+            if (!PAGINATION_STATE[key]) {
+                PAGINATION_STATE[key] = { observer: null };
+            }
+            const state = PAGINATION_STATE[key];
+
+            // 以前のObserverがあれば解除
+            if (state.observer) {
+                state.observer.disconnect();
+                state.observer = null;
+            }
+
+            // 状態更新
+            state.list = items;
+            state.cursor = 0;
+            state.renderer = rowRenderer;
+            state.container = container;
+            state.sentinelClass = `adv-sentinel-${key}`;
+
+            // 表示クリア
+            container.innerHTML = '';
+
+            // 空の場合
+            if (items.length === 0) {
+                if (emptyEl) {
+                    emptyEl.textContent = emptyMsg || '';
+                    emptyEl.style.display = 'block';
+                }
+                return;
+            } else {
+                if (emptyEl) emptyEl.style.display = 'none';
+            }
+
+            // バッチ処理関数
+            const renderBatch = () => {
+                const nextBatch = state.list.slice(state.cursor, state.cursor + PAGE_SIZE);
+                if (nextBatch.length === 0) return;
+
+                const frag = document.createDocumentFragment();
+                nextBatch.forEach(item => {
+                    frag.appendChild(state.renderer(item));
+                });
+
+                // センチネル管理
+                let sentinel = container.querySelector(`.${state.sentinelClass}`);
+                if (!sentinel) {
+                    sentinel = document.createElement('div');
+                    sentinel.className = state.sentinelClass;
+                    sentinel.style.height = '40px';
+                    sentinel.style.margin = '10px 0';
+                    // まだDOMに無いなら、フラグメントの後ろに追加予定（後述）
+                }
+
+                // リストへの挿入
+                if (container.contains(sentinel)) {
+                    container.insertBefore(frag, sentinel);
+                } else {
+                    container.appendChild(frag);
+                    container.appendChild(sentinel);
+                }
+
+                state.cursor += nextBatch.length;
+                updateSentinel(sentinel);
+            };
+
+            // センチネルの状態更新と監視
+            const updateSentinel = (sentinel) => {
+                const hasMore = state.cursor < state.list.length;
+                if (hasMore) {
+                    sentinel.style.display = 'block';
+                    // Observer設定
+                    if (!state.observer) {
+                        state.observer = new IntersectionObserver((entries) => {
+                            if (entries[0].isIntersecting) {
+                                // 連続発火防止のため一旦監視解除
+                                state.observer.unobserve(entries[0].target);
+                                setTimeout(renderBatch, 50);
+                            }
+                        }, {
+                            root: container.closest('.adv-modal-body'), // スクロール親要素
+                            rootMargin: '200px'
+                        });
+                    }
+                    state.observer.observe(sentinel);
+                } else {
+                    sentinel.style.display = 'none';
+                    if (state.observer) state.observer.unobserve(sentinel);
+                }
+            };
+
+            // 初回バッチ実行
+            renderBatch();
+        }
 
         function renderFavorites() {
             const listEl = document.getElementById('adv-favorites-list');
@@ -6489,7 +6590,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             // 3. データのロードとフィルタリング
             const allItems = loadFavorites(); // { id, text, user, postedAt, ts, ... }
 
-            let filtered = allItems.filter(item => {
+            // フィルタ結果をローカル変数に
+            let filteredList = allItems.filter(item => {
                 // A. テキスト検索
                 const q = favSearchQuery.trim().toLowerCase(); // 検索時に初めて正規化する
                 if (q) {
@@ -6509,12 +6611,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             // 4. ソート適用
             // ts: 追加日時, postedAt: 投稿日時
             // postedAt が無い古いデータは ts をフォールバックとして使う
-            filtered.sort((a, b) => {
+            filteredList.sort((a, b) => {
                 const tsA = a.ts || 0;
                 const tsB = b.ts || 0;
                 const postedA = a.postedAt || tsA; // fallback
                 const postedB = b.postedAt || tsB; // fallback
-
                 switch (currentSort) {
                     case 'saved_oldest':  return tsA - tsB;
                     case 'posted_newest': return postedB - postedA;
@@ -6524,21 +6625,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 }
             });
 
-            // 5. リスト描画
-            listEl.innerHTML = '';
-
-            // 全データ(allItems)が空の時だけメッセージを出す。
-            // 検索やフィルタでヒットしなかっただけなら、メッセージは出さずに空欄にする。
-            if (allItems.length === 0) {
-                emptyEl.textContent = i18n.t('emptyFavorites');
-                emptyEl.style.display = 'block';
-            } else {
-                emptyEl.style.display = 'none';
-                filtered.forEach(item => {
-                    const row = renderFavoriteRow(item);
-                    listEl.appendChild(row);
-                });
-            }
+            // 5. 汎用ページネーション関数で描画
+            renderPagedList('favorites', listEl, filteredList, renderFavoriteRow, emptyEl, i18n.t('emptyFavorites'));
         }
 
         /* タブごと保存に対応 */
@@ -8378,68 +8466,65 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         const historySortEl = document.getElementById('adv-history-sort');
 
         const renderHistory = () => {
-          const listAll = migrateList(loadJSON(HISTORY_KEY, []));
+            const listAll = migrateList(loadJSON(HISTORY_KEY, []));
 
-          // 1. Get filter/sort values
-          const q = (historySearchEl?.value || '').toLowerCase().trim();
-          const sort = historySortEl?.value || kv.get(HISTORY_SORT_KEY, 'newest');
-          if (historySortEl && historySortEl.value !== sort) {
-            historySortEl.value = sort;
-          }
-
-          // 2. Filter
-          const listFiltered = q
-            ? listAll.filter(item => (item.q || '').toLowerCase().includes(q))
-            : listAll;
-
-          // 3. Sort
-          const listSorted = listFiltered.sort((a, b) => {
-            switch (sort) {
-              case 'oldest': return (a.ts || 0) - (b.ts || 0);
-              case 'name_asc': return (a.q || '').localeCompare(b.q || '');
-              case 'name_desc': return (b.q || '').localeCompare(a.q || '');
-              case 'newest':
-              default:
-                return (b.ts || 0) - (a.ts || 0);
+            // 1. Get filter/sort values
+            const q = (historySearchEl?.value || '').toLowerCase().trim();
+            const sort = historySortEl?.value || kv.get(HISTORY_SORT_KEY, 'newest');
+            if (historySortEl && historySortEl.value !== sort) {
+                historySortEl.value = sort;
             }
-          });
 
-          // 4. Render
-          historyListEl.innerHTML = '';
-          historyEmptyEl.textContent = listAll.length === 0 ? i18n.t('emptyHistory') : '';
+            // 2. Filter
+            const listFiltered = q
+                ? listAll.filter(item => (item.q || '').toLowerCase().includes(q))
+                : listAll;
 
-          listSorted.forEach(item => {
-            const row = document.createElement('div');
-            row.className = 'adv-item';
-            row.dataset.id = item.id;
-
-            row.innerHTML = `
-              <div class="adv-item-main">
-                <div class="adv-item-title">${escapeHTML(item.q)}</div>
-                <div class="adv-item-sub">
-                  <span>${fmtTime(item.ts)}</span>
-                  ${scopeChipsHTML(!!item.pf, !!item.lf)}
-                </div>
-              </div>
-              <div class="adv-item-actions">
-                <button class="adv-chip primary" data-action="run">${i18n.t('run')}</button>
-                <button class="adv-chip danger" data-action="delete">${i18n.t('delete')}</button>
-              </div>
-            `;
-
-            row.querySelector('[data-action="run"]').addEventListener('click', () => {
-              parseQueryAndApplyToModal(item.q);
-              applyScopesToControls({ pf: !!item.pf, lf: !!item.lf });
-              // activateTab('search');
-              executeSearch({ pf: item.pf, lf: item.lf });
+            // 3. Sort
+            const listSorted = listFiltered.sort((a, b) => {
+                switch (sort) {
+                    case 'oldest': return (a.ts || 0) - (b.ts || 0);
+                    case 'name_asc': return (a.q || '').localeCompare(b.q || '');
+                    case 'name_desc': return (b.q || '').localeCompare(a.q || '');
+                    case 'newest':
+                    default:
+                        return (b.ts || 0) - (a.ts || 0);
+                }
             });
 
-            row.querySelector('[data-action="delete"]').addEventListener('click', () => {
-              deleteHistory(item.id);
-            });
+            // 4. Render with Pagination
+            const renderHistoryRow = (item) => {
+                const row = document.createElement('div');
+                row.className = 'adv-item';
+                row.dataset.id = item.id;
 
-            historyListEl.appendChild(row);
-          });
+                row.innerHTML = `
+                  <div class="adv-item-main">
+                    <div class="adv-item-title">${escapeHTML(item.q)}</div>
+                    <div class="adv-item-sub">
+                      <span>${fmtTime(item.ts)}</span>
+                      ${scopeChipsHTML(!!item.pf, !!item.lf)}
+                    </div>
+                  </div>
+                  <div class="adv-item-actions">
+                    <button class="adv-chip primary" data-action="run">${i18n.t('run')}</button>
+                    <button class="adv-chip danger" data-action="delete">${i18n.t('delete')}</button>
+                  </div>
+                `;
+
+                row.querySelector('[data-action="run"]').addEventListener('click', () => {
+                    parseQueryAndApplyToModal(item.q);
+                    applyScopesToControls({ pf: !!item.pf, lf: !!item.lf });
+                    executeSearch({ pf: item.pf, lf: item.lf });
+                });
+
+                row.querySelector('[data-action="delete"]').addEventListener('click', () => {
+                    deleteHistory(item.id);
+                });
+                return row;
+            };
+
+            renderPagedList('history', historyListEl, listSorted, renderHistoryRow, historyEmptyEl, i18n.t('emptyHistory'));
         };
 
         historyClearAllBtn.addEventListener('click', clearAllHistory);
@@ -11003,48 +11088,49 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         }
 
         const renderMuted = () => {
-          let list = loadMuted();
-          // 検索ボックスに値があればフィルタリング
-          if (muteFilterEl) {
-              const q = muteFilterEl.value.trim().toLowerCase();
-              if (q) {
-                  list = list.filter(item => item.word.toLowerCase().includes(q));
-              }
-          }
-          muteListEl.innerHTML = '';
-          muteEmptyEl.textContent = list.length ? '' : i18n.t('emptyMuted');
-          list.forEach(item => {
-            const row = document.createElement('div');
-            row.className = 'adv-mute-item';
-            if (!item.enabled) row.classList.add('disabled');
-            row.innerHTML = `
-              <div class="adv-mute-content-left">
-                  <div class="adv-mute-word">${escapeHTML(item.word)}</div>
-                  <div class="adv-mute-options-row">
-                    <label class="adv-toggle">
-                      <input type="checkbox" ${item.enabled ? 'checked' : ''} data-action="toggle-enabled">
-                      <span data-i18n="labelEnabled">${i18n.t('labelEnabled')}</span>
-                    </label>
-                    <label class="adv-toggle">
-                      <input type="checkbox" ${item.wb ? 'checked' : ''} data-action="toggle-wb">
-                      <span data-i18n="labelWordBoundary">${i18n.t('labelWordBoundary')}</span>
-                    </label>
-                    <label class="adv-toggle">
-                      <input type="checkbox" ${item.cs ? 'checked' : ''} data-action="toggle-cs">
-                      <span data-i18n="labelCaseSensitive">${i18n.t('labelCaseSensitive')}</span>
-                    </label>
+            let list = loadMuted();
+            // 検索ボックスに値があればフィルタリング
+            if (muteFilterEl) {
+                const q = muteFilterEl.value.trim().toLowerCase();
+                if (q) {
+                    list = list.filter(item => item.word.toLowerCase().includes(q));
+                }
+            }
+
+            const renderMuteRow = (item) => {
+                const row = document.createElement('div');
+                row.className = 'adv-mute-item';
+                if (!item.enabled) row.classList.add('disabled');
+                row.innerHTML = `
+                  <div class="adv-mute-content-left">
+                      <div class="adv-mute-word">${escapeHTML(item.word)}</div>
+                      <div class="adv-mute-options-row">
+                        <label class="adv-toggle">
+                          <input type="checkbox" ${item.enabled ? 'checked' : ''} data-action="toggle-enabled">
+                          <span data-i18n="labelEnabled">${i18n.t('labelEnabled')}</span>
+                        </label>
+                        <label class="adv-toggle">
+                          <input type="checkbox" ${item.wb ? 'checked' : ''} data-action="toggle-wb">
+                          <span data-i18n="labelWordBoundary">${i18n.t('labelWordBoundary')}</span>
+                        </label>
+                        <label class="adv-toggle">
+                          <input type="checkbox" ${item.cs ? 'checked' : ''} data-action="toggle-cs">
+                          <span data-i18n="labelCaseSensitive">${i18n.t('labelCaseSensitive')}</span>
+                        </label>
+                      </div>
                   </div>
-              </div>
-              <div class="adv-mute-actions-right">
-                <button class="adv-chip danger" data-action="delete" style="padding:2px 8px; font-size:11px;">${i18n.t('delete')}</button>
-              </div>
-            `;
-            row.querySelector('[data-action="toggle-enabled"]').addEventListener('change', () => toggleMutedEnabled(item.id));
-            row.querySelector('[data-action="toggle-cs"]').addEventListener('change', () => toggleMutedCS(item.id));
-            row.querySelector('[data-action="toggle-wb"]').addEventListener('change', () => toggleMutedWB(item.id));
-            row.querySelector('[data-action="delete"]').addEventListener('click', () => deleteMuted(item.id));
-            muteListEl.appendChild(row);
-          });
+                  <div class="adv-mute-actions-right">
+                    <button class="adv-chip danger" data-action="delete" style="padding:2px 8px; font-size:11px;">${i18n.t('delete')}</button>
+                  </div>
+                `;
+                row.querySelector('[data-action="toggle-enabled"]').addEventListener('change', () => toggleMutedEnabled(item.id));
+                row.querySelector('[data-action="toggle-cs"]').addEventListener('change', () => toggleMutedCS(item.id));
+                row.querySelector('[data-action="toggle-wb"]').addEventListener('change', () => toggleMutedWB(item.id));
+                row.querySelector('[data-action="delete"]').addEventListener('click', () => deleteMuted(item.id));
+                return row;
+            };
+
+            renderPagedList('mute', muteListEl, list, renderMuteRow, muteEmptyEl, i18n.t('emptyMuted'));
         };
 
         function applyMuteVisualState() {
@@ -11700,11 +11786,6 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         }
 
         setupFavoritesDelegation();
-        renderFavorites(); // 初期描画 (これで ft_state がある状態で走る)
-        renderHistory();
-        renderSaved();
-        renderAccounts();
-        renderMuted();
         // スマホ対応用：タッチ操作をドラッグ操作へ変換するリスナーを登録
         enableMobileDragSupport();
         // 保存された最後のタブを読み込んでアクティブにする
