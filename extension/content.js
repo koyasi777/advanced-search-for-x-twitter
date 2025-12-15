@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.5.7
+// @version      6.5.8
 // @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
 // @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
 // @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
@@ -34,6 +34,7 @@
 // @grant        GM_setValue
 // @grant        GM_deleteValue
 // @grant        GM_info
+// @grant        unsafeWindow
 // @run-at       document-idle
 // @license      MIT
 // @homepageURL  https://github.com/koyasi777/advanced-search-for-x-twitter
@@ -2736,24 +2737,63 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
       });
     }
 
-    // ▼ SPA 遷移の核。pushState → 合成 popstate → DOM適用待ち → 失敗ならフォールバック
+    // ▼ State生成（React Routerの仕様に準拠したクリーンなState）
+    function createCleanState(currentPath) {
+        // 6文字のランダムな英数字 (React Router標準のkey生成ロジック模倣)
+        const key = Math.random().toString(36).slice(2, 8);
+        return {
+            key: key,
+            state: {
+                fromApp: true,
+                previousPath: currentPath || location.pathname,
+                // ここに focalTweetId や context などの「前の文脈」を含めないことで
+                // React Router に「新しいビューとしてレンダリング」させる
+            }
+        };
+    }
+
+    // ▼ SPA 遷移関数（Chrome/Firefox/Safari全対応・Sandbox突破版）
     async function spaNavigate(path, { ctrlMeta = false, timeoutMs = 1200 } = {}) {
-      try {
-        const to = new URL(path, location.origin);
-        if (to.origin !== location.origin) throw new Error('cross-origin');
+        try {
+            const to = new URL(path, location.origin);
+            if (to.origin !== location.origin) throw new Error('cross-origin');
 
-        history.pushState(history.state, '', to.pathname + to.search + to.hash);
-        // X のルーターは popstate を購読している想定
-        window.dispatchEvent(new PopStateEvent('popstate', { state: history.state }));
+            // 1. クリーンなStateを作成
+            let nextState = createCleanState(location.pathname);
 
-        const ok = await waitForRouteApply(to.pathname, timeoutMs);
-        if (ok) return; // 成功
-      } catch (e) {
-        // fall through to fallback
-      }
-      // フォールバック：修飾キーありなら新規タブ、なければ通常遷移
-      if (ctrlMeta) window.open(path, '_blank', 'noopener');
-      else location.assign(path);
+            // 2.【Firefox対策】特権領域(UserScript)のオブジェクトをページ領域へ複製
+            // これをしないと Firefox で "Permission denied to access property" エラーになる
+            if (typeof cloneInto === 'function') {
+                nextState = cloneInto(nextState, document.defaultView || window);
+            }
+
+            // 3. 環境に応じたグローバルオブジェクトの取得
+            // unsafeWindow が使えるなら、ページ本来の window (実体) を使う
+            const targetWindow = (typeof unsafeWindow !== 'undefined') ? unsafeWindow : window;
+
+            // 4. History API 更新
+            // ページ実体の history を操作する
+            targetWindow.history.pushState(nextState, '', to.pathname + to.search + to.hash);
+
+            // 5. イベント発火 (PopStateEvent)
+            // React Router は window.addEventListener('popstate', ...) で待機しているため
+            // ページ実体のコンストラクタでイベントを作り、ページ実体の window で発火する
+            const PopStateEventClass = targetWindow.PopStateEvent || PopStateEvent;
+            const evt = new PopStateEventClass('popstate', { state: nextState });
+            targetWindow.dispatchEvent(evt);
+
+            // 6. 適用待ち (DOM変化の監視)
+            const ok = await waitForRouteApply(to.pathname, timeoutMs);
+            if (ok) return;
+
+        } catch (e) {
+            console.error('[spaNavigate] Fallback triggered due to:', e);
+            // エラー時はフォールバックへ進む
+        }
+
+        // フォールバック（通常遷移: ページリロード発生）
+        if (ctrlMeta) window.open(path, '_blank', 'noopener');
+        else location.assign(path);
     }
 
     const uid = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
