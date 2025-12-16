@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.5.8
+// @version      6.5.9
 // @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
 // @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
 // @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
@@ -4198,6 +4198,88 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           display: block;
           margin-left: 2px;
         }
+
+        /* --- Link Card (OGP) --- */
+        .adv-card-box {
+          margin-top: 8px;
+          border: 1px solid var(--modal-border);
+          border-radius: 12px;
+          overflow: hidden;
+          text-decoration: none;
+          display: flex; /* Flexに変更（Small Card対応） */
+          flex-direction: column;
+          transition: background-color 0.2s;
+        }
+        .adv-card-box:hover {
+          background-color: rgba(255, 255, 255, 0.03);
+        }
+        /* 通常の画像 */
+        .adv-card-image {
+          width: 100%;
+          height: auto;
+          aspect-ratio: 1.91 / 1;
+          object-fit: cover;
+          display: block;
+          border-bottom: 1px solid var(--modal-border);
+        }
+        /* Small Card用レイアウト */
+        .adv-card-box.small-card {
+          flex-direction: row; /* 横並び */
+          align-items: center;
+          height: 100px; /* 高さを固定 */
+        }
+        .adv-card-box.small-card .adv-card-image {
+          width: 100px;
+          height: 100px;
+          aspect-ratio: 1 / 1;
+          border-bottom: none;
+          border-right: 1px solid var(--modal-border);
+          flex-shrink: 0;
+        }
+        /* SVGアイコン用コンテナ */
+        .adv-card-icon-container {
+          width: 100px;
+          height: 100px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background-color: var(--modal-input-bg);
+          border-right: 1px solid var(--modal-border);
+          color: var(--modal-text-secondary);
+          flex-shrink: 0;
+        }
+        .adv-card-icon-container svg {
+          width: 24px;
+          height: 24px;
+          fill: currentColor;
+        }
+        .adv-card-content {
+          padding: 8px 12px;
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        }
+        .adv-card-domain {
+          font-size: 13px;
+          color: var(--modal-text-secondary);
+          margin-bottom: 2px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .adv-card-title {
+          font-size: 14px;
+          font-weight: 700;
+          color: var(--modal-text-primary);
+          line-height: 1.3;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
         /* Favorites Item Tag Container */
         .adv-fav-tag-container {
             display: inline-block;
@@ -6400,6 +6482,40 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             };
             const mainMediaHtml = buildMediaHtml(item.media, false);
 
+            // --- Link Card HTML ---
+            let cardHtml = '';
+            if (item.card) {
+                let domain = item.card.domain || '';
+                if (!domain) {
+                    try {
+                        const u = new URL(item.card.url);
+                        domain = u.hostname;
+                    } catch(e) { domain = 'link'; }
+                }
+
+                // 画像部分のHTML生成
+                let mediaPart = '';
+                if (item.card.img) {
+                    mediaPart = `<img src="${escapeAttr(item.card.img)}" class="adv-card-image" loading="lazy" />`;
+                } else if (item.card.svg) {
+                    // SVGがある場合（Small Cardで画像がない場合など）
+                    mediaPart = `<div class="adv-card-icon-container">${item.card.svg}</div>`;
+                }
+
+                // クラスの切り替え
+                const boxClass = item.card.style === 'small' ? 'adv-card-box small-card' : 'adv-card-box';
+
+                cardHtml = `
+                    <a href="${escapeAttr(item.card.url)}" target="_blank" rel="noopener noreferrer nofollow" class="${boxClass}">
+                        ${mediaPart}
+                        <div class="adv-card-content">
+                            <div class="adv-card-domain">${escapeHTML(domain)}</div>
+                            <div class="adv-card-title">${escapeHTML(item.card.title)}</div>
+                        </div>
+                    </a>
+                `;
+            }
+
             // --- 引用HTML ---
             let quoteHtml = '';
             if (item.quote) {
@@ -6448,7 +6564,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     </div>
                     <div class="adv-item-body-text">${bodyHtml}</div>
                     ${mainMediaHtml}
-                    ${quoteHtml}
+                    ${cardHtml} ${quoteHtml}
                     <div class="adv-item-sub">
                         <span>${displayTime}</span>
                     </div>
@@ -11513,12 +11629,98 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 };
             }
 
+            // --- Link Card Extraction ---
+            let card = null;
+            const cardWrapper = article.querySelector('[data-testid="card.wrapper"]');
+
+            // 引用コンテナの中にあるカードは除外
+            if (cardWrapper && (!quoteContainer || !quoteContainer.contains(cardWrapper))) {
+                // URL取得 (共通)
+                const cardLink = cardWrapper.querySelector('a[role="link"]');
+                const cardUrl = cardLink ? cardLink.getAttribute('href') : '';
+
+                if (cardUrl) {
+                    let cardTitle = '';
+                    let cardDomain = '';
+                    let cardImg = '';
+                    let cardSvg = ''; // SVG文字列用
+                    let isSmall = false;
+
+                    // A. Small Card (横長) の場合: 構造が特殊なので専用にパースする
+                    const smallDetail = cardWrapper.querySelector('[data-testid="card.layoutSmall.detail"]');
+                    if (smallDetail) {
+                        isSmall = true;
+                        // テキスト行を取得 (1行目:ドメイン, 2行目:タイトル の順で並んでいることが多い)
+                        const lines = Array.from(smallDetail.querySelectorAll('div[dir="auto"]'))
+                            .map(el => el.innerText.trim())
+                            .filter(Boolean);
+
+                        if (lines.length >= 1) cardDomain = lines[0];
+                        if (lines.length >= 2) cardTitle = lines[1];
+
+                        // 画像取得を試みる
+                        const imgEl = cardWrapper.querySelector('img');
+                        if (imgEl) {
+                            cardImg = imgEl.src;
+                        } else {
+                            // 画像がなければSVGを探す
+                            const svgEl = cardWrapper.querySelector('svg');
+                            if (svgEl) {
+                                // SVGタグ自体を文字列として保存
+                                cardSvg = svgEl.outerHTML;
+                            }
+                        }
+                    }
+                    // B. Large Card (縦長) またはその他の場合: 従来のロジック
+                    else {
+                        const imgEl = cardWrapper.querySelector('img');
+                        cardImg = imgEl ? imgEl.src : '';
+
+                        // 複数のリンクからテキスト情報を探す
+                        const allLinks = Array.from(cardWrapper.querySelectorAll('a[role="link"]'));
+                        for (const link of allLinks) {
+                            const text = link.innerText || '';
+                            const aria = link.getAttribute('aria-label') || '';
+                            if (text.trim() || aria.trim()) {
+                                cardTitle = aria || text;
+                                const rawAria = aria;
+                                if (rawAria) {
+                                    const firstPart = rawAria.split(/\s+/)[0];
+                                    if (firstPart && firstPart.includes('.')) {
+                                        cardDomain = firstPart;
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                        // タイトルからドメインを除去 (重複対策)
+                        cardTitle = cardTitle.replace(/\n/g, ' ').trim();
+                        if (cardDomain && cardTitle.startsWith(cardDomain)) {
+                            cardTitle = cardTitle.substring(cardDomain.length).trim();
+                        }
+                    }
+
+                    // データがあれば保存
+                    if (cardUrl && (cardImg || cardSvg || cardTitle)) {
+                        card = {
+                            url: cardUrl,
+                            img: cardImg,
+                            svg: cardSvg, // ★追加: SVGデータ
+                            title: cardTitle,
+                            domain: cardDomain,
+                            style: isSmall ? 'small' : 'large' // ★追加: 表示タイプ
+                        };
+                    }
+                }
+            }
+
             return {
                 id: tweetId,
                 text,
                 user: { name, handle, avatar },
                 media: mainMedia,
                 quote,
+                card,
                 ts: Date.now(), // 保存操作をした日時（ソート用などで使用する場合のため残す）
                 postedAt: postedAt // 実際の投稿日時
             };
