@@ -4,7 +4,7 @@
     "description": "The extension's name"
   },
   "extensionDescription": {
-    "message": "Adds a draggable advanced search panel for X (Twitter) with filters, search-box sync, history and saved search management.",
+    "message": "Boost X search—no syntax to learn. Floating panel saves filters/history, tagged favorites, regex mutes, folders for lists/accounts.",
     "description": "The extension's description"
   }
 }
