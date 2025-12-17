@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.6.1
+// @version      6.6.2
 // @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
 // @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
 // @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
@@ -11409,9 +11409,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         const installNavigationHooks = (onRouteChange) => {
             let lastHref = location.href;
             const _debounce = (fn, wait=60) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); }; };
+
             const fireIfChanged = _debounce(() => {
                 const now = location.href;
-                if (now !== lastHref) {
+                // ▼ lastHref が null (強制実行フラグ) の場合も通過させる
+                if (lastHref === null || now !== lastHref) {
                     lastHref = now;
                     try {
                         const u = new URL(now, location.origin);
@@ -11432,6 +11434,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     onRouteChange();
                 }
             }, 60);
+
             const wrapHistory = (m) => {
                 const orig = history[m];
                 history[m] = function(...args){
@@ -11448,12 +11451,21 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                         }
                     } catch(_) {}
                     const ret = orig.apply(this, args);
+
+                    // ▼ ページ遷移時はキャッシュを破棄して確実に再判定させる
+                    lastHref = null;
                     queueMicrotask(fireIfChanged);
                     return ret;
                 };
             };
             wrapHistory('pushState'); wrapHistory('replaceState');
-            window.addEventListener('popstate', fireIfChanged);
+
+            // ▼ ブラウザバック時もキャッシュを破棄して確実に再判定させる
+            window.addEventListener('popstate', () => {
+                lastHref = null;
+                fireIfChanged();
+            });
+
             document.addEventListener('click', (e) => {
                 const a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
                 if (!a) return;
@@ -11467,7 +11479,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                                 document.getElementById('advanced-search-trigger')
                             );
                         }
-                        setTimeout(fireIfChanged, 0);
+                        // クリック遷移の場合も少し遅延させてチェック
+                        setTimeout(() => {
+                            // 明示的な遷移なので強制チェックしても良いが、
+                            // 通常は pushState 側で拾われるためここは補助
+                            fireIfChanged();
+                        }, 0);
                     }
                 } catch(_) {}
             }, true);
