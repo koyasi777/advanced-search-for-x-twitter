@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.6.0
+// @version      6.6.1
 // @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
 // @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
 // @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
@@ -11475,6 +11475,46 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             return fireIfChanged;
         };
 
+        // Reactの内部キーをキャッシュする変数 (Global scope within closure)
+        let __cachedReactFiberKey = null;
+
+        // React Fiberから内部データを取得してリンク先パスを探すヘルパー
+        function ft_getLinkFromReactFiber(dom) {
+            if (!dom) return null;
+
+            // UserScript環境(Firefox等)対策
+            const target = (typeof dom.wrappedJSObject !== 'undefined') ? dom.wrappedJSObject : dom;
+
+            // キーが未取得の場合のみ探索する (キャッシュ戦略)
+            if (!__cachedReactFiberKey) {
+                __cachedReactFiberKey = Object.keys(target).find(k => k.startsWith('__reactFiber$'));
+            }
+
+            // キーが見つからない、または要素がそのキーを持っていない場合は終了
+            if (!__cachedReactFiberKey || !target[__cachedReactFiberKey]) return null;
+
+            let fiber = target[__cachedReactFiberKey];
+
+            // 親を遡って props.link.pathname を探す (最大20階層)
+            for (let i = 0; i < 20; i++) {
+                if (!fiber) break;
+
+                const props = fiber.memoizedProps;
+                if (props && props.link && props.link.pathname) {
+                    return props.link.pathname;
+                }
+
+                // pendingProps も念のため確認
+                const pProps = fiber.pendingProps;
+                if (pProps && pProps.link && pProps.link.pathname) {
+                    return pProps.link.pathname;
+                }
+
+                fiber = fiber.return; // 親へ移動
+            }
+            return null;
+        }
+
         // ▼▼▼ ツイート本文をきれいに取得するヘルパー ▼▼▼
         function ft_getCleanTweetText(root) {
             if (!root) return '';
@@ -11629,16 +11669,29 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 if (qImg) qAvatar = qImg.src;
 
                 let qTweetId = '';
-                // 引用ID特定ロジック
+
+                // 1. 従来のDOM探索 (高速・一般的)
+                // 通常の写真リンクなどを探す
                 const photoLink = quoteContainer.querySelector('a[href*="/status/"][href*="/photo/"]');
                 if (photoLink) {
                     const m = photoLink.getAttribute('href').match(/\/status\/(\d+)/);
                     if (m) qTweetId = m[1];
                 }
-                // もし「さらに表示」リンクがあれば、そこからIDが取れる場合もあるので補完
+
+                // 「さらに表示」リンクがある場合の補完
                 if (!qTweetId && qShowMore && qShowMore.url) {
                      const m = qShowMore.url.match(/\/status\/(\d+)/);
                      if (m) qTweetId = m[1];
+                }
+
+                // 2. React Fiberからの取得 (低速・最終手段)
+                // DOM探索で見つからなかった場合（動画引用や特殊なカードなど、aタグがない場合）のみ実行
+                if (!qTweetId) {
+                    const fiberPath = ft_getLinkFromReactFiber(quoteContainer);
+                    if (fiberPath) {
+                        const m = fiberPath.match(/\/status\/(\d+)/);
+                        if (m) qTweetId = m[1];
+                    }
                 }
 
                 const qMedia = extractMedia(quoteContainer, null);
