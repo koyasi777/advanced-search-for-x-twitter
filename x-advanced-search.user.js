@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.5.9
+// @version      6.6.0
 // @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
 // @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
 // @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
@@ -6424,6 +6424,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     let targetPath = targetBaseUrl;
                     if (type === 'image') {
                         targetPath = `${targetBaseUrl}/photo/${index}`;
+                    } else if (type === 'video') {
+                        // 動画の場合もインデックス付きURLへ遷移させる
+                        targetPath = `${targetBaseUrl}/video/${index}`;
                     }
 
                     spaNavigate(targetPath, { ctrlMeta: e.ctrlKey || e.metaKey });
@@ -11549,20 +11552,40 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             // メディア抽出ヘルパー
             const extractMedia = (rootElement, excludeElement) => {
                 const extracted = [];
-                rootElement.querySelectorAll('div[data-testid="tweetPhoto"] img').forEach(m => {
-                    if (excludeElement && excludeElement.contains(m)) return;
-                    if (m.src) extracted.push({ type: 'image', url: m.src });
+
+                // コンテナ(tweetPhoto)を基準にループすることで、DOM上の表示順序(1,2,3,4)を維持する
+                const mediaContainers = Array.from(rootElement.querySelectorAll('div[data-testid="tweetPhoto"]'));
+
+                // 同じコンテナを二重に処理しないためのセット（念のため）
+                const processedUrls = new Set();
+
+                mediaContainers.forEach(container => {
+                    // 引用枠内の除外判定
+                    if (excludeElement && excludeElement.contains(container)) return;
+
+                    // 1. まず video を探す (videoタグがあれば動画扱い)
+                    const video = container.querySelector('video');
+                    if (video) {
+                        const url = video.poster || ''; // ポスター画像をサムネとして使用
+                        if (url && !processedUrls.has(url)) {
+                            extracted.push({ type: 'video', url: url });
+                            processedUrls.add(url);
+                        }
+                        return; // 動画が見つかったらこのコンテナは処理終了
+                    }
+
+                    // 2. なければ img を探す
+                    const img = container.querySelector('img');
+                    if (img && img.src) {
+                        const url = img.src;
+                        if (!processedUrls.has(url)) {
+                            extracted.push({ type: 'image', url: url });
+                            processedUrls.add(url);
+                        }
+                    }
                 });
-                rootElement.querySelectorAll('video').forEach(v => {
-                    if (excludeElement && excludeElement.contains(v)) return;
-                    if (v.poster) extracted.push({ type: 'video', url: v.poster });
-                });
-                const unique = [];
-                const seen = new Set();
-                for (const m of extracted) {
-                    if (!seen.has(m.url)) { seen.add(m.url); unique.push(m); }
-                }
-                return unique;
+
+                return extracted;
             };
 
             // 引用コンテナ特定
