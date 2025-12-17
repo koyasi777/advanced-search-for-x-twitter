@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.5.8
+// @version      6.6.2
 // @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
 // @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
 // @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
@@ -4198,6 +4198,88 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           display: block;
           margin-left: 2px;
         }
+
+        /* --- Link Card (OGP) --- */
+        .adv-card-box {
+          margin-top: 8px;
+          border: 1px solid var(--modal-border);
+          border-radius: 12px;
+          overflow: hidden;
+          text-decoration: none;
+          display: flex; /* Flexに変更（Small Card対応） */
+          flex-direction: column;
+          transition: background-color 0.2s;
+        }
+        .adv-card-box:hover {
+          background-color: rgba(255, 255, 255, 0.03);
+        }
+        /* 通常の画像 */
+        .adv-card-image {
+          width: 100%;
+          height: auto;
+          aspect-ratio: 1.91 / 1;
+          object-fit: cover;
+          display: block;
+          border-bottom: 1px solid var(--modal-border);
+        }
+        /* Small Card用レイアウト */
+        .adv-card-box.small-card {
+          flex-direction: row; /* 横並び */
+          align-items: center;
+          height: 100px; /* 高さを固定 */
+        }
+        .adv-card-box.small-card .adv-card-image {
+          width: 100px;
+          height: 100px;
+          aspect-ratio: 1 / 1;
+          border-bottom: none;
+          border-right: 1px solid var(--modal-border);
+          flex-shrink: 0;
+        }
+        /* SVGアイコン用コンテナ */
+        .adv-card-icon-container {
+          width: 100px;
+          height: 100px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background-color: var(--modal-input-bg);
+          border-right: 1px solid var(--modal-border);
+          color: var(--modal-text-secondary);
+          flex-shrink: 0;
+        }
+        .adv-card-icon-container svg {
+          width: 24px;
+          height: 24px;
+          fill: currentColor;
+        }
+        .adv-card-content {
+          padding: 8px 12px;
+          flex: 1;
+          min-width: 0;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        }
+        .adv-card-domain {
+          font-size: 13px;
+          color: var(--modal-text-secondary);
+          margin-bottom: 2px;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .adv-card-title {
+          font-size: 14px;
+          font-weight: 700;
+          color: var(--modal-text-primary);
+          line-height: 1.3;
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+
         /* Favorites Item Tag Container */
         .adv-fav-tag-container {
             display: inline-block;
@@ -6342,6 +6424,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     let targetPath = targetBaseUrl;
                     if (type === 'image') {
                         targetPath = `${targetBaseUrl}/photo/${index}`;
+                    } else if (type === 'video') {
+                        // 動画の場合もインデックス付きURLへ遷移させる
+                        targetPath = `${targetBaseUrl}/video/${index}`;
                     }
 
                     spaNavigate(targetPath, { ctrlMeta: e.ctrlKey || e.metaKey });
@@ -6400,6 +6485,40 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             };
             const mainMediaHtml = buildMediaHtml(item.media, false);
 
+            // --- Link Card HTML ---
+            let cardHtml = '';
+            if (item.card) {
+                let domain = item.card.domain || '';
+                if (!domain) {
+                    try {
+                        const u = new URL(item.card.url);
+                        domain = u.hostname;
+                    } catch(e) { domain = 'link'; }
+                }
+
+                // 画像部分のHTML生成
+                let mediaPart = '';
+                if (item.card.img) {
+                    mediaPart = `<img src="${escapeAttr(item.card.img)}" class="adv-card-image" loading="lazy" />`;
+                } else if (item.card.svg) {
+                    // SVGがある場合（Small Cardで画像がない場合など）
+                    mediaPart = `<div class="adv-card-icon-container">${item.card.svg}</div>`;
+                }
+
+                // クラスの切り替え
+                const boxClass = item.card.style === 'small' ? 'adv-card-box small-card' : 'adv-card-box';
+
+                cardHtml = `
+                    <a href="${escapeAttr(item.card.url)}" target="_blank" rel="noopener noreferrer nofollow" class="${boxClass}">
+                        ${mediaPart}
+                        <div class="adv-card-content">
+                            <div class="adv-card-domain">${escapeHTML(domain)}</div>
+                            <div class="adv-card-title">${escapeHTML(item.card.title)}</div>
+                        </div>
+                    </a>
+                `;
+            }
+
             // --- 引用HTML ---
             let quoteHtml = '';
             if (item.quote) {
@@ -6448,7 +6567,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     </div>
                     <div class="adv-item-body-text">${bodyHtml}</div>
                     ${mainMediaHtml}
-                    ${quoteHtml}
+                    ${cardHtml} ${quoteHtml}
                     <div class="adv-item-sub">
                         <span>${displayTime}</span>
                     </div>
@@ -11290,9 +11409,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         const installNavigationHooks = (onRouteChange) => {
             let lastHref = location.href;
             const _debounce = (fn, wait=60) => { let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), wait); }; };
+
             const fireIfChanged = _debounce(() => {
                 const now = location.href;
-                if (now !== lastHref) {
+                // ▼ lastHref が null (強制実行フラグ) の場合も通過させる
+                if (lastHref === null || now !== lastHref) {
                     lastHref = now;
                     try {
                         const u = new URL(now, location.origin);
@@ -11313,6 +11434,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     onRouteChange();
                 }
             }, 60);
+
             const wrapHistory = (m) => {
                 const orig = history[m];
                 history[m] = function(...args){
@@ -11329,12 +11451,21 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                         }
                     } catch(_) {}
                     const ret = orig.apply(this, args);
+
+                    // ▼ ページ遷移時はキャッシュを破棄して確実に再判定させる
+                    lastHref = null;
                     queueMicrotask(fireIfChanged);
                     return ret;
                 };
             };
             wrapHistory('pushState'); wrapHistory('replaceState');
-            window.addEventListener('popstate', fireIfChanged);
+
+            // ▼ ブラウザバック時もキャッシュを破棄して確実に再判定させる
+            window.addEventListener('popstate', () => {
+                lastHref = null;
+                fireIfChanged();
+            });
+
             document.addEventListener('click', (e) => {
                 const a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
                 if (!a) return;
@@ -11348,13 +11479,58 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                                 document.getElementById('advanced-search-trigger')
                             );
                         }
-                        setTimeout(fireIfChanged, 0);
+                        // クリック遷移の場合も少し遅延させてチェック
+                        setTimeout(() => {
+                            // 明示的な遷移なので強制チェックしても良いが、
+                            // 通常は pushState 側で拾われるためここは補助
+                            fireIfChanged();
+                        }, 0);
                     }
                 } catch(_) {}
             }, true);
 
             return fireIfChanged;
         };
+
+        // Reactの内部キーをキャッシュする変数 (Global scope within closure)
+        let __cachedReactFiberKey = null;
+
+        // React Fiberから内部データを取得してリンク先パスを探すヘルパー
+        function ft_getLinkFromReactFiber(dom) {
+            if (!dom) return null;
+
+            // UserScript環境(Firefox等)対策
+            const target = (typeof dom.wrappedJSObject !== 'undefined') ? dom.wrappedJSObject : dom;
+
+            // キーが未取得の場合のみ探索する (キャッシュ戦略)
+            if (!__cachedReactFiberKey) {
+                __cachedReactFiberKey = Object.keys(target).find(k => k.startsWith('__reactFiber$'));
+            }
+
+            // キーが見つからない、または要素がそのキーを持っていない場合は終了
+            if (!__cachedReactFiberKey || !target[__cachedReactFiberKey]) return null;
+
+            let fiber = target[__cachedReactFiberKey];
+
+            // 親を遡って props.link.pathname を探す (最大20階層)
+            for (let i = 0; i < 20; i++) {
+                if (!fiber) break;
+
+                const props = fiber.memoizedProps;
+                if (props && props.link && props.link.pathname) {
+                    return props.link.pathname;
+                }
+
+                // pendingProps も念のため確認
+                const pProps = fiber.pendingProps;
+                if (pProps && pProps.link && pProps.link.pathname) {
+                    return pProps.link.pathname;
+                }
+
+                fiber = fiber.return; // 親へ移動
+            }
+            return null;
+        }
 
         // ▼▼▼ ツイート本文をきれいに取得するヘルパー ▼▼▼
         function ft_getCleanTweetText(root) {
@@ -11433,20 +11609,40 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             // メディア抽出ヘルパー
             const extractMedia = (rootElement, excludeElement) => {
                 const extracted = [];
-                rootElement.querySelectorAll('div[data-testid="tweetPhoto"] img').forEach(m => {
-                    if (excludeElement && excludeElement.contains(m)) return;
-                    if (m.src) extracted.push({ type: 'image', url: m.src });
+
+                // コンテナ(tweetPhoto)を基準にループすることで、DOM上の表示順序(1,2,3,4)を維持する
+                const mediaContainers = Array.from(rootElement.querySelectorAll('div[data-testid="tweetPhoto"]'));
+
+                // 同じコンテナを二重に処理しないためのセット（念のため）
+                const processedUrls = new Set();
+
+                mediaContainers.forEach(container => {
+                    // 引用枠内の除外判定
+                    if (excludeElement && excludeElement.contains(container)) return;
+
+                    // 1. まず video を探す (videoタグがあれば動画扱い)
+                    const video = container.querySelector('video');
+                    if (video) {
+                        const url = video.poster || ''; // ポスター画像をサムネとして使用
+                        if (url && !processedUrls.has(url)) {
+                            extracted.push({ type: 'video', url: url });
+                            processedUrls.add(url);
+                        }
+                        return; // 動画が見つかったらこのコンテナは処理終了
+                    }
+
+                    // 2. なければ img を探す
+                    const img = container.querySelector('img');
+                    if (img && img.src) {
+                        const url = img.src;
+                        if (!processedUrls.has(url)) {
+                            extracted.push({ type: 'image', url: url });
+                            processedUrls.add(url);
+                        }
+                    }
                 });
-                rootElement.querySelectorAll('video').forEach(v => {
-                    if (excludeElement && excludeElement.contains(v)) return;
-                    if (v.poster) extracted.push({ type: 'video', url: v.poster });
-                });
-                const unique = [];
-                const seen = new Set();
-                for (const m of extracted) {
-                    if (!seen.has(m.url)) { seen.add(m.url); unique.push(m); }
-                }
-                return unique;
+
+                return extracted;
             };
 
             // 引用コンテナ特定
@@ -11490,16 +11686,29 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 if (qImg) qAvatar = qImg.src;
 
                 let qTweetId = '';
-                // 引用ID特定ロジック
+
+                // 1. 従来のDOM探索 (高速・一般的)
+                // 通常の写真リンクなどを探す
                 const photoLink = quoteContainer.querySelector('a[href*="/status/"][href*="/photo/"]');
                 if (photoLink) {
                     const m = photoLink.getAttribute('href').match(/\/status\/(\d+)/);
                     if (m) qTweetId = m[1];
                 }
-                // もし「さらに表示」リンクがあれば、そこからIDが取れる場合もあるので補完
+
+                // 「さらに表示」リンクがある場合の補完
                 if (!qTweetId && qShowMore && qShowMore.url) {
                      const m = qShowMore.url.match(/\/status\/(\d+)/);
                      if (m) qTweetId = m[1];
+                }
+
+                // 2. React Fiberからの取得 (低速・最終手段)
+                // DOM探索で見つからなかった場合（動画引用や特殊なカードなど、aタグがない場合）のみ実行
+                if (!qTweetId) {
+                    const fiberPath = ft_getLinkFromReactFiber(quoteContainer);
+                    if (fiberPath) {
+                        const m = fiberPath.match(/\/status\/(\d+)/);
+                        if (m) qTweetId = m[1];
+                    }
                 }
 
                 const qMedia = extractMedia(quoteContainer, null);
@@ -11513,12 +11722,98 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 };
             }
 
+            // --- Link Card Extraction ---
+            let card = null;
+            const cardWrapper = article.querySelector('[data-testid="card.wrapper"]');
+
+            // 引用コンテナの中にあるカードは除外
+            if (cardWrapper && (!quoteContainer || !quoteContainer.contains(cardWrapper))) {
+                // URL取得 (共通)
+                const cardLink = cardWrapper.querySelector('a[role="link"]');
+                const cardUrl = cardLink ? cardLink.getAttribute('href') : '';
+
+                if (cardUrl) {
+                    let cardTitle = '';
+                    let cardDomain = '';
+                    let cardImg = '';
+                    let cardSvg = ''; // SVG文字列用
+                    let isSmall = false;
+
+                    // A. Small Card (横長) の場合: 構造が特殊なので専用にパースする
+                    const smallDetail = cardWrapper.querySelector('[data-testid="card.layoutSmall.detail"]');
+                    if (smallDetail) {
+                        isSmall = true;
+                        // テキスト行を取得 (1行目:ドメイン, 2行目:タイトル の順で並んでいることが多い)
+                        const lines = Array.from(smallDetail.querySelectorAll('div[dir="auto"]'))
+                            .map(el => el.innerText.trim())
+                            .filter(Boolean);
+
+                        if (lines.length >= 1) cardDomain = lines[0];
+                        if (lines.length >= 2) cardTitle = lines[1];
+
+                        // 画像取得を試みる
+                        const imgEl = cardWrapper.querySelector('img');
+                        if (imgEl) {
+                            cardImg = imgEl.src;
+                        } else {
+                            // 画像がなければSVGを探す
+                            const svgEl = cardWrapper.querySelector('svg');
+                            if (svgEl) {
+                                // SVGタグ自体を文字列として保存
+                                cardSvg = svgEl.outerHTML;
+                            }
+                        }
+                    }
+                    // B. Large Card (縦長) またはその他の場合: 従来のロジック
+                    else {
+                        const imgEl = cardWrapper.querySelector('img');
+                        cardImg = imgEl ? imgEl.src : '';
+
+                        // 複数のリンクからテキスト情報を探す
+                        const allLinks = Array.from(cardWrapper.querySelectorAll('a[role="link"]'));
+                        for (const link of allLinks) {
+                            const text = link.innerText || '';
+                            const aria = link.getAttribute('aria-label') || '';
+                            if (text.trim() || aria.trim()) {
+                                cardTitle = aria || text;
+                                const rawAria = aria;
+                                if (rawAria) {
+                                    const firstPart = rawAria.split(/\s+/)[0];
+                                    if (firstPart && firstPart.includes('.')) {
+                                        cardDomain = firstPart;
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                        // タイトルからドメインを除去 (重複対策)
+                        cardTitle = cardTitle.replace(/\n/g, ' ').trim();
+                        if (cardDomain && cardTitle.startsWith(cardDomain)) {
+                            cardTitle = cardTitle.substring(cardDomain.length).trim();
+                        }
+                    }
+
+                    // データがあれば保存
+                    if (cardUrl && (cardImg || cardSvg || cardTitle)) {
+                        card = {
+                            url: cardUrl,
+                            img: cardImg,
+                            svg: cardSvg, // ★追加: SVGデータ
+                            title: cardTitle,
+                            domain: cardDomain,
+                            style: isSmall ? 'small' : 'large' // ★追加: 表示タイプ
+                        };
+                    }
+                }
+            }
+
             return {
                 id: tweetId,
                 text,
                 user: { name, handle, avatar },
                 media: mainMedia,
                 quote,
+                card,
                 ts: Date.now(), // 保存操作をした日時（ソート用などで使用する場合のため残す）
                 postedAt: postedAt // 実際の投稿日時
             };
