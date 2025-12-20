@@ -4905,6 +4905,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             set(key, val) { try { GM_setValue(key, val); } catch (_) {} },
             del(key)      { try { GM_deleteValue(key); } catch (_) {} },
         };
+
+        // インポート中かどうかを判定するフラグ
+        let __IS_IMPORTING__ = false;
+
         const loadJSON = (key, def) => {
             try {
                 const raw = kv.get(key, JSON.stringify(def));
@@ -4922,8 +4926,15 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
         const saveJSON = (key, value) => {
             try { kv.set(key, JSON.stringify(value)); } catch(_) {}
-            // Hook for auto-sync
-            triggerAutoSync();
+
+            // インポート中でない場合のみ、リビジョン更新と同期トリガーを行う
+            if (!__IS_IMPORTING__) {
+                // データ保存時にのみリビジョン（変更時刻）を更新する
+                try { kv.set(DATA_REVISION_KEY, Date.now().toString()); } catch(_) {}
+
+                // Hook for auto-sync
+                triggerAutoSync();
+            }
         };
 
         const DEFAULT_TABS = ['search', 'history', 'saved', 'favorites', 'mute', 'lists', 'accounts'];
@@ -7072,6 +7083,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         const HISTORY_KEY = 'advSearchHistory_v2';
         const SAVED_KEY   = 'advSearchSaved_v2';
         const SECRET_KEY  = 'advSearchSecretMode_v1';
+        // データリビジョン管理キー
+        const DATA_REVISION_KEY = 'advDataRevision_v1';
 
         const MUTE_KEY = 'advMutedWords_v1';
         const NATIVE_SEARCH_WIDTH_KEY = 'advNativeSearchWidth_v1';
@@ -7306,16 +7319,64 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           return JSON.stringify(data, null, 2);
         }
 
+        // クラウド同期専用のペイロード生成（UI設定を除外し、データのみを含める）
+        function buildCloudSyncPayload() {
+            // ローカルの全データを取得
+            const fullData = JSON.parse(buildSettingsExportJSON());
+
+            // 同期対象とするキー（コンテンツ・データ）のみを抽出
+            const syncData = {
+                appName: fullData.appName,
+                v: fullData.v,
+
+                // --- 同期するデータ (Content) ---
+                history: fullData.history,           // 検索履歴
+                saved: fullData.saved,               // 保存済み検索
+                favorites: fullData.favorites,       // お気に入り
+                favoriteTags: fullData.favoriteTags, // お気に入りタグ
+                accounts: fullData.accounts,         // アカウントリスト
+                lists: fullData.lists,               // リスト一覧
+                folders: fullData.folders,           // 各フォルダ構成
+                unassignedIndex: fullData.unassignedIndex, // 未分類の位置
+
+                // ミュート・除外設定（これはロジックなので同期した方が便利だが、好みによる。今回は同期対象とする）
+                muted: fullData.muted,
+                muteMaster: fullData.muteMaster,
+                muteMode: fullData.muteMode,
+                excludeFlags: fullData.excludeFlags,
+
+                // タイムスタンプのリビジョン（必須）
+                syncTimestamp: fullData.syncTimestamp || Date.now()
+            };
+
+            // --- 除外されるキー (Device Specific UI) ---
+            // modalState (位置・サイズ)
+            // triggerState (ボタン位置)
+            // zoom (拡大率)
+            // tabs (並び順・表示設定・初期タブ)
+            // lang (言語設定)
+            // secret (シークレットモード状態)
+            // historySort (ソート順)
+            // nativeSearchWidth (検索窓幅)
+
+            return JSON.stringify(syncData);
+        }
+
         function applySettingsImportJSON(text) {
+            // インポート開始（saveJSONによる更新検知をブロック）
+            __IS_IMPORTING__ = true;
+
             let data;
             try {
                 data = JSON.parse(text);
             } catch (_) {
                 alert(i18n.t('alertInvalidJSON'));
+                __IS_IMPORTING__ = false; // エラー時解除
                 return false;
             }
             if (!data || typeof data !== 'object') {
                 alert(i18n.t('alertInvalidData'));
+                __IS_IMPORTING__ = false; // エラー時解除
                 return false;
             }
 
@@ -7456,6 +7517,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                         ft_state = s;
                     }
                 } catch (_) {}
+            }
+
+            // サーバー(またはインポートファイル)のタイムスタンプをローカルリビジョンとして適用
+            // これにより、不必要な再同期ループを防ぐ
+            if (data.syncTimestamp) {
+                try { kv.set(DATA_REVISION_KEY, data.syncTimestamp.toString()); } catch(_) {}
             }
 
             // 言語を再適用
@@ -12331,22 +12398,25 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 this.updateStatus('Syncing...');
 
                 try {
-                    const localJSON = buildSettingsExportJSON();
+                    const localJSON = buildCloudSyncPayload();
                     const localData = JSON.parse(localJSON);
 
                     // ローカルの最終同期時刻（なければ0）
                     const lastSyncTs = parseInt(GM_getValue('advLastSyncTs', '0')) || 0;
-                    const nowTs = Date.now();
+
+                    // 現在時刻ではなく、データの「最終変更時刻」を取得して使用する
+                    // 未設定（初回）の場合は 0 とする
+                    const dataRevision = parseInt(GM_getValue(DATA_REVISION_KEY, '0')) || 0;
 
                     const headers = {
                         'Content-Type': 'application/json',
                         'X-Sync-ID': this.syncId,
-                        'X-Timestamp': nowTs.toString()
+                        'X-Timestamp': dataRevision.toString()
                     };
 
                     // 1. まずサーバーへデータを送信（Push）を試みる
-                    // サーバー側で「送信データが古い」と判断されれば 409 Conflict が返り、最新データが渡される
-                    localData.syncTimestamp = nowTs;
+                    // ペイロードに含めるタイムスタンプもリビジョン時刻にする
+                    localData.syncTimestamp = dataRevision;
 
                     const res = await gmFetch(this.endpoint, {
                         method: 'POST',
@@ -12367,11 +12437,18 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
                         if (serverData) {
                             console.log('[Sync] Server data is newer. Pulling...');
+
+                            // 解説: ここで applySettingsImportJSON を呼ぶと
+                            // 内部で __IS_IMPORTING__ が true になり、
+                            // saveJSON による同期トリガー(無限ループ)が抑制されます。
                             const success = applySettingsImportJSON(JSON.stringify(serverData));
+
                             if (success) {
+                                // 成功時、ローカルのリビジョン(DATA_REVISION_KEY)は
+                                // serverData.syncTimestamp と同じ値にセットされています。
                                 GM_setValue('advLastSyncTs', serverData.syncTimestamp.toString());
                                 this.updateStatus('Synced (Pull)');
-                                showToast(i18n.t('toastImported')); // "Imported."
+                                // showToast は applySettingsImportJSON 内でも呼ばれますが、ここでも呼んでOKです
                             } else {
                                 this.updateStatus('Import Failed');
                             }
