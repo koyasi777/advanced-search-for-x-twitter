@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.6.2
+// @version      6.6.2-dev-sync
 // @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
 // @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
 // @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
@@ -4871,6 +4871,22 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                           </div>
                       </div>
 
+                      <div class="adv-settings-section-header">Cloud Sync (Beta)</div>
+                      <div class="adv-settings-group">
+                          <label>Endpoint URL (Cloudflare Worker)</label>
+                          <input type="text" id="adv-sync-endpoint" placeholder="https://your-worker.workers.dev">
+                      </div>
+                      <div class="adv-settings-group">
+                          <label>Sync Secret (Password)</label>
+                          <input type="password" id="adv-sync-secret" placeholder="Random secure password">
+                      </div>
+                      <div class="adv-settings-group">
+                          <div style="display:flex; justify-content:space-between; align-items:center;">
+                              <div style="font-size:12px; color:var(--modal-text-secondary);" id="adv-sync-status">Status: Idle</div>
+                              <button id="adv-sync-now-btn" type="button" class="adv-modal-button primary">Sync Now</button>
+                          </div>
+                      </div>
+
                     </div>
                     <div class="adv-settings-footer">
                         <button id="adv-settings-close-footer" type="button" class="adv-modal-button" data-i18n="buttonClose"></button>
@@ -4893,8 +4909,19 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 return JSON.parse(raw);
             } catch(_) { return def; }
         };
+        // Debounce helper for sync
+        let _syncTimeout;
+        const triggerAutoSync = () => {
+            if (typeof syncManager !== 'undefined') {
+                clearTimeout(_syncTimeout);
+                _syncTimeout = setTimeout(() => syncManager.executeSync(), 5000); // 5秒後に同期
+            }
+        };
+
         const saveJSON = (key, value) => {
             try { kv.set(key, JSON.stringify(value)); } catch(_) {}
+            // Hook for auto-sync
+            triggerAutoSync();
         };
 
         const DEFAULT_TABS = ['search', 'history', 'saved', 'favorites', 'mute', 'lists', 'accounts'];
@@ -12210,6 +12237,177 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             });
         };
         setupExclusiveChecks();
+
+        /* ============================================================
+         * Cloud Sync Manager (Inserted)
+         * ============================================================ */
+        const SYNC_CFG_KEY = 'advSyncConfig_v1';
+
+        class SyncManager {
+            constructor() {
+                this.endpoint = '';
+                this.secret = '';
+                this.syncId = ''; // Derived from secret
+                this.isSyncing = false;
+                this.loadConfig();
+            }
+
+            loadConfig() {
+                try {
+                    const cfg = JSON.parse(GM_getValue(SYNC_CFG_KEY, '{}'));
+                    this.endpoint = cfg.endpoint || '';
+                    this.secret = cfg.secret || '';
+                    if (this.secret) this.deriveSyncId();
+                } catch(e){}
+            }
+
+            saveConfig(endpoint, secret) {
+                this.endpoint = endpoint.trim().replace(/\/$/, '');
+                this.secret = secret.trim();
+                GM_setValue(SYNC_CFG_KEY, JSON.stringify({ endpoint: this.endpoint, secret: this.secret }));
+                if (this.secret) this.deriveSyncId();
+            }
+
+            async deriveSyncId() {
+                // SecretからID(公開用)とKey(署名用)を生成
+                const enc = new TextEncoder();
+                const keyMaterial = await crypto.subtle.importKey(
+                    "raw", enc.encode(this.secret), { name: "PBKDF2" }, false, ["deriveBits", "deriveKey"]
+                );
+                // ID生成 (Salt固定でハッシュ化)
+                const idBits = await crypto.subtle.deriveBits(
+                    { name: "PBKDF2", salt: enc.encode("adv-search-id-salt"), iterations: 1000, hash: "SHA-256" },
+                    keyMaterial, 128
+                );
+                this.syncId = Array.from(new Uint8Array(idBits)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+                // 署名キー生成
+                this.signKey = await crypto.subtle.deriveKey(
+                    { name: "PBKDF2", salt: enc.encode("adv-search-sign-salt"), iterations: 1000, hash: "SHA-256" },
+                    keyMaterial,
+                    { name: "HMAC", hash: "SHA-256" },
+                    false, ["sign"]
+                );
+            }
+
+            async sign(text, timestamp) {
+                if (!this.signKey) await this.deriveSyncId();
+                const enc = new TextEncoder();
+                const data = `${this.syncId}:${timestamp}:${text}`;
+                const sig = await crypto.subtle.sign("HMAC", this.signKey, enc.encode(data));
+                return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+            }
+
+            updateStatus(msg) {
+                const el = document.getElementById('adv-sync-status');
+                if (el) el.textContent = `Status: ${msg}`;
+            }
+
+            async executeSync() {
+                if (this.isSyncing || !this.endpoint || !this.secret) return;
+                this.isSyncing = true;
+                this.updateStatus('Checking...');
+
+                try {
+                    // 1. Local Data Preparation
+                    const localJSON = buildSettingsExportJSON();
+                    const localData = JSON.parse(localJSON);
+                    // 最終更新時刻として、保存データ内の最新タイムスタンプを探すか、現在時刻を使用
+                    // ここでは簡易的に「現在時刻」を保存時のTSとしますが、本来は各データのmax(ts)を使うのがベスト
+                    const localTs = Date.now();
+
+                    // 2. Fetch Remote
+                    const ts = Date.now().toString();
+                    const headers = {
+                        'X-Sync-ID': this.syncId,
+                        'X-Timestamp': ts,
+                        'X-Signature': await this.sign('', ts) // GET body is empty
+                    };
+
+                    const res = await fetch(`${this.endpoint}`, { method: 'GET', headers });
+                    if (!res.ok) throw new Error(`Server error: ${res.status}`);
+
+                    const remoteText = await res.text();
+                    let remoteData = null;
+                    try { remoteData = JSON.parse(remoteText); } catch(e){}
+
+                    // 3. Compare & Sync logic (Last Write Wins by whole config)
+                    // リモートにデータがあり、かつリモートのほうが新しい(またはローカルが空)場合
+                    const remoteTs = (remoteData && remoteData.syncTimestamp) ? remoteData.syncTimestamp : 0;
+                    // ローカルの最終保存時刻（簡易的にKVから取るか、ここでは常にリモート優先チェック）
+                    const lastSyncTs = parseInt(GM_getValue('advLastSyncTs', '0'));
+
+                    // Logic:
+                    // Remote > LastSync -> Pull (Remote is newer)
+                    // Remote <= LastSync -> Push (Local might be newer)
+
+                    if (remoteData && remoteTs > lastSyncTs) {
+                        this.updateStatus('Pulling...');
+                        console.log('[Sync] Remote is newer. Applying...');
+                        const success = applySettingsImportJSON(remoteText);
+                        if (success) {
+                            GM_setValue('advLastSyncTs', remoteTs.toString());
+                            this.updateStatus('Synced (Pulled)');
+                            showToast('Data synced from cloud.');
+                        } else {
+                            this.updateStatus('Import Failed');
+                        }
+                    } else {
+                        // Push
+                        this.updateStatus('Pushing...');
+                        const newTs = Date.now();
+                        localData.syncTimestamp = newTs;
+                        const payload = JSON.stringify(localData);
+
+                        const pushHeaders = {
+                            'X-Sync-ID': this.syncId,
+                            'X-Timestamp': ts,
+                            'X-Signature': await this.sign(payload, ts),
+                            'Content-Type': 'application/json'
+                        };
+
+                        const pushRes = await fetch(`${this.endpoint}`, { method: 'POST', headers: pushHeaders, body: payload });
+                        if (!pushRes.ok) throw new Error('Push failed');
+
+                        GM_setValue('advLastSyncTs', newTs.toString());
+                        this.updateStatus('Synced (Pushed)');
+                    }
+
+                } catch (e) {
+                    console.error('[Sync] Error:', e);
+                    this.updateStatus(`Error: ${e.message}`);
+                } finally {
+                    this.isSyncing = false;
+                }
+            }
+        }
+
+        const syncManager = new SyncManager();
+
+        // UI Event Listeners for Sync
+        const syncEpInput = document.getElementById('adv-sync-endpoint');
+        const syncScInput = document.getElementById('adv-sync-secret');
+        const syncBtn = document.getElementById('adv-sync-now-btn');
+
+        if (syncEpInput && syncScInput && syncBtn) {
+            syncEpInput.value = syncManager.endpoint;
+            syncScInput.value = syncManager.secret;
+
+            const saveConf = () => syncManager.saveConfig(syncEpInput.value, syncScInput.value);
+            syncEpInput.addEventListener('change', saveConf);
+            syncScInput.addEventListener('change', saveConf);
+
+            syncBtn.addEventListener('click', () => {
+                saveConf();
+                syncManager.executeSync();
+            });
+        }
+
+        // Auto-sync on load if configured
+        if (syncManager.endpoint && syncManager.secret) {
+            setTimeout(() => syncManager.executeSync(), 2000);
+        }
+
         setupObservers();
 
         // イベント委任のためのルート要素を取得
@@ -12375,3 +12573,4 @@ if (typeof GM_info !== 'undefined' && typeof window.__X_ADV_SEARCH_MAIN__ === 'u
 else {
     window.__X_ADV_SEARCH_MAIN__ = __X_ADV_SEARCH_MAIN_LOGIC__;
 }
+
