@@ -12340,6 +12340,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 this.endpoint = '';
                 this.secret = '';
                 this.syncId = '';
+                this.encryptionKey = null; // Key for E2EE
                 this.isSyncing = false;
                 this.readyPromise = Promise.resolve();
                 this.loadConfig();
@@ -12351,7 +12352,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     this.endpoint = cfg.endpoint || '';
                     this.secret = cfg.secret || '';
                     if (this.secret) {
-                        this.readyPromise = this.deriveSyncId();
+                        this.readyPromise = this.deriveKeys();
                     }
                 } catch (e) {}
             }
@@ -12362,30 +12363,113 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 GM_setValue(SYNC_CFG_KEY, JSON.stringify({ endpoint: this.endpoint, secret: this.secret }));
 
                 if (this.secret) {
-                    this.readyPromise = this.deriveSyncId();
+                    this.readyPromise = this.deriveKeys();
                 }
                 return this.readyPromise;
             }
 
-            // パスワードからSyncID（認証ID）のみを生成
-            // 署名鍵の生成はサーバー側検証が不可能なため廃止
-            async deriveSyncId() {
+            // [Firefox Fix] ヘッダーオブジェクトを純粋なオブジェクトとして再構築し、
+            // Sandbox境界でのプロトタイプチェーン汚染エラーを回避する
+            _sanitizeHeaders(headers) {
+                const clean = {};
+                for (const key of Object.keys(headers)) {
+                    clean[key] = String(headers[key]);
+                }
+                return clean;
+            }
+
+            // 鍵導出: 1つのパスワードから「認証ID」と「暗号化キー」の2つを生成
+            // セキュリティのためストレッチング回数を10万回に設定
+            async deriveKeys() {
                 if (!this.secret) return;
                 try {
                     const enc = new TextEncoder();
-                    const keyMaterial = await crypto.subtle.importKey(
-                        "raw", enc.encode(this.secret), { name: "PBKDF2" }, false, ["deriveBits"]
+                    // UserScript環境では window.crypto を明示的に参照
+                    const cryptoObj = window.crypto || window.msCrypto;
+                    const subtle = cryptoObj.subtle;
+
+                    const keyMaterial = await subtle.importKey(
+                        "raw", enc.encode(this.secret), { name: "PBKDF2" }, false, ["deriveBits", "deriveKey"]
                     );
-                    // 128bit = 32 hex chars. 十分なエントロピーを持つIDを生成
-                    const idBits = await crypto.subtle.deriveBits(
-                        { name: "PBKDF2", salt: enc.encode("adv-search-id-salt"), iterations: 5000, hash: "SHA-256" },
+
+                    // 1. Generate Auth ID (for Worker Access)
+                    const idBits = await subtle.deriveBits(
+                        { name: "PBKDF2", salt: enc.encode("adv-search-AUTH-salt-v2"), iterations: 100000, hash: "SHA-256" },
                         keyMaterial, 128
                     );
                     this.syncId = Array.from(new Uint8Array(idBits)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+                    // 2. Generate Encryption Key (for Data Protection: AES-GCM)
+                    this.encryptionKey = await subtle.deriveKey(
+                        { name: "PBKDF2", salt: enc.encode("adv-search-ENC-salt-v2"), iterations: 100000, hash: "SHA-256" },
+                        keyMaterial,
+                        { name: "AES-GCM", length: 256 },
+                        false,
+                        ["encrypt", "decrypt"]
+                    );
                 } catch (e) {
                     console.error("Crypto Error:", e);
                     this.updateStatus("Crypto Error");
                 }
+            }
+
+            // Encryption Helper (AES-GCM)
+            // FileReaderを使用してネイティブバッファを直接Base64化する。
+            // JSループやapplyを使用しないため、Chromeのスタック制限もFirefoxの権限エラーも発生しない。
+            async encryptData(dataObj) {
+                if (!this.encryptionKey) throw new Error("No encryption key");
+                const enc = new TextEncoder();
+                const cryptoObj = window.crypto || window.msCrypto;
+                const iv = cryptoObj.getRandomValues(new Uint8Array(12));
+
+                const ciphertext = await cryptoObj.subtle.encrypt(
+                    { name: "AES-GCM", iv: iv },
+                    this.encryptionKey,
+                    enc.encode(JSON.stringify(dataObj))
+                );
+
+                // Blob + FileReader による堅牢なBase64変換
+                const blob = new Blob([ciphertext]);
+                const base64DataUrl = await new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+
+                // "data:application/octet-stream;base64,......" からBase64部分のみ抽出
+                const base64String = base64DataUrl.split(',')[1];
+
+                return {
+                    syncTimestamp: dataObj.syncTimestamp,
+                    iv: Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join(''),
+                    ciphertext: base64String
+                };
+            }
+
+            // Decryption Helper
+            async decryptData(encryptedObj) {
+                if (!this.encryptionKey) throw new Error("No encryption key");
+                const cryptoObj = window.crypto || window.msCrypto;
+                const subtle = cryptoObj.subtle;
+
+                // Hex IV -> Uint8Array
+                const iv = new Uint8Array(encryptedObj.iv.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+
+                // Base64 -> Uint8Array
+                const binaryString = atob(encryptedObj.ciphertext);
+                const len = binaryString.length;
+                const ciphertext = new Uint8Array(len);
+                for (let i = 0; i < len; i++) {
+                    ciphertext[i] = binaryString.charCodeAt(i);
+                }
+
+                const decryptedBuffer = await subtle.decrypt(
+                    { name: "AES-GCM", iv: iv },
+                    this.encryptionKey,
+                    ciphertext
+                );
+                return JSON.parse(new TextDecoder().decode(decryptedBuffer));
             }
 
             updateStatus(msg) {
@@ -12397,7 +12481,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 if (this.isSyncing) return;
                 await this.readyPromise;
 
-                if (!this.endpoint || !this.syncId) {
+                if (!this.endpoint || !this.syncId || !this.encryptionKey) {
                     this.updateStatus('Not Configured');
                     return;
                 }
@@ -12409,63 +12493,61 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     const localJSON = buildCloudSyncPayload();
                     const localData = JSON.parse(localJSON);
 
-                    // ローカルの最終同期時刻（なければ0）
-                    const lastSyncTs = parseInt(GM_getValue('advLastSyncTs', '0')) || 0;
-
-                    // 現在時刻ではなく、データの「最終変更時刻」を取得して使用する
-                    // 未設定（初回）の場合は 0 とする
                     const dataRevision = parseInt(GM_getValue(DATA_REVISION_KEY, '0')) || 0;
-
-                    const headers = {
-                        'Content-Type': 'application/json',
-                        'X-Sync-ID': this.syncId,
-                        'X-Timestamp': dataRevision.toString()
-                    };
-
-                    // 1. まずサーバーへデータを送信（Push）を試みる
-                    // ペイロードに含めるタイムスタンプもリビジョン時刻にする
                     localData.syncTimestamp = dataRevision;
 
-                    const res = await gmFetch(this.endpoint, {
-                        method: 'POST',
-                        headers: headers,
-                        body: JSON.stringify(localData)
+                    // 1. Encrypt Data (E2EE)
+                    const encryptedPayload = await this.encryptData(localData);
+
+                    // 2. Prepare Headers (Sanitized)
+                    const headers = this._sanitizeHeaders({
+                        'Content-Type': 'application/json',
+                        'X-Sync-ID': this.syncId,
+                        'X-Timestamp': dataRevision
                     });
 
-                    // ケースA: 成功 (200 OK) -> サーバーが更新された
+                    // 3. Send to Server using GM_xmlhttpRequest
+                    const res = await new Promise((resolve, reject) => {
+                        GM_xmlhttpRequest({
+                            method: 'POST',
+                            url: this.endpoint,
+                            headers: headers,
+                            data: JSON.stringify(encryptedPayload),
+                            onload: (r) => resolve(r),
+                            onerror: () => reject(new Error('Network error')),
+                            ontimeout: () => reject(new Error('Timeout'))
+                        });
+                    });
+
                     if (res.status === 200) {
-                        GM_setValue('advLastSyncTs', nowTs.toString());
+                        GM_setValue('advLastSyncTs', Date.now().toString());
                         this.updateStatus('Synced (Push)');
-                        showToast(i18n.t('toastSaved')); // "Saved."
+                        showToast(i18n.t('toastSaved'));
                     }
-                    // ケースB: 競合 (409 Conflict) -> サーバーの方が新しい
                     else if (res.status === 409) {
                         const responseBody = JSON.parse(res.responseText);
-                        const serverData = responseBody.serverData;
+                        const encryptedServerData = responseBody.serverData;
 
-                        if (serverData) {
-                            console.log('[Sync] Server data is newer. Pulling...');
+                        if (encryptedServerData) {
+                            console.log('[Sync] Server data is newer. Pulling & Decrypting...');
+                            try {
+                                const serverData = await this.decryptData(encryptedServerData);
+                                const success = applySettingsImportJSON(JSON.stringify(serverData));
 
-                            // 解説: ここで applySettingsImportJSON を呼ぶと
-                            // 内部で __IS_IMPORTING__ が true になり、
-                            // saveJSON による同期トリガー(無限ループ)が抑制されます。
-                            const success = applySettingsImportJSON(JSON.stringify(serverData));
-
-                            if (success) {
-                                // 成功時、ローカルのリビジョン(DATA_REVISION_KEY)は
-                                // serverData.syncTimestamp と同じ値にセットされています。
-                                GM_setValue('advLastSyncTs', serverData.syncTimestamp.toString());
-                                this.updateStatus('Synced (Pull)');
-                                // showToast は applySettingsImportJSON 内でも呼ばれますが、ここでも呼んでOKです
-                            } else {
-                                this.updateStatus('Import Failed');
+                                if (success) {
+                                    GM_setValue('advLastSyncTs', serverData.syncTimestamp.toString());
+                                    this.updateStatus('Synced (Pull)');
+                                } else {
+                                    this.updateStatus('Import Failed');
+                                }
+                            } catch (e) {
+                                console.error("Decryption failed:", e);
+                                this.updateStatus('Decryption Failed');
+                                alert("Failed to decrypt server data. Password might be wrong.");
                             }
                         }
                     }
-                    // ケースC: データなし (初回など) またはその他のエラー
                     else {
-                        // 念のためGETを試行するフォールバック
-                        // (Workerの実装上はPOSTで全て解決するはずだが安全策)
                         this.updateStatus(`Error: ${res.status}`);
                         console.error('Sync Error Response:', res.responseText);
                     }
