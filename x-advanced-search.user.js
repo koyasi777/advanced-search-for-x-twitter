@@ -33,8 +33,10 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_deleteValue
+// @grant        GM_xmlhttpRequest
 // @grant        GM_info
 // @grant        unsafeWindow
+// @connect      *
 // @run-at       document-idle
 // @license      MIT
 // @homepageURL  https://github.com/koyasi777/advanced-search-for-x-twitter
@@ -12238,10 +12240,32 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         };
         setupExclusiveChecks();
 
-        /* ============================================================
-         * Cloud Sync Manager (Inserted)
+       /* ============================================================
+         * Cloud Sync Manager (Fixed for Chrome CSP)
          * ============================================================ */
         const SYNC_CFG_KEY = 'advSyncConfig_v1';
+
+        // ★ Helper: fetch like wrapper for GM_xmlhttpRequest to bypass CSP
+        const gmFetch = (url, options = {}) => {
+            return new Promise((resolve, reject) => {
+                GM_xmlhttpRequest({
+                    method: options.method || 'GET',
+                    url: url,
+                    headers: options.headers,
+                    data: options.body,
+                    onload: (res) => {
+                        resolve({
+                            ok: res.status >= 200 && res.status < 300,
+                            status: res.status,
+                            text: () => Promise.resolve(res.responseText),
+                            json: () => Promise.resolve(JSON.parse(res.responseText))
+                        });
+                    },
+                    onerror: (err) => reject(new Error('Network error')),
+                    ontimeout: () => reject(new Error('Timeout'))
+                });
+            });
+        };
 
         class SyncManager {
             constructor() {
@@ -12269,19 +12293,16 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             }
 
             async deriveSyncId() {
-                // SecretからID(公開用)とKey(署名用)を生成
                 const enc = new TextEncoder();
                 const keyMaterial = await crypto.subtle.importKey(
                     "raw", enc.encode(this.secret), { name: "PBKDF2" }, false, ["deriveBits", "deriveKey"]
                 );
-                // ID生成 (Salt固定でハッシュ化)
                 const idBits = await crypto.subtle.deriveBits(
                     { name: "PBKDF2", salt: enc.encode("adv-search-id-salt"), iterations: 1000, hash: "SHA-256" },
                     keyMaterial, 128
                 );
                 this.syncId = Array.from(new Uint8Array(idBits)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-                // 署名キー生成
                 this.signKey = await crypto.subtle.deriveKey(
                     { name: "PBKDF2", salt: enc.encode("adv-search-sign-salt"), iterations: 1000, hash: "SHA-256" },
                     keyMaterial,
@@ -12312,34 +12333,26 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     // 1. Local Data Preparation
                     const localJSON = buildSettingsExportJSON();
                     const localData = JSON.parse(localJSON);
-                    // 最終更新時刻として、保存データ内の最新タイムスタンプを探すか、現在時刻を使用
-                    // ここでは簡易的に「現在時刻」を保存時のTSとしますが、本来は各データのmax(ts)を使うのがベスト
-                    const localTs = Date.now();
 
-                    // 2. Fetch Remote
+                    // 2. Fetch Remote (Using gmFetch)
                     const ts = Date.now().toString();
                     const headers = {
                         'X-Sync-ID': this.syncId,
                         'X-Timestamp': ts,
-                        'X-Signature': await this.sign('', ts) // GET body is empty
+                        'X-Signature': await this.sign('', ts)
                     };
 
-                    const res = await fetch(`${this.endpoint}`, { method: 'GET', headers });
+                    // ★ fetch -> gmFetch
+                    const res = await gmFetch(`${this.endpoint}`, { method: 'GET', headers });
                     if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
                     const remoteText = await res.text();
                     let remoteData = null;
                     try { remoteData = JSON.parse(remoteText); } catch(e){}
 
-                    // 3. Compare & Sync logic (Last Write Wins by whole config)
-                    // リモートにデータがあり、かつリモートのほうが新しい(またはローカルが空)場合
+                    // 3. Compare & Sync logic
                     const remoteTs = (remoteData && remoteData.syncTimestamp) ? remoteData.syncTimestamp : 0;
-                    // ローカルの最終保存時刻（簡易的にKVから取るか、ここでは常にリモート優先チェック）
                     const lastSyncTs = parseInt(GM_getValue('advLastSyncTs', '0'));
-
-                    // Logic:
-                    // Remote > LastSync -> Pull (Remote is newer)
-                    // Remote <= LastSync -> Push (Local might be newer)
 
                     if (remoteData && remoteTs > lastSyncTs) {
                         this.updateStatus('Pulling...');
@@ -12366,7 +12379,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                             'Content-Type': 'application/json'
                         };
 
-                        const pushRes = await fetch(`${this.endpoint}`, { method: 'POST', headers: pushHeaders, body: payload });
+                        // ★ fetch -> gmFetch
+                        const pushRes = await gmFetch(`${this.endpoint}`, { method: 'POST', headers: pushHeaders, body: payload });
                         if (!pushRes.ok) throw new Error('Push failed');
 
                         GM_setValue('advLastSyncTs', newTs.toString());
@@ -12573,4 +12587,3 @@ if (typeof GM_info !== 'undefined' && typeof window.__X_ADV_SEARCH_MAIN__ === 'u
 else {
     window.__X_ADV_SEARCH_MAIN__ = __X_ADV_SEARCH_MAIN_LOGIC__;
 }
-
