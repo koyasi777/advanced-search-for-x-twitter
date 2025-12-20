@@ -12340,7 +12340,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 this.endpoint = '';
                 this.secret = '';
                 this.syncId = '';
-                this.encryptionKey = null; // Key for E2EE
+                this.encryptionKey = null; // AES-GCM Key
+                this.signingKey = null;    // HMAC Key
                 this.isSyncing = false;
                 this.readyPromise = Promise.resolve();
                 this.loadConfig();
@@ -12407,28 +12408,36 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                         false,
                         ["encrypt", "decrypt"]
                     );
+
+                    // 3. Signing Key (HMAC-SHA256) - New for Integrity
+                    this.signingKey = await subtle.deriveKey(
+                        { name: "PBKDF2", salt: enc.encode("adv-search-SIGN-salt-v2"), iterations: 100000, hash: "SHA-256" },
+                        keyMaterial,
+                        { name: "HMAC", hash: "SHA-256" },
+                        false,
+                        ["sign", "verify"]
+                    );
                 } catch (e) {
                     console.error("Crypto Error:", e);
                     this.updateStatus("Crypto Error");
                 }
             }
 
-            // Encryption Helper (AES-GCM)
-            // FileReaderを使用してネイティブバッファを直接Base64化する。
-            // JSループやapplyを使用しないため、Chromeのスタック制限もFirefoxの権限エラーも発生しない。
             async encryptData(dataObj) {
-                if (!this.encryptionKey) throw new Error("No encryption key");
+                if (!this.encryptionKey || !this.signingKey) throw new Error("No keys");
                 const enc = new TextEncoder();
                 const cryptoObj = window.crypto || window.msCrypto;
                 const iv = cryptoObj.getRandomValues(new Uint8Array(12));
+                const jsonStr = JSON.stringify(dataObj);
 
+                // Encrypt
                 const ciphertext = await cryptoObj.subtle.encrypt(
                     { name: "AES-GCM", iv: iv },
                     this.encryptionKey,
-                    enc.encode(JSON.stringify(dataObj))
+                    enc.encode(jsonStr)
                 );
 
-                // Blob + FileReader による堅牢なBase64変換
+                // Convert to Base64
                 const blob = new Blob([ciphertext]);
                 const base64DataUrl = await new Promise((resolve, reject) => {
                     const reader = new FileReader();
@@ -12436,40 +12445,120 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     reader.onerror = reject;
                     reader.readAsDataURL(blob);
                 });
+                const base64Cipher = base64DataUrl.split(',')[1];
+                const ivHex = Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join('');
 
-                // "data:application/octet-stream;base64,......" からBase64部分のみ抽出
-                const base64String = base64DataUrl.split(',')[1];
+                // Sign (IV + Ciphertext)
+                const signData = enc.encode(ivHex + base64Cipher);
+                const signature = await cryptoObj.subtle.sign(
+                    "HMAC",
+                    this.signingKey,
+                    signData
+                );
+                const signatureHex = Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
 
                 return {
                     syncTimestamp: dataObj.syncTimestamp,
-                    iv: Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join(''),
-                    ciphertext: base64String
+                    iv: ivHex,
+                    ciphertext: base64Cipher,
+                    signature: signatureHex // Payload integrity
                 };
             }
 
-            // Decryption Helper
             async decryptData(encryptedObj) {
-                if (!this.encryptionKey) throw new Error("No encryption key");
+                if (!this.encryptionKey || !this.signingKey) throw new Error("No keys");
                 const cryptoObj = window.crypto || window.msCrypto;
-                const subtle = cryptoObj.subtle;
+                const enc = new TextEncoder();
 
-                // Hex IV -> Uint8Array
+                // 1. Verify Signature
+                if (encryptedObj.signature) {
+                    const signData = enc.encode(encryptedObj.iv + encryptedObj.ciphertext);
+                    // signature hex -> buffer
+                    const sigBuf = new Uint8Array(encryptedObj.signature.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+                    const isValid = await cryptoObj.subtle.verify(
+                        "HMAC",
+                        this.signingKey,
+                        sigBuf,
+                        signData
+                    );
+                    if (!isValid) throw new Error("Signature Mismatch (Data Tampered)");
+                } else {
+                    console.warn("Legacy data without signature.");
+                }
+
+                // 2. Decrypt
                 const iv = new Uint8Array(encryptedObj.iv.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-
-                // Base64 -> Uint8Array
                 const binaryString = atob(encryptedObj.ciphertext);
                 const len = binaryString.length;
                 const ciphertext = new Uint8Array(len);
-                for (let i = 0; i < len; i++) {
-                    ciphertext[i] = binaryString.charCodeAt(i);
-                }
+                for (let i = 0; i < len; i++) ciphertext[i] = binaryString.charCodeAt(i);
 
-                const decryptedBuffer = await subtle.decrypt(
+                const decryptedBuffer = await cryptoObj.subtle.decrypt(
                     { name: "AES-GCM", iv: iv },
                     this.encryptionKey,
                     ciphertext
                 );
                 return JSON.parse(new TextDecoder().decode(decryptedBuffer));
+            }
+
+            // Merge logic: Local edits + Server edits
+            _mergePayloads(local, server) {
+                const merged = { ...local }; // Start with local
+
+                // Helper: Merge array of objects by 'id'
+                const mergeList = (locArr, srvArr) => {
+                    if (!Array.isArray(srvArr)) return locArr;
+                    if (!Array.isArray(locArr)) return srvArr;
+                    const map = new Map();
+                    srvArr.forEach(i => map.set(i.id, i));
+                    // Local items overwrite server items if collision (optimistic),
+                    // but we keep items that exist only on server.
+                    // To prefer latest timestamp, we would need to check 'ts'.
+                    locArr.forEach(i => {
+                        const srvItem = map.get(i.id);
+                        if (srvItem && (srvItem.ts || 0) > (i.ts || 0)) {
+                            // If server item is newer, keep server item
+                            map.set(i.id, srvItem);
+                        } else {
+                            map.set(i.id, i);
+                        }
+                    });
+                    return Array.from(map.values());
+                };
+
+                // Helper: Merge Muted words by 'word'
+                const mergeMuted = (locArr, srvArr) => {
+                    if (!Array.isArray(srvArr)) return locArr;
+                    const map = new Map();
+                    srvArr.forEach(i => map.set(i.word, i));
+                    locArr.forEach(i => map.set(i.word, i));
+                    return Array.from(map.values());
+                };
+
+                // Execute Merge
+                merged.history = mergeList(local.history, server.history);
+                merged.saved = mergeList(local.saved, server.saved);
+                merged.favorites = mergeList(local.favorites, server.favorites);
+                merged.accounts = mergeList(local.accounts, server.accounts);
+                merged.lists = mergeList(local.lists, server.lists);
+                merged.muted = mergeMuted(local.muted, server.muted);
+
+                // Favorite Tags: Merge tags array
+                if (local.favoriteTags && server.favoriteTags) {
+                    merged.favoriteTags = { ...local.favoriteTags };
+                    merged.favoriteTags.tags = mergeList(local.favoriteTags.tags || [], server.favoriteTags.tags || []);
+                    // Merge tweet mapping
+                    merged.favoriteTags.tweetTags = { ...(server.favoriteTags.tweetTags || {}), ...(local.favoriteTags.tweetTags || {}) };
+                }
+
+                // Settings: Simply take the newer timestamp one?
+                // For simplicity in this version, we trust server for config if server is newer overall,
+                // but we kept 'local' as base, so local settings prevail currently.
+                // To be robust, let's keep local settings active to avoid UI jumps.
+
+                // Update timestamp
+                merged.syncTimestamp = Date.now();
+                return merged;
             }
 
             updateStatus(msg) {
@@ -12493,20 +12582,21 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     const localJSON = buildCloudSyncPayload();
                     const localData = JSON.parse(localJSON);
 
-                    const dataRevision = parseInt(GM_getValue(DATA_REVISION_KEY, '0')) || 0;
-                    localData.syncTimestamp = dataRevision;
+                    // Current local revision
+                    const localRev = parseInt(GM_getValue(DATA_REVISION_KEY, '0')) || 0;
+                    localData.syncTimestamp = localRev || Date.now();
 
-                    // 1. Encrypt Data (E2EE)
+                    // 1. Encrypt
                     const encryptedPayload = await this.encryptData(localData);
 
-                    // 2. Prepare Headers (Sanitized)
+                    // 2. Headers
                     const headers = this._sanitizeHeaders({
                         'Content-Type': 'application/json',
                         'X-Sync-ID': this.syncId,
-                        'X-Timestamp': dataRevision
+                        'X-Timestamp': localRev
                     });
 
-                    // 3. Send to Server using GM_xmlhttpRequest
+                    // 3. POST
                     const res = await new Promise((resolve, reject) => {
                         GM_xmlhttpRequest({
                             method: 'POST',
@@ -12520,41 +12610,75 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     });
 
                     if (res.status === 200) {
-                        GM_setValue('advLastSyncTs', Date.now().toString());
+                        // Success (Push)
+                        const resJson = JSON.parse(res.responseText);
+                        // Update local revision to match what server accepted
+                        if (resJson.syncedAt) {
+                            GM_setValue(DATA_REVISION_KEY, resJson.syncedAt.toString());
+                        }
                         this.updateStatus('Synced (Push)');
                         showToast(i18n.t('toastSaved'));
                     }
                     else if (res.status === 409) {
+                        // Conflict: Server has newer data
+                        this.updateStatus('Merging...');
+                        console.log('[Sync] Conflict detected. Merging...');
+
                         const responseBody = JSON.parse(res.responseText);
                         const encryptedServerData = responseBody.serverData;
 
                         if (encryptedServerData) {
-                            console.log('[Sync] Server data is newer. Pulling & Decrypting...');
-                            try {
-                                const serverData = await this.decryptData(encryptedServerData);
-                                const success = applySettingsImportJSON(JSON.stringify(serverData));
+                            // A. Decrypt Server Data
+                            const serverData = await this.decryptData(encryptedServerData);
 
-                                if (success) {
-                                    GM_setValue('advLastSyncTs', serverData.syncTimestamp.toString());
-                                    this.updateStatus('Synced (Pull)');
-                                } else {
-                                    this.updateStatus('Import Failed');
+                            // B. Merge (Local + Server)
+                            // Re-read local data to ensure we have latest state before merge
+                            const currentLocal = JSON.parse(buildCloudSyncPayload());
+                            const mergedData = this._mergePayloads(currentLocal, serverData);
+
+                            // C. Apply Merged Data Locally
+                            const importSuccess = applySettingsImportJSON(JSON.stringify(mergedData));
+                            if (!importSuccess) throw new Error("Merge application failed");
+
+                            // D. Encrypt Merged Data
+                            // Important: New timestamp is already set in _mergePayloads
+                            const newEncrypted = await this.encryptData(mergedData);
+
+                            // E. Force Push (Retry)
+                            // Update timestamp header to the new merged timestamp
+                            headers['X-Timestamp'] = mergedData.syncTimestamp;
+
+                            const retryRes = await new Promise((resolve, reject) => {
+                                GM_xmlhttpRequest({
+                                    method: 'POST',
+                                    url: this.endpoint,
+                                    headers: headers,
+                                    data: JSON.stringify(newEncrypted),
+                                    onload: (r) => resolve(r),
+                                    onerror: () => reject(new Error('Retry Network error')),
+                                    ontimeout: () => reject(new Error('Retry Timeout'))
+                                });
+                            });
+
+                            if (retryRes.status === 200) {
+                                const retryJson = JSON.parse(retryRes.responseText);
+                                if (retryJson.syncedAt) {
+                                    GM_setValue(DATA_REVISION_KEY, retryJson.syncedAt.toString());
                                 }
-                            } catch (e) {
-                                console.error("Decryption failed:", e);
-                                this.updateStatus('Decryption Failed');
-                                alert("Failed to decrypt server data. Password might be wrong.");
+                                this.updateStatus('Synced (Merged)');
+                                showToast(i18n.t('updated'));
+                            } else {
+                                this.updateStatus(`Merge Push Failed: ${retryRes.status}`);
                             }
                         }
-                    }
-                    else {
+                    } else {
                         this.updateStatus(`Error: ${res.status}`);
-                        console.error('Sync Error Response:', res.responseText);
+                        console.error('Sync Error:', res.responseText);
                     }
 
                 } catch (e) {
                     console.error('[Sync] Error:', e);
-                    this.updateStatus('Network Error');
+                    this.updateStatus(e.message || 'Error');
                 } finally {
                     this.isSyncing = false;
                 }
