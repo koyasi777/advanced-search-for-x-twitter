@@ -12241,11 +12241,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         setupExclusiveChecks();
 
        /* ============================================================
-         * Cloud Sync Manager (Fixed for Chrome CSP)
+         * Cloud Sync Manager (Bug Fixed: Async Await)
          * ============================================================ */
         const SYNC_CFG_KEY = 'advSyncConfig_v1';
 
-        // ★ Helper: fetch like wrapper for GM_xmlhttpRequest to bypass CSP
+        // Helper: fetch like wrapper for GM_xmlhttpRequest
         const gmFetch = (url, options = {}) => {
             return new Promise((resolve, reject) => {
                 GM_xmlhttpRequest({
@@ -12271,8 +12271,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             constructor() {
                 this.endpoint = '';
                 this.secret = '';
-                this.syncId = ''; // Derived from secret
+                this.syncId = '';
+                this.signKey = null;
                 this.isSyncing = false;
+                
+                // 鍵生成の完了を待つためのPromise
+                this.readyPromise = Promise.resolve(); 
                 this.loadConfig();
             }
 
@@ -12281,7 +12285,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     const cfg = JSON.parse(GM_getValue(SYNC_CFG_KEY, '{}'));
                     this.endpoint = cfg.endpoint || '';
                     this.secret = cfg.secret || '';
-                    if (this.secret) this.deriveSyncId();
+                    if (this.secret) {
+                        this.readyPromise = this.deriveSyncId();
+                    }
                 } catch(e){}
             }
 
@@ -12289,30 +12295,45 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 this.endpoint = endpoint.trim().replace(/\/$/, '');
                 this.secret = secret.trim();
                 GM_setValue(SYNC_CFG_KEY, JSON.stringify({ endpoint: this.endpoint, secret: this.secret }));
-                if (this.secret) this.deriveSyncId();
+                
+                if (this.secret) {
+                    // 保存したら即座に再生成を開始し、Promiseを更新
+                    this.readyPromise = this.deriveSyncId();
+                }
+                return this.readyPromise;
             }
 
             async deriveSyncId() {
-                const enc = new TextEncoder();
-                const keyMaterial = await crypto.subtle.importKey(
-                    "raw", enc.encode(this.secret), { name: "PBKDF2" }, false, ["deriveBits", "deriveKey"]
-                );
-                const idBits = await crypto.subtle.deriveBits(
-                    { name: "PBKDF2", salt: enc.encode("adv-search-id-salt"), iterations: 1000, hash: "SHA-256" },
-                    keyMaterial, 128
-                );
-                this.syncId = Array.from(new Uint8Array(idBits)).map(b => b.toString(16).padStart(2, '0')).join('');
-
-                this.signKey = await crypto.subtle.deriveKey(
-                    { name: "PBKDF2", salt: enc.encode("adv-search-sign-salt"), iterations: 1000, hash: "SHA-256" },
-                    keyMaterial,
-                    { name: "HMAC", hash: "SHA-256" },
-                    false, ["sign"]
-                );
+                if (!this.secret) return;
+                try {
+                    const enc = new TextEncoder();
+                    const keyMaterial = await crypto.subtle.importKey(
+                        "raw", enc.encode(this.secret), { name: "PBKDF2" }, false, ["deriveBits", "deriveKey"]
+                    );
+                    const idBits = await crypto.subtle.deriveBits(
+                        { name: "PBKDF2", salt: enc.encode("adv-search-id-salt"), iterations: 1000, hash: "SHA-256" },
+                        keyMaterial, 128
+                    );
+                    this.syncId = Array.from(new Uint8Array(idBits)).map(b => b.toString(16).padStart(2, '0')).join('');
+                    
+                    this.signKey = await crypto.subtle.deriveKey(
+                        { name: "PBKDF2", salt: enc.encode("adv-search-sign-salt"), iterations: 1000, hash: "SHA-256" },
+                        keyMaterial,
+                        { name: "HMAC", hash: "SHA-256" },
+                        false, ["sign"]
+                    );
+                } catch (e) {
+                    console.error("Crypto Error:", e);
+                }
             }
 
             async sign(text, timestamp) {
-                if (!this.signKey) await this.deriveSyncId();
+                // 確実に鍵生成が終わるのを待つ
+                await this.readyPromise;
+                
+                if (!this.signKey || !this.syncId) {
+                    throw new Error("Key generation failed or Secret is missing.");
+                }
                 const enc = new TextEncoder();
                 const data = `${this.syncId}:${timestamp}:${text}`;
                 const sig = await crypto.subtle.sign("HMAC", this.signKey, enc.encode(data));
@@ -12325,24 +12346,32 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             }
 
             async executeSync() {
-                if (this.isSyncing || !this.endpoint || !this.secret) return;
+                if (this.isSyncing) return;
+
+                // 鍵生成待ち
+                await this.readyPromise;
+
+                if (!this.endpoint || !this.secret || !this.syncId) {
+                    this.updateStatus('Not Configured');
+                    return;
+                }
+
                 this.isSyncing = true;
                 this.updateStatus('Checking...');
 
                 try {
-                    // 1. Local Data Preparation
                     const localJSON = buildSettingsExportJSON();
                     const localData = JSON.parse(localJSON);
-
-                    // 2. Fetch Remote (Using gmFetch)
+                    
                     const ts = Date.now().toString();
+                    const sig = await this.sign('', ts); // GET has empty body
+
                     const headers = {
                         'X-Sync-ID': this.syncId,
                         'X-Timestamp': ts,
-                        'X-Signature': await this.sign('', ts)
+                        'X-Signature': sig
                     };
 
-                    // ★ fetch -> gmFetch
                     const res = await gmFetch(`${this.endpoint}`, { method: 'GET', headers });
                     if (!res.ok) throw new Error(`Server error: ${res.status}`);
 
@@ -12350,7 +12379,6 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     let remoteData = null;
                     try { remoteData = JSON.parse(remoteText); } catch(e){}
 
-                    // 3. Compare & Sync logic
                     const remoteTs = (remoteData && remoteData.syncTimestamp) ? remoteData.syncTimestamp : 0;
                     const lastSyncTs = parseInt(GM_getValue('advLastSyncTs', '0'));
 
@@ -12366,20 +12394,20 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                             this.updateStatus('Import Failed');
                         }
                     } else {
-                        // Push
                         this.updateStatus('Pushing...');
                         const newTs = Date.now();
                         localData.syncTimestamp = newTs;
                         const payload = JSON.stringify(localData);
-
+                        
+                        const pushSig = await this.sign(payload, ts);
+                        
                         const pushHeaders = {
                             'X-Sync-ID': this.syncId,
                             'X-Timestamp': ts,
-                            'X-Signature': await this.sign(payload, ts),
+                            'X-Signature': pushSig,
                             'Content-Type': 'application/json'
                         };
-
-                        // ★ fetch -> gmFetch
+                        
                         const pushRes = await gmFetch(`${this.endpoint}`, { method: 'POST', headers: pushHeaders, body: payload });
                         if (!pushRes.ok) throw new Error('Push failed');
 
@@ -12390,6 +12418,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 } catch (e) {
                     console.error('[Sync] Error:', e);
                     this.updateStatus(`Error: ${e.message}`);
+                    // モバイルで見えるように念のためアラート（デバッグ時のみ有効にしてもよい）
+                    // alert(`Sync Error: ${e.message}`);
                 } finally {
                     this.isSyncing = false;
                 }
@@ -12407,12 +12437,14 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             syncEpInput.value = syncManager.endpoint;
             syncScInput.value = syncManager.secret;
 
+            // 入力欄が変わるたびに設定を保存し、鍵生成を開始する
             const saveConf = () => syncManager.saveConfig(syncEpInput.value, syncScInput.value);
             syncEpInput.addEventListener('change', saveConf);
             syncScInput.addEventListener('change', saveConf);
-
-            syncBtn.addEventListener('click', () => {
-                saveConf();
+            
+            syncBtn.addEventListener('click', async () => {
+                // ボタンを押した瞬間に現在の入力値で保存＆鍵生成を待機してから同期
+                await saveConf(); 
                 syncManager.executeSync();
             });
         }
