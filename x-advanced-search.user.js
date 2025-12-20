@@ -7366,232 +7366,240 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             // インポート開始（saveJSONによる更新検知をブロック）
             __IS_IMPORTING__ = true;
 
-            let data;
             try {
-                data = JSON.parse(text);
-            } catch (_) {
-                alert(i18n.t('alertInvalidJSON'));
-                __IS_IMPORTING__ = false; // エラー時解除
-                return false;
-            }
-            if (!data || typeof data !== 'object') {
-                alert(i18n.t('alertInvalidData'));
-                __IS_IMPORTING__ = false; // エラー時解除
-                return false;
-            }
-
-            // バリデーションロジック
-            // 1. アプリ識別子 (appName) があるかチェック
-            const hasSignature = (data.appName === 'AdvancedSearchForX');
-
-            // 2. 識別子がない場合、このアプリ特有の構造（vプロパティ + 主要な配列のいずれか）を持っているかチェック（後方互換性救済）
-            const hasValidStructure = (
-                typeof data.v === 'number' &&
-                (Array.isArray(data.history) || Array.isArray(data.saved) || Array.isArray(data.favorites) || typeof data.tabs === 'object')
-            );
-
-            if (!hasSignature && !hasValidStructure) {
-                alert(i18n.t('alertInvalidApp'));
-                return false;
-            }
-            // バリデーション終了
-
-            // --- 基本設定（v1/v2 共通） ---
-            if (data.lang !== undefined) {
-                try { kv.set(LANG_OVERRIDE_KEY, data.lang || ''); } catch (_) {}
-            }
-
-            if (data.initialTab !== undefined) {
-                try { kv.set(INITIAL_TAB_KEY, data.initialTab || 'last'); } catch (_) {}
-            }
-
-            if (data.excludeFlags) {
-                saveExcludeFlags({
-                    name: !!data.excludeFlags.name,
-                    handle: !!data.excludeFlags.handle,
-                    reposts: !!data.excludeFlags.reposts,
-                    hashtags: !!data.excludeFlags.hashtags,
-                });
-            }
-
-            if (Array.isArray(data.muted)) {
-                saveMuted(data.muted);
-            }
-
-            if (typeof data.muteMaster === 'boolean') {
-                saveMuteMaster(data.muteMaster);
-            }
-
-            // ミュートモードの読み込みと保存
-            if (data.muteMode && (data.muteMode === 'hidden' || data.muteMode === 'collapsed')) {
-                saveMuteMode(data.muteMode);
-            }
-
-            // --- v2 以降で追加された保存データ ---
-            if (Array.isArray(data.history)) {
-                saveJSON(HISTORY_KEY, data.history);
-            }
-            if (Array.isArray(data.saved)) {
-                saveJSON(SAVED_KEY, data.saved);
-            }
-
-            // saveFavorites を経由させてキャッシュ(_favSet)も更新する
-            if (Array.isArray(data.favorites)) {
-                saveFavorites(data.favorites);
-            }
-
-            if (typeof data.secret === 'boolean') {
-                try { kv.set(SECRET_KEY, data.secret ? '1' : '0'); } catch (_) {}
-            }
-            if (data.historySort) {
-                try { kv.set(HISTORY_SORT_KEY, data.historySort); } catch (_) {}
-            }
-            // 検索窓の幅復元
-            if (data.nativeSearchWidth !== undefined) {
+                let data;
                 try {
-                    if (data.nativeSearchWidth) kv.set(NATIVE_SEARCH_WIDTH_KEY, data.nativeSearchWidth);
-                    else kv.del(NATIVE_SEARCH_WIDTH_KEY);
-                } catch (_) {}
-            }
-            if (data.tabs && typeof data.tabs === 'object') {
-                if (data.tabs.last) {
-                    try { kv.set(LAST_TAB_KEY, data.tabs.last); } catch (_) {}
+                    data = JSON.parse(text);
+                } catch (_) {
+                    alert(i18n.t('alertInvalidJSON'));
+                    __IS_IMPORTING__ = false; // エラー時解除
+                    return false;
                 }
-                if (Array.isArray(data.tabs.order)) {
-                    saveJSON(TABS_ORDER_KEY, data.tabs.order);
+                if (!data || typeof data !== 'object') {
+                    alert(i18n.t('alertInvalidData'));
+                    __IS_IMPORTING__ = false; // エラー時解除
+                    return false;
                 }
-                if (data.tabs.visibility && typeof data.tabs.visibility === 'object') {
-                    saveTabsVisibility(data.tabs.visibility);
+
+                // バリデーションロジック
+                // 1. アプリ識別子 (appName) があるかチェック
+                const hasSignature = (data.appName === 'AdvancedSearchForX');
+
+                // 2. 識別子がない場合、このアプリ特有の構造（vプロパティ + 主要な配列のいずれか）を持っているかチェック（後方互換性救済）
+                const hasValidStructure = (
+                    typeof data.v === 'number' &&
+                    (Array.isArray(data.history) || Array.isArray(data.saved) || Array.isArray(data.favorites) || typeof data.tabs === 'object')
+                );
+
+                if (!hasSignature && !hasValidStructure) {
+                    alert(i18n.t('alertInvalidApp'));
+                    return false;
                 }
-            }
-            if (data.modalState) {
-                try { kv.set(MODAL_STATE_KEY, JSON.stringify(data.modalState)); } catch (_) {}
-            }
-            if (data.triggerState) {
-                try { kv.set(TRIGGER_STATE_KEY, JSON.stringify(data.triggerState)); } catch (_) {}
-            }
-            if (data.zoom && typeof data.zoom === 'object') {
-                try {
-                    for (const [tab, key] of Object.entries(ZOOM_KEYS)) {
-                        if (data.zoom[tab] != null) {
-                            kv.set(key, String(data.zoom[tab]));
+                // バリデーション終了
+
+                // --- 基本設定（v1/v2 共通） ---
+                if (data.lang !== undefined) {
+                    try { kv.set(LANG_OVERRIDE_KEY, data.lang || ''); } catch (_) {}
+                }
+
+                if (data.initialTab !== undefined) {
+                    try { kv.set(INITIAL_TAB_KEY, data.initialTab || 'last'); } catch (_) {}
+                }
+
+                if (data.excludeFlags) {
+                    saveExcludeFlags({
+                        name: !!data.excludeFlags.name,
+                        handle: !!data.excludeFlags.handle,
+                        reposts: !!data.excludeFlags.reposts,
+                        hashtags: !!data.excludeFlags.hashtags,
+                    });
+                }
+
+                if (Array.isArray(data.muted)) {
+                    saveMuted(data.muted);
+                }
+
+                if (typeof data.muteMaster === 'boolean') {
+                    saveMuteMaster(data.muteMaster);
+                }
+
+                // ミュートモードの読み込みと保存
+                if (data.muteMode && (data.muteMode === 'hidden' || data.muteMode === 'collapsed')) {
+                    saveMuteMode(data.muteMode);
+                }
+
+                // --- v2 以降で追加された保存データ ---
+                if (Array.isArray(data.history)) {
+                    saveJSON(HISTORY_KEY, data.history);
+                }
+                if (Array.isArray(data.saved)) {
+                    saveJSON(SAVED_KEY, data.saved);
+                }
+
+                // saveFavorites を経由させてキャッシュ(_favSet)も更新する
+                if (Array.isArray(data.favorites)) {
+                    saveFavorites(data.favorites);
+                }
+
+                if (typeof data.secret === 'boolean') {
+                    try { kv.set(SECRET_KEY, data.secret ? '1' : '0'); } catch (_) {}
+                }
+                if (data.historySort) {
+                    try { kv.set(HISTORY_SORT_KEY, data.historySort); } catch (_) {}
+                }
+                // 検索窓の幅復元
+                if (data.nativeSearchWidth !== undefined) {
+                    try {
+                        if (data.nativeSearchWidth) kv.set(NATIVE_SEARCH_WIDTH_KEY, data.nativeSearchWidth);
+                        else kv.del(NATIVE_SEARCH_WIDTH_KEY);
+                    } catch (_) {}
+                }
+                if (data.tabs && typeof data.tabs === 'object') {
+                    if (data.tabs.last) {
+                        try { kv.set(LAST_TAB_KEY, data.tabs.last); } catch (_) {}
+                    }
+                    if (Array.isArray(data.tabs.order)) {
+                        saveJSON(TABS_ORDER_KEY, data.tabs.order);
+                    }
+                    if (data.tabs.visibility && typeof data.tabs.visibility === 'object') {
+                        saveTabsVisibility(data.tabs.visibility);
+                    }
+                }
+                if (data.modalState) {
+                    try { kv.set(MODAL_STATE_KEY, JSON.stringify(data.modalState)); } catch (_) {}
+                }
+                if (data.triggerState) {
+                    try { kv.set(TRIGGER_STATE_KEY, JSON.stringify(data.triggerState)); } catch (_) {}
+                }
+                if (data.zoom && typeof data.zoom === 'object') {
+                    try {
+                        for (const [tab, key] of Object.entries(ZOOM_KEYS)) {
+                            if (data.zoom[tab] != null) {
+                                kv.set(key, String(data.zoom[tab]));
+                            }
                         }
+                    } catch (_) {}
+                }
+
+                if (Array.isArray(data.accounts) && typeof saveAccounts === 'function') {
+                    try { saveAccounts(data.accounts); } catch (_) {}
+                }
+                if (Array.isArray(data.lists) && typeof saveLists === 'function') {
+                    try { saveLists(data.lists); } catch (_) {}
+                }
+
+                if (data.folders && typeof data.folders === 'object') {
+                    if (Array.isArray(data.folders.accounts) && typeof ACCOUNTS_FOLDERS_KEY !== 'undefined') {
+                        try { saveFolders(ACCOUNTS_FOLDERS_KEY, data.folders.accounts); } catch (_) {}
                     }
-                } catch (_) {}
-            }
-
-            if (Array.isArray(data.accounts) && typeof saveAccounts === 'function') {
-                try { saveAccounts(data.accounts); } catch (_) {}
-            }
-            if (Array.isArray(data.lists) && typeof saveLists === 'function') {
-                try { saveLists(data.lists); } catch (_) {}
-            }
-
-            if (data.folders && typeof data.folders === 'object') {
-                if (Array.isArray(data.folders.accounts) && typeof ACCOUNTS_FOLDERS_KEY !== 'undefined') {
-                    try { saveFolders(ACCOUNTS_FOLDERS_KEY, data.folders.accounts); } catch (_) {}
+                    if (Array.isArray(data.folders.lists) && typeof LISTS_FOLDERS_KEY !== 'undefined') {
+                        try { saveFolders(LISTS_FOLDERS_KEY, data.folders.lists); } catch (_) {}
+                    }
+                    if (Array.isArray(data.folders.saved) && typeof SAVED_FOLDERS_KEY !== 'undefined') {
+                        try { saveFolders(SAVED_FOLDERS_KEY, data.folders.saved); } catch (_) {}
+                    }
                 }
-                if (Array.isArray(data.folders.lists) && typeof LISTS_FOLDERS_KEY !== 'undefined') {
-                    try { saveFolders(LISTS_FOLDERS_KEY, data.folders.lists); } catch (_) {}
-                }
-                if (Array.isArray(data.folders.saved) && typeof SAVED_FOLDERS_KEY !== 'undefined') {
-                    try { saveFolders(SAVED_FOLDERS_KEY, data.folders.saved); } catch (_) {}
-                }
-            }
 
-            if (data.unassignedIndex && typeof data.unassignedIndex === 'object') {
-                if ('saved' in data.unassignedIndex) try { kv.set('advSavedUnassignedIndex_v1', String(data.unassignedIndex.saved | 0)); } catch (_) {}
-                if ('accounts' in data.unassignedIndex) try { kv.set('advAccountsUnassignedIndex_v1', String(data.unassignedIndex.accounts | 0)); } catch (_) {}
-                if ('lists' in data.unassignedIndex) try { kv.set('advListsUnassignedIndex_v1', String(data.unassignedIndex.lists | 0)); } catch (_) {}
-            }
+                if (data.unassignedIndex && typeof data.unassignedIndex === 'object') {
+                    if ('saved' in data.unassignedIndex) try { kv.set('advSavedUnassignedIndex_v1', String(data.unassignedIndex.saved | 0)); } catch (_) {}
+                    if ('accounts' in data.unassignedIndex) try { kv.set('advAccountsUnassignedIndex_v1', String(data.unassignedIndex.accounts | 0)); } catch (_) {}
+                    if ('lists' in data.unassignedIndex) try { kv.set('advListsUnassignedIndex_v1', String(data.unassignedIndex.lists | 0)); } catch (_) {}
+                }
 
-            /* --- Favorite Tags Data --- */
-            if (data.favoriteTags && typeof ft_saveState === 'function') {
+                /* --- Favorite Tags Data --- */
+                if (data.favoriteTags && typeof ft_saveState === 'function') {
+                    try {
+                        const s = data.favoriteTags;
+                        ft_normalizeTagOrdersFor(s);
+                        ft_clampUncategorizedOrderFor(s);
+                        ft_saveState(s); // ストレージへの保存
+
+                        if (typeof ft_state !== 'undefined') {
+                            ft_state = s;
+                        }
+                    } catch (_) {}
+                }
+
+                // サーバー(またはインポートファイル)のタイムスタンプをローカルリビジョンとして適用
+                // これにより、不必要な再同期ループを防ぐ
+                if (data.syncTimestamp) {
+                    try { kv.set(DATA_REVISION_KEY, data.syncTimestamp.toString()); } catch(_) {}
+                }
+
+                // 言語を再適用
                 try {
-                    const s = data.favoriteTags;
-                    ft_normalizeTagOrdersFor(s);
-                    ft_clampUncategorizedOrderFor(s);
-                    ft_saveState(s); // ストレージへの保存
-
-                    if (typeof ft_state !== 'undefined') {
-                        ft_state = s;
+                    const override = kv.get(LANG_OVERRIDE_KEY, '');
+                    if (override && i18n.translations[override]) {
+                        i18n.lang = override;
+                    } else if (!override) {
+                        i18n.init();
                     }
                 } catch (_) {}
+
+                try {
+                    i18n.apply(document.getElementById('advanced-search-modal'));
+                    i18n.apply(document.getElementById('adv-settings-modal'));
+                } catch (_) {}
+
+                try { applySecretBtn(); } catch (_) {}
+                try { renderHistory(); } catch (_) {}
+                try { renderSaved(); } catch (_) {}
+                try { renderLists(); } catch (_) {}
+                try { renderAccounts(); } catch (_) {}
+                try { renderMuted(); } catch (_) {}
+
+                // お気に入りリストを再描画し、ボタン状態・タグチップを全更新する
+                try {
+                    renderFavorites();
+                    updateAllFavoriteButtons();
+                } catch (_) {}
+
+                try { rescanAllTweetsForFilter(); } catch (_) {}
+
+                /* --- Favorite Tags UI Refresh --- */
+                try {
+                    if (typeof ft_refreshAllTagChips === 'function') ft_refreshAllTagChips();
+                } catch (_) {}
+
+                // タブの表示状態を適用
+                try { applyTabsVisibility(); } catch (_) {}
+
+                /* ▼▼▼ インポートした設定を即座に画面に反映する処理 ▼▼▼ */
+
+                // 1. ズーム設定の反映
+                // Storageからメモリ変数(zoomByTab)へ再ロードし、DOMに適用
+                try {
+                    Object.keys(zoomByTab).forEach(tab => loadZoomFor(tab));
+                    applyZoom();
+                } catch (_) {}
+
+                // 2. モーダル位置・サイズの反映
+                // Storageから読み込み直し、位置補正(keepModalInViewport)も含めて適用
+                try {
+                    loadModalState(); // 内部で applyModalStoredPosition() が呼ばれ、座標とサイズがセットされる
+                    requestAnimationFrame(keepModalInViewport);
+                } catch (_) {}
+
+                // 3. トリガーボタン位置の反映
+                try {
+                    applyTriggerStoredPosition();
+                    requestAnimationFrame(keepTriggerInViewport);
+                } catch (_) {}
+
+                // 4. 検索窓の幅の反映
+                try {
+                    setupNativeSearchResizer();
+                } catch (_) {}
+
+                showToast(i18n.t('toastImported'));
+                return true;
+            } catch (e) {
+                console.error(e);
+                return false;
+            } finally {
+                // 成功・失敗・エラーに関わらず、必ずフラグを戻す
+                __IS_IMPORTING__ = false;
             }
-
-            // サーバー(またはインポートファイル)のタイムスタンプをローカルリビジョンとして適用
-            // これにより、不必要な再同期ループを防ぐ
-            if (data.syncTimestamp) {
-                try { kv.set(DATA_REVISION_KEY, data.syncTimestamp.toString()); } catch(_) {}
-            }
-
-            // 言語を再適用
-            try {
-                const override = kv.get(LANG_OVERRIDE_KEY, '');
-                if (override && i18n.translations[override]) {
-                    i18n.lang = override;
-                } else if (!override) {
-                    i18n.init();
-                }
-            } catch (_) {}
-
-            try {
-                i18n.apply(document.getElementById('advanced-search-modal'));
-                i18n.apply(document.getElementById('adv-settings-modal'));
-            } catch (_) {}
-
-            try { applySecretBtn(); } catch (_) {}
-            try { renderHistory(); } catch (_) {}
-            try { renderSaved(); } catch (_) {}
-            try { renderLists(); } catch (_) {}
-            try { renderAccounts(); } catch (_) {}
-            try { renderMuted(); } catch (_) {}
-
-            // お気に入りリストを再描画し、ボタン状態・タグチップを全更新する
-            try {
-                renderFavorites();
-                updateAllFavoriteButtons();
-            } catch (_) {}
-
-            try { rescanAllTweetsForFilter(); } catch (_) {}
-
-            /* --- Favorite Tags UI Refresh --- */
-            try {
-                if (typeof ft_refreshAllTagChips === 'function') ft_refreshAllTagChips();
-            } catch (_) {}
-
-            // タブの表示状態を適用
-            try { applyTabsVisibility(); } catch (_) {}
-
-            /* ▼▼▼ インポートした設定を即座に画面に反映する処理 ▼▼▼ */
-
-            // 1. ズーム設定の反映
-            // Storageからメモリ変数(zoomByTab)へ再ロードし、DOMに適用
-            try {
-                Object.keys(zoomByTab).forEach(tab => loadZoomFor(tab));
-                applyZoom();
-            } catch (_) {}
-
-            // 2. モーダル位置・サイズの反映
-            // Storageから読み込み直し、位置補正(keepModalInViewport)も含めて適用
-            try {
-                loadModalState(); // 内部で applyModalStoredPosition() が呼ばれ、座標とサイズがセットされる
-                requestAnimationFrame(keepModalInViewport);
-            } catch (_) {}
-
-            // 3. トリガーボタン位置の反映
-            try {
-                applyTriggerStoredPosition();
-                requestAnimationFrame(keepTriggerInViewport);
-            } catch (_) {}
-
-            // 4. 検索窓の幅の反映
-            try {
-                setupNativeSearchResizer();
-            } catch (_) {}
-
-            showToast(i18n.t('toastImported'));
-            return true;
         }
 
         // マスターON/OFF（全体の適用を止めるだけ。各エントリの enabled は保持）
