@@ -4936,8 +4936,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
             // インポート中でない場合のみ、リビジョン更新と同期トリガーを行う
             if (!__IS_IMPORTING__) {
-                // データ保存時にのみリビジョン（変更時刻）を更新する
-                try { kv.set(DATA_REVISION_KEY, Date.now().toString()); } catch(_) {}
+                // リビジョン（サーバー同期番号）は触らず、変更フラグ(Dirty)を立てる
+                try { kv.set(DIRTY_KEY, '1'); } catch(_) {}
 
                 // Hook for auto-sync
                 triggerAutoSync();
@@ -7092,6 +7092,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         const SECRET_KEY  = 'advSearchSecretMode_v1';
         // データリビジョン管理キー
         const DATA_REVISION_KEY = 'advDataRevision_v1';
+        // 未同期の変更フラグ
+        const DIRTY_KEY = 'advDataDirty_v1';
 
         const MUTE_KEY = 'advMutedWords_v1';
         const NATIVE_SEARCH_WIDTH_KEY = 'advNativeSearchWidth_v1';
@@ -12594,12 +12596,17 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 try {
                     // 1. Check Server (GET)
                     const localRev = parseInt(GM_getValue(DATA_REVISION_KEY, '0')) || 0;
+                    // 変更があるか確認
+                    const isDirty = GM_getValue(DIRTY_KEY, '0') === '1';
+
                     const headers = {
                         'Content-Type': 'application/json',
                         'X-Sync-ID': this.syncId
                     };
 
-                    const getRes = await gmFetch(this.endpoint, { method: 'GET', headers });
+                    // URLにタイムスタンプを付与してキャッシュを回避する
+                    const cacheBuster = (this.endpoint.includes('?') ? '&' : '?') + 't=' + Date.now();
+                    const getRes = await gmFetch(this.endpoint + cacheBuster, { method: 'GET', headers });
 
                     if (getRes.status === 200) {
                         const serverWrapper = JSON.parse(getRes.responseText);
@@ -12611,13 +12618,16 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                             if (serverWrapper.data) {
                                 const decrypted = await this.decryptPayload(serverWrapper.data);
 
-                                // 現在のローカルデータとマージしてから保存（ローカルの未同期変更を消さないため）
+                                // 現在のローカルデータとマージしてから保存
                                 const currentLocal = JSON.parse(buildCloudSyncPayload());
                                 const merged = this._mergeData(currentLocal, decrypted);
 
                                 const importSuccess = applySettingsImportJSON(JSON.stringify(merged));
                                 if (importSuccess) {
                                     GM_setValue(DATA_REVISION_KEY, serverRev.toString());
+                                    // ★追加: Pull成功＝最新になったのでDirtyフラグを消す
+                                    GM_deleteValue(DIRTY_KEY);
+
                                     this.updateStatus('Synced (Pulled)');
                                     showToast(i18n.t('updated'));
                                     return;
@@ -12626,19 +12636,15 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                                 }
                             }
                         }
-                        // Case B: Synced
-                        else if (serverRev === localRev) {
-                            // 単純化のため、リビジョンが同じなら同期完了とみなす
-                            // (本来はハッシュ値比較などが望ましいが、トラフィック削減のため)
+                        // Case B: Synced check
+                        // リビジョンが同じでも、ローカルに変更(isDirty)があればここに入らずPushへ進む
+                        else if (serverRev === localRev && !isDirty) {
                             this.updateStatus('Idle (Synced)');
-                            // ただし、もし強制Pushが必要なケースがあればここを通過させるロジックを追加可能
+                            return;
                         }
                     }
 
-                    // 2. Push (If local is newer or equal and we want to push changes)
-                    // 簡易実装: リビジョンに関わらず、Pullが発生しなかった場合はPushを試みる
-                    // (Worker側でリビジョンチェックを行い、古ければ409を返すので安全)
-
+                    // 2. Push (Serverが古い、またはリビジョン同じだがローカルに変更がある場合)
                     this.updateStatus('Pushing...');
                     const rawData = JSON.parse(buildCloudSyncPayload());
                     const encryptedBody = await this.encryptPayload(rawData, localRev);
@@ -12654,12 +12660,14 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                         const resJson = JSON.parse(postRes.responseText);
                         if (resJson.newRevision) {
                             GM_setValue(DATA_REVISION_KEY, resJson.newRevision.toString());
+                            // Push成功したのでDirtyフラグを消す
+                            GM_deleteValue(DIRTY_KEY);
                         }
                         this.updateStatus('Synced (Pushed)');
                         showToast(i18n.t('toastSaved'));
                     }
                     else if (postRes.status === 409) {
-                        // Conflict: Server has newer data during push
+                        // Conflict: Server has newer data
                         this.updateStatus('Merging...');
                         console.warn('[Sync] Conflict detected. Auto-merging...');
 
@@ -12672,10 +12680,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                             const currentLocal = JSON.parse(buildCloudSyncPayload());
                             const merged = this._mergeData(currentLocal, serverData);
 
-                            // Apply to UI
                             applySettingsImportJSON(JSON.stringify(merged));
 
-                            // Retry Push with merged data and server's revision
+                            // Retry Push
                             const mergedEncrypted = await this.encryptPayload(merged, serverCurrentRev);
 
                             const retryRes = await gmFetch(this.endpoint, {
@@ -12687,6 +12694,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                             if (retryRes.status === 200) {
                                 const retryJson = JSON.parse(retryRes.responseText);
                                 GM_setValue(DATA_REVISION_KEY, retryJson.newRevision.toString());
+                                // マージPush成功したのでDirtyフラグを消す
+                                GM_deleteValue(DIRTY_KEY);
+
                                 this.updateStatus('Synced (Merged)');
                                 showToast(i18n.t('updated'));
                             } else {
@@ -12694,10 +12704,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                             }
                         }
                     } else {
-                        // サーバーからのエラー詳細テキスト（JSON）を取得して表示する
                         const errorText = postRes.responseText;
                         console.error('[Sync] Server Error Body:', errorText);
-
                         throw new Error(`Upload failed: ${postRes.status} - ${errorText}`);
                     }
 
