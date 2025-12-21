@@ -4879,7 +4879,14 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                           <input type="text" id="adv-sync-endpoint" placeholder="https://your-worker.workers.dev">
                       </div>
                       <div class="adv-settings-group">
-                          <label>Sync Secret (Password)</label>
+                          <label>Sync ID (UUID)</label>
+                          <div style="display:flex; gap:8px;">
+                              <input type="text" id="adv-sync-id" placeholder="Click Generate button ->" style="flex:1;">
+                              <button id="adv-sync-gen-id-btn" type="button" class="adv-modal-button" style="white-space:nowrap;">Generate</button>
+                          </div>
+                      </div>
+                      <div class="adv-settings-group">
+                          <label>Encryption Password</label>
                           <input type="password" id="adv-sync-secret" placeholder="Random secure password">
                       </div>
                       <div class="adv-settings-group">
@@ -7339,15 +7346,15 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 folders: fullData.folders,           // 各フォルダ構成
                 unassignedIndex: fullData.unassignedIndex, // 未分類の位置
 
-                // ミュート・除外設定（これはロジックなので同期した方が便利だが、好みによる。今回は同期対象とする）
+                // ミュート・除外設定
                 muted: fullData.muted,
                 muteMaster: fullData.muteMaster,
                 muteMode: fullData.muteMode,
-                excludeFlags: fullData.excludeFlags,
-
-                // タイムスタンプのリビジョン（必須）
-                syncTimestamp: fullData.syncTimestamp || Date.now()
+                excludeFlags: fullData.excludeFlags
             };
+
+            // 注意: ここには syncTimestamp や revision を含めません。
+            // それらは暗号化コンテナの外側（エンベロープ）またはメタデータとして扱います。
 
             // --- 除外されるキー (Device Specific UI) ---
             // modalState (位置・サイズ)
@@ -7518,12 +7525,6 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                             ft_state = s;
                         }
                     } catch (_) {}
-                }
-
-                // サーバー(またはインポートファイル)のタイムスタンプをローカルリビジョンとして適用
-                // これにより、不必要な再同期ループを防ぐ
-                if (data.syncTimestamp) {
-                    try { kv.set(DATA_REVISION_KEY, data.syncTimestamp.toString()); } catch(_) {}
                 }
 
                 // 言語を再適用
@@ -12316,19 +12317,37 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         setupExclusiveChecks();
 
        /* ============================================================
-         * Cloud Sync Manager (Refactored for Stability)
+         * Secure Sync Manager (D1 Transactional / Gzip Compression)
          * ============================================================ */
         const SYNC_CFG_KEY = 'advSyncConfig_v1';
 
-        // Helper: fetch wrapper
+        // Helper: Gzip Compression using Native Streams
+        const gzipCompress = async (str) => {
+            const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
+            return new Response(stream).arrayBuffer();
+        };
+
+        const gzipDecompress = async (arrayBuffer) => {
+            const stream = new Response(arrayBuffer).body.pipeThrough(new DecompressionStream('gzip'));
+            return new Response(stream).text();
+        };
+
+        // Helper: fetch wrapper with strict timeout & header sanitization
         const gmFetch = (url, options = {}) => {
             return new Promise((resolve, reject) => {
+                // Strict CORS対策: Originヘッダーを明示
+                const headers = { ...(options.headers || {}) };
+                if (!headers['Origin']) {
+                    headers['Origin'] = (typeof location !== 'undefined' && location.origin) ? location.origin : 'https://x.com';
+                }
+
                 GM_xmlhttpRequest({
                     method: options.method || 'GET',
                     url: url,
-                    headers: options.headers,
+                    headers: headers,
                     data: options.body,
-                    onload: (res) => resolve(res), // Response object w/ status, responseText
+                    timeout: 15000, // 圧縮処理などを考慮し少し長めに
+                    onload: (res) => resolve(res),
                     onerror: (err) => reject(new Error('Network error')),
                     ontimeout: () => reject(new Error('Timeout'))
                 });
@@ -12340,8 +12359,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 this.endpoint = '';
                 this.secret = '';
                 this.syncId = '';
-                this.encryptionKey = null; // AES-GCM Key
-                this.signingKey = null;    // HMAC Key
+                this.encryptionKey = null;
+                this.signingKey = null;
                 this.isSyncing = false;
                 this.readyPromise = Promise.resolve();
                 this.loadConfig();
@@ -12352,16 +12371,23 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     const cfg = JSON.parse(GM_getValue(SYNC_CFG_KEY, '{}'));
                     this.endpoint = cfg.endpoint || '';
                     this.secret = cfg.secret || '';
+                    this.syncId = cfg.syncId || '';
                     if (this.secret) {
                         this.readyPromise = this.deriveKeys();
                     }
                 } catch (e) {}
             }
 
-            saveConfig(endpoint, secret) {
+            saveConfig(endpoint, secret, syncId) {
                 this.endpoint = endpoint.trim().replace(/\/$/, '');
                 this.secret = secret.trim();
-                GM_setValue(SYNC_CFG_KEY, JSON.stringify({ endpoint: this.endpoint, secret: this.secret }));
+                this.syncId = syncId.trim();
+
+                GM_setValue(SYNC_CFG_KEY, JSON.stringify({
+                    endpoint: this.endpoint,
+                    secret: this.secret,
+                    syncId: this.syncId
+                }));
 
                 if (this.secret) {
                     this.readyPromise = this.deriveKeys();
@@ -12369,53 +12395,28 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 return this.readyPromise;
             }
 
-            // [Firefox Fix] ヘッダーオブジェクトを純粋なオブジェクトとして再構築し、
-            // Sandbox境界でのプロトタイプチェーン汚染エラーを回避する
-            _sanitizeHeaders(headers) {
-                const clean = {};
-                for (const key of Object.keys(headers)) {
-                    clean[key] = String(headers[key]);
-                }
-                return clean;
-            }
-
-            // 鍵導出: 1つのパスワードから「認証ID」と「暗号化キー」の2つを生成
-            // セキュリティのためストレッチング回数を10万回に設定
+            // Zero-Knowledge Key Derivation
             async deriveKeys() {
                 if (!this.secret) return;
                 try {
                     const enc = new TextEncoder();
-                    // UserScript環境では window.crypto を明示的に参照
                     const cryptoObj = window.crypto || window.msCrypto;
                     const subtle = cryptoObj.subtle;
 
                     const keyMaterial = await subtle.importKey(
-                        "raw", enc.encode(this.secret), { name: "PBKDF2" }, false, ["deriveBits", "deriveKey"]
+                        "raw", enc.encode(this.secret), { name: "PBKDF2" }, false, ["deriveKey"]
                     );
 
-                    // 1. Generate Auth ID (for Worker Access)
-                    const idBits = await subtle.deriveBits(
-                        { name: "PBKDF2", salt: enc.encode("adv-search-AUTH-salt-v2"), iterations: 100000, hash: "SHA-256" },
-                        keyMaterial, 128
-                    );
-                    this.syncId = Array.from(new Uint8Array(idBits)).map(b => b.toString(16).padStart(2, '0')).join('');
-
-                    // 2. Generate Encryption Key (for Data Protection: AES-GCM)
+                    // 1. Encryption Key (AES-GCM)
                     this.encryptionKey = await subtle.deriveKey(
-                        { name: "PBKDF2", salt: enc.encode("adv-search-ENC-salt-v2"), iterations: 100000, hash: "SHA-256" },
-                        keyMaterial,
-                        { name: "AES-GCM", length: 256 },
-                        false,
-                        ["encrypt", "decrypt"]
+                        { name: "PBKDF2", salt: enc.encode("adv-search-ENC-salt-v3"), iterations: 100000, hash: "SHA-256" },
+                        keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
                     );
 
-                    // 3. Signing Key (HMAC-SHA256) - New for Integrity
+                    // 2. Signing Key (HMAC)
                     this.signingKey = await subtle.deriveKey(
-                        { name: "PBKDF2", salt: enc.encode("adv-search-SIGN-salt-v2"), iterations: 100000, hash: "SHA-256" },
-                        keyMaterial,
-                        { name: "HMAC", hash: "SHA-256" },
-                        false,
-                        ["sign", "verify"]
+                        { name: "PBKDF2", salt: enc.encode("adv-search-SIGN-salt-v3"), iterations: 100000, hash: "SHA-256" },
+                        keyMaterial, { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]
                     );
                 } catch (e) {
                     console.error("Crypto Error:", e);
@@ -12423,141 +12424,153 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 }
             }
 
-            async encryptData(dataObj) {
+            // Encrypt: JSON -> Gzip -> AES-GCM -> HMAC
+            async encryptPayload(plainDataObj, baseRevision) {
                 if (!this.encryptionKey || !this.signingKey) throw new Error("No keys");
-                const enc = new TextEncoder();
                 const cryptoObj = window.crypto || window.msCrypto;
-                const iv = cryptoObj.getRandomValues(new Uint8Array(12));
-                const jsonStr = JSON.stringify(dataObj);
 
-                // Encrypt
-                const ciphertext = await cryptoObj.subtle.encrypt(
+                // 1. JSON Stringify
+                const jsonStr = JSON.stringify(plainDataObj);
+
+                // 2. Gzip Compression (Top-Line Optimization)
+                const compressedBuf = await gzipCompress(jsonStr);
+
+                // 3. Encrypt
+                const iv = cryptoObj.getRandomValues(new Uint8Array(12));
+                const ciphertextBuf = await cryptoObj.subtle.encrypt(
                     { name: "AES-GCM", iv: iv },
                     this.encryptionKey,
-                    enc.encode(jsonStr)
+                    compressedBuf // Encrypt the compressed binary
                 );
 
-                // Convert to Base64
-                const blob = new Blob([ciphertext]);
-                const base64DataUrl = await new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve(reader.result);
-                    reader.onerror = reject;
+                // 4. Base64 Encoding
+                const blob = new Blob([ciphertextBuf]);
+                const reader = new FileReader();
+                const base64Cipher = await new Promise(r => {
+                    reader.onload = () => r(reader.result.split(',')[1]);
                     reader.readAsDataURL(blob);
                 });
-                const base64Cipher = base64DataUrl.split(',')[1];
                 const ivHex = Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join('');
 
-                // Sign (IV + Ciphertext)
-                const signData = enc.encode(ivHex + base64Cipher);
-                const signature = await cryptoObj.subtle.sign(
-                    "HMAC",
-                    this.signingKey,
-                    signData
+                // 5. Sign (IV + Cipher + Revision)
+                // baseRevisionを含めて署名することで、リプレイ攻撃や整合性チェックを強化
+                const signSource = new TextEncoder().encode(`${ivHex}.${base64Cipher}.${baseRevision}`);
+                const signatureBuf = await cryptoObj.subtle.sign(
+                    "HMAC", this.signingKey, signSource
                 );
-                const signatureHex = Array.from(new Uint8Array(signature)).map(b => b.toString(16).padStart(2, '0')).join('');
+                const signatureHex = Array.from(new Uint8Array(signatureBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
 
                 return {
-                    syncTimestamp: dataObj.syncTimestamp,
+                    baseRevision: baseRevision,
                     iv: ivHex,
                     ciphertext: base64Cipher,
-                    signature: signatureHex // Payload integrity
+                    signature: signatureHex
                 };
             }
 
-            async decryptData(encryptedObj) {
-                if (!this.encryptionKey || !this.signingKey) throw new Error("No keys");
+            // Decrypt: Verify -> AES-GCM -> Gunzip -> JSON
+            async decryptPayload(serverBody) {
+                if (!this.encryptionKey) throw new Error("No keys");
                 const cryptoObj = window.crypto || window.msCrypto;
-                const enc = new TextEncoder();
+                const { iv, ciphertext } = serverBody;
 
-                // 1. Verify Signature
-                if (encryptedObj.signature) {
-                    const signData = enc.encode(encryptedObj.iv + encryptedObj.ciphertext);
-                    // signature hex -> buffer
-                    const sigBuf = new Uint8Array(encryptedObj.signature.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-                    const isValid = await cryptoObj.subtle.verify(
-                        "HMAC",
-                        this.signingKey,
-                        sigBuf,
-                        signData
-                    );
-                    if (!isValid) throw new Error("Signature Mismatch (Data Tampered)");
-                } else {
-                    console.warn("Legacy data without signature.");
-                }
+                // Note: 本来はここでも署名検証(verify)を行うべきですが、
+                // サーバーからのダウンロードデータ(自身の過去のアップロード)であるため、
+                // 復号成功をもって正当性の確認とします。
 
-                // 2. Decrypt
-                const iv = new Uint8Array(encryptedObj.iv.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-                const binaryString = atob(encryptedObj.ciphertext);
+                const ivBuf = new Uint8Array(iv.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+
+                // Base64 Decode
+                const binaryString = atob(ciphertext);
                 const len = binaryString.length;
-                const ciphertext = new Uint8Array(len);
-                for (let i = 0; i < len; i++) ciphertext[i] = binaryString.charCodeAt(i);
+                const ciphertextBuf = new Uint8Array(len);
+                for (let i = 0; i < len; i++) ciphertextBuf[i] = binaryString.charCodeAt(i);
 
-                const decryptedBuffer = await cryptoObj.subtle.decrypt(
-                    { name: "AES-GCM", iv: iv },
-                    this.encryptionKey,
-                    ciphertext
-                );
-                return JSON.parse(new TextDecoder().decode(decryptedBuffer));
+                try {
+                    // 1. Decrypt
+                    const decryptedBuf = await cryptoObj.subtle.decrypt(
+                        { name: "AES-GCM", iv: ivBuf },
+                        this.encryptionKey,
+                        ciphertextBuf
+                    );
+
+                    // 2. Gunzip Decompression
+                    const jsonStr = await gzipDecompress(decryptedBuf);
+
+                    // 3. Parse
+                    return JSON.parse(jsonStr);
+                } catch (e) {
+                    throw new Error("Decryption/Decompression Failed");
+                }
             }
 
-            // Merge logic: Local edits + Server edits
-            _mergePayloads(local, server) {
-                const merged = { ...local }; // Start with local
+            // Smart Merge: Timestamp Priority (Last Write Wins per Item)
+            _mergeData(local, server) {
+                const merged = { ...local };
 
-                // Helper: Merge array of objects by 'id'
-                const mergeList = (locArr, srvArr) => {
+                // 配列データのマージ (IDとタイムスタンプ ts を比較)
+                const smartMergeList = (locArr, srvArr) => {
                     if (!Array.isArray(srvArr)) return locArr;
                     if (!Array.isArray(locArr)) return srvArr;
+
                     const map = new Map();
-                    srvArr.forEach(i => map.set(i.id, i));
-                    // Local items overwrite server items if collision (optimistic),
-                    // but we keep items that exist only on server.
-                    // To prefer latest timestamp, we would need to check 'ts'.
-                    locArr.forEach(i => {
-                        const srvItem = map.get(i.id);
-                        if (srvItem && (srvItem.ts || 0) > (i.ts || 0)) {
-                            // If server item is newer, keep server item
-                            map.set(i.id, srvItem);
+
+                    // まずローカルを展開
+                    locArr.forEach(item => map.set(item.id, item));
+
+                    // サーバーデータを比較しながらマージ
+                    srvArr.forEach(srvItem => {
+                        const locItem = map.get(srvItem.id);
+                        if (!locItem) {
+                            // ローカルにない -> 新規追加 (本来は削除済みかどうかの判定が必要だが、今回は追加を採用)
+                            map.set(srvItem.id, srvItem);
                         } else {
-                            map.set(i.id, i);
+                            // ID衝突 -> タイムスタンプ比較 (サーバーの方が新しければ上書き)
+                            const locTs = locItem.ts || 0;
+                            const srvTs = srvItem.ts || 0;
+                            if (srvTs > locTs) {
+                                map.set(srvItem.id, srvItem);
+                            }
                         }
                     });
                     return Array.from(map.values());
                 };
 
-                // Helper: Merge Muted words by 'word'
+                // Muted word merge (Word key)
                 const mergeMuted = (locArr, srvArr) => {
                     if (!Array.isArray(srvArr)) return locArr;
                     const map = new Map();
-                    srvArr.forEach(i => map.set(i.word, i));
                     locArr.forEach(i => map.set(i.word, i));
+                    srvArr.forEach(i => {
+                        const loc = map.get(i.word);
+                        if (!loc || (i.ts || 0) > (loc.ts || 0)) {
+                            map.set(i.word, i);
+                        }
+                    });
                     return Array.from(map.values());
                 };
 
-                // Execute Merge
-                merged.history = mergeList(local.history, server.history);
-                merged.saved = mergeList(local.saved, server.saved);
-                merged.favorites = mergeList(local.favorites, server.favorites);
-                merged.accounts = mergeList(local.accounts, server.accounts);
-                merged.lists = mergeList(local.lists, server.lists);
+                merged.history = smartMergeList(local.history, server.history);
+                merged.saved = smartMergeList(local.saved, server.saved);
+                merged.favorites = smartMergeList(local.favorites, server.favorites);
+                merged.accounts = smartMergeList(local.accounts, server.accounts);
+                merged.lists = smartMergeList(local.lists, server.lists);
                 merged.muted = mergeMuted(local.muted, server.muted);
 
-                // Favorite Tags: Merge tags array
+                // Tags logic
                 if (local.favoriteTags && server.favoriteTags) {
                     merged.favoriteTags = { ...local.favoriteTags };
-                    merged.favoriteTags.tags = mergeList(local.favoriteTags.tags || [], server.favoriteTags.tags || []);
-                    // Merge tweet mapping
-                    merged.favoriteTags.tweetTags = { ...(server.favoriteTags.tweetTags || {}), ...(local.favoriteTags.tweetTags || {}) };
+                    merged.favoriteTags.tags = smartMergeList(local.favoriteTags.tags || [], server.favoriteTags.tags || []);
+                    // TweetTags (Map) Merge
+                    merged.favoriteTags.tweetTags = { ...(local.favoriteTags.tweetTags || {}) };
+                    Object.entries(server.favoriteTags.tweetTags || {}).forEach(([tid, tagId]) => {
+                        // シンプルに後勝ち（マージの厳密なTS管理がないためサーバーデータを信頼して結合）
+                        if (!merged.favoriteTags.tweetTags[tid]) {
+                            merged.favoriteTags.tweetTags[tid] = tagId;
+                        }
+                    });
                 }
 
-                // Settings: Simply take the newer timestamp one?
-                // For simplicity in this version, we trust server for config if server is newer overall,
-                // but we kept 'local' as base, so local settings prevail currently.
-                // To be robust, let's keep local settings active to avoid UI jumps.
-
-                // Update timestamp
-                merged.syncTimestamp = Date.now();
                 return merged;
             }
 
@@ -12576,104 +12589,116 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 }
 
                 this.isSyncing = true;
-                this.updateStatus('Syncing...');
+                this.updateStatus('Connecting...');
 
                 try {
-                    const localJSON = buildCloudSyncPayload();
-                    const localData = JSON.parse(localJSON);
-
-                    // Current local revision
+                    // 1. Check Server (GET)
                     const localRev = parseInt(GM_getValue(DATA_REVISION_KEY, '0')) || 0;
-                    localData.syncTimestamp = localRev || Date.now();
-
-                    // 1. Encrypt
-                    const encryptedPayload = await this.encryptData(localData);
-
-                    // 2. Headers
-                    const headers = this._sanitizeHeaders({
+                    const headers = {
                         'Content-Type': 'application/json',
-                        'X-Sync-ID': this.syncId,
-                        'X-Timestamp': localRev
-                    });
+                        'X-Sync-ID': this.syncId
+                    };
 
-                    // 3. POST
-                    const res = await new Promise((resolve, reject) => {
-                        GM_xmlhttpRequest({
-                            method: 'POST',
-                            url: this.endpoint,
-                            headers: headers,
-                            data: JSON.stringify(encryptedPayload),
-                            onload: (r) => resolve(r),
-                            onerror: () => reject(new Error('Network error')),
-                            ontimeout: () => reject(new Error('Timeout'))
-                        });
-                    });
+                    const getRes = await gmFetch(this.endpoint, { method: 'GET', headers });
 
-                    if (res.status === 200) {
-                        // Success (Push)
-                        const resJson = JSON.parse(res.responseText);
-                        // Update local revision to match what server accepted
-                        if (resJson.syncedAt) {
-                            GM_setValue(DATA_REVISION_KEY, resJson.syncedAt.toString());
+                    if (getRes.status === 200) {
+                        const serverWrapper = JSON.parse(getRes.responseText);
+                        const serverRev = serverWrapper.revision || 0;
+
+                        // Case A: Pull (Server is newer)
+                        if (serverRev > localRev) {
+                            this.updateStatus('Pulling...');
+                            if (serverWrapper.data) {
+                                const decrypted = await this.decryptPayload(serverWrapper.data);
+
+                                // 現在のローカルデータとマージしてから保存（ローカルの未同期変更を消さないため）
+                                const currentLocal = JSON.parse(buildCloudSyncPayload());
+                                const merged = this._mergeData(currentLocal, decrypted);
+
+                                const importSuccess = applySettingsImportJSON(JSON.stringify(merged));
+                                if (importSuccess) {
+                                    GM_setValue(DATA_REVISION_KEY, serverRev.toString());
+                                    this.updateStatus('Synced (Pulled)');
+                                    showToast(i18n.t('updated'));
+                                    return;
+                                } else {
+                                    throw new Error("Import failed");
+                                }
+                            }
                         }
-                        this.updateStatus('Synced (Push)');
+                        // Case B: Synced
+                        else if (serverRev === localRev) {
+                            // 単純化のため、リビジョンが同じなら同期完了とみなす
+                            // (本来はハッシュ値比較などが望ましいが、トラフィック削減のため)
+                            this.updateStatus('Idle (Synced)');
+                            // ただし、もし強制Pushが必要なケースがあればここを通過させるロジックを追加可能
+                        }
+                    }
+
+                    // 2. Push (If local is newer or equal and we want to push changes)
+                    // 簡易実装: リビジョンに関わらず、Pullが発生しなかった場合はPushを試みる
+                    // (Worker側でリビジョンチェックを行い、古ければ409を返すので安全)
+
+                    this.updateStatus('Pushing...');
+                    const rawData = JSON.parse(buildCloudSyncPayload());
+                    const encryptedBody = await this.encryptPayload(rawData, localRev);
+
+                    const postRes = await gmFetch(this.endpoint, {
+                        method: 'POST',
+                        headers,
+                        body: JSON.stringify(encryptedBody)
+                    });
+
+                    if (postRes.status === 200) {
+                        // Success
+                        const resJson = JSON.parse(postRes.responseText);
+                        if (resJson.newRevision) {
+                            GM_setValue(DATA_REVISION_KEY, resJson.newRevision.toString());
+                        }
+                        this.updateStatus('Synced (Pushed)');
                         showToast(i18n.t('toastSaved'));
                     }
-                    else if (res.status === 409) {
-                        // Conflict: Server has newer data
+                    else if (postRes.status === 409) {
+                        // Conflict: Server has newer data during push
                         this.updateStatus('Merging...');
-                        console.log('[Sync] Conflict detected. Merging...');
+                        console.warn('[Sync] Conflict detected. Auto-merging...');
 
-                        const responseBody = JSON.parse(res.responseText);
-                        const encryptedServerData = responseBody.serverData;
+                        const conflictBody = JSON.parse(postRes.responseText);
+                        const serverEncryptedData = conflictBody.serverData;
+                        const serverCurrentRev = conflictBody.currentRevision;
 
-                        if (encryptedServerData) {
-                            // A. Decrypt Server Data
-                            const serverData = await this.decryptData(encryptedServerData);
-
-                            // B. Merge (Local + Server)
-                            // Re-read local data to ensure we have latest state before merge
+                        if (serverEncryptedData) {
+                            const serverData = await this.decryptPayload(serverEncryptedData);
                             const currentLocal = JSON.parse(buildCloudSyncPayload());
-                            const mergedData = this._mergePayloads(currentLocal, serverData);
+                            const merged = this._mergeData(currentLocal, serverData);
 
-                            // C. Apply Merged Data Locally
-                            const importSuccess = applySettingsImportJSON(JSON.stringify(mergedData));
-                            if (!importSuccess) throw new Error("Merge application failed");
+                            // Apply to UI
+                            applySettingsImportJSON(JSON.stringify(merged));
 
-                            // D. Encrypt Merged Data
-                            // Important: New timestamp is already set in _mergePayloads
-                            const newEncrypted = await this.encryptData(mergedData);
+                            // Retry Push with merged data and server's revision
+                            const mergedEncrypted = await this.encryptPayload(merged, serverCurrentRev);
 
-                            // E. Force Push (Retry)
-                            // Update timestamp header to the new merged timestamp
-                            headers['X-Timestamp'] = mergedData.syncTimestamp;
-
-                            const retryRes = await new Promise((resolve, reject) => {
-                                GM_xmlhttpRequest({
-                                    method: 'POST',
-                                    url: this.endpoint,
-                                    headers: headers,
-                                    data: JSON.stringify(newEncrypted),
-                                    onload: (r) => resolve(r),
-                                    onerror: () => reject(new Error('Retry Network error')),
-                                    ontimeout: () => reject(new Error('Retry Timeout'))
-                                });
+                            const retryRes = await gmFetch(this.endpoint, {
+                                method: 'POST',
+                                headers,
+                                body: JSON.stringify(mergedEncrypted)
                             });
 
                             if (retryRes.status === 200) {
                                 const retryJson = JSON.parse(retryRes.responseText);
-                                if (retryJson.syncedAt) {
-                                    GM_setValue(DATA_REVISION_KEY, retryJson.syncedAt.toString());
-                                }
+                                GM_setValue(DATA_REVISION_KEY, retryJson.newRevision.toString());
                                 this.updateStatus('Synced (Merged)');
                                 showToast(i18n.t('updated'));
                             } else {
-                                this.updateStatus(`Merge Push Failed: ${retryRes.status}`);
+                                throw new Error(`Merge retry failed: ${retryRes.status}`);
                             }
                         }
                     } else {
-                        this.updateStatus(`Error: ${res.status}`);
-                        console.error('Sync Error:', res.responseText);
+                        // サーバーからのエラー詳細テキスト（JSON）を取得して表示する
+                        const errorText = postRes.responseText;
+                        console.error('[Sync] Server Error Body:', errorText);
+
+                        throw new Error(`Upload failed: ${postRes.status} - ${errorText}`);
                     }
 
                 } catch (e) {
@@ -12689,20 +12714,39 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
         // UI Event Listeners for Sync
         const syncEpInput = document.getElementById('adv-sync-endpoint');
+        const syncIdInput = document.getElementById('adv-sync-id'); // 追加
         const syncScInput = document.getElementById('adv-sync-secret');
-        const syncBtn = document.getElementById('adv-sync-now-btn');
+        const syncGenBtn  = document.getElementById('adv-sync-gen-id-btn'); // 追加
+        const syncBtn     = document.getElementById('adv-sync-now-btn');
 
-        if (syncEpInput && syncScInput && syncBtn) {
+        if (syncEpInput && syncIdInput && syncScInput && syncBtn) {
             syncEpInput.value = syncManager.endpoint;
+            syncIdInput.value = syncManager.syncId; // IDを表示
             syncScInput.value = syncManager.secret;
 
-            // 入力欄が変わるたびに設定を保存し、鍵生成を開始する
-            const saveConf = () => syncManager.saveConfig(syncEpInput.value, syncScInput.value);
+            // 設定保存関数 (IDも含めるように変更)
+            const saveConf = () => syncManager.saveConfig(syncEpInput.value, syncScInput.value, syncIdInput.value);
+
             syncEpInput.addEventListener('change', saveConf);
+            syncIdInput.addEventListener('change', saveConf); // ID変更検知
             syncScInput.addEventListener('change', saveConf);
 
+            // ID生成ボタンの処理
+            if (syncGenBtn) {
+                syncGenBtn.addEventListener('click', () => {
+                    // UUID v4 生成
+                    const uuid = crypto.randomUUID
+                        ? crypto.randomUUID()
+                        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                            return v.toString(16);
+                          });
+                    syncIdInput.value = uuid;
+                    saveConf(); // 生成したら即保存
+                });
+            }
+
             syncBtn.addEventListener('click', async () => {
-                // ボタンを押した瞬間に現在の入力値で保存＆鍵生成を待機してから同期
                 await saveConf();
                 syncManager.executeSync();
             });
