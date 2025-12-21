@@ -12591,14 +12591,21 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             }
 
             // Decrypt: Verify -> AES-GCM -> Gunzip -> JSON
-            async decryptPayload(serverBody) {
-                if (!this.encryptionKey) throw new Error("No keys");
+            async decryptPayload(serverBody, revision) {
+                if (!this.encryptionKey || !this.signingKey) throw new Error("No keys");
                 const cryptoObj = window.crypto || window.msCrypto;
-                const { iv, ciphertext } = serverBody;
+                const { iv, ciphertext, signature } = serverBody;
 
-                // Note: 本来はここでも署名検証(verify)を行うべきですが、
-                // サーバーからのダウンロードデータ(自身の過去のアップロード)であるため、
-                // 復号成功をもって正当性の確認とします。
+                // 1. Verify HMAC (Integrity Check)
+                // baseRevision(revision)を含めて検証することで、リプレイ攻撃を防ぐ
+                if (signature && revision) {
+                    const signSource = new TextEncoder().encode(`${iv}.${ciphertext}.${revision}`);
+                    const signatureBuf = new Uint8Array(signature.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+                    const isValid = await cryptoObj.subtle.verify(
+                        "HMAC", this.signingKey, signatureBuf, signSource
+                    );
+                    if (!isValid) throw new Error("Signature verification failed (Integrity Check)");
+                }
 
                 const ivBuf = new Uint8Array(iv.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
 
@@ -12773,7 +12780,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                         if (serverRev > localRev) {
                             this.updateStatus('Pulling...');
                             if (serverWrapper.data) {
-                                const decrypted = await this.decryptPayload(serverWrapper.data);
+                                // 署名は「更新前のリビジョン(N-1)」で行われているため、1引いて検証する
+                                const decrypted = await this.decryptPayload(serverWrapper.data, serverRev - 1);
 
                                 // 現在のローカルデータとマージしてから保存
                                 const currentLocal = JSON.parse(buildCloudSyncPayload());
@@ -12806,10 +12814,16 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     const rawData = JSON.parse(buildCloudSyncPayload());
                     const encryptedBody = await this.encryptPayload(rawData, localRev);
 
+                    // 送信前にペイロードサイズをチェック (Worker制限: 50MB)
+                    const payloadString = JSON.stringify(encryptedBody);
+                    if (new Blob([payloadString]).size > 49 * 1024 * 1024) {
+                        throw new Error("Payload too large (>50MB). Sync aborted.");
+                    }
+
                     const postRes = await gmFetch(this.endpoint, {
                         method: 'POST',
                         headers,
-                        body: JSON.stringify(encryptedBody)
+                        body: payloadString // 文字列化したものを送る
                     });
 
                     if (postRes.status === 200) {
@@ -12833,7 +12847,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                         const serverCurrentRev = conflictBody.currentRevision;
 
                         if (serverEncryptedData) {
-                            const serverData = await this.decryptPayload(serverEncryptedData);
+                            // serverCurrentRev を渡して署名検証を行う
+                            const serverData = await this.decryptPayload(serverEncryptedData, serverCurrentRev - 1);
                             const currentLocal = JSON.parse(buildCloudSyncPayload());
                             const merged = this._mergeData(currentLocal, serverData);
 
