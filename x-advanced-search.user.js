@@ -4873,26 +4873,60 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                           </div>
                       </div>
 
-                      <div class="adv-settings-section-header">Cloud Sync (Beta)</div>
-                      <div class="adv-settings-group">
-                          <label>Endpoint URL (Cloudflare Worker)</label>
-                          <input type="text" id="adv-sync-endpoint" placeholder="https://your-worker.workers.dev">
-                      </div>
-                      <div class="adv-settings-group">
-                          <label>Sync ID (UUID)</label>
-                          <div style="display:flex; gap:8px;">
-                              <input type="text" id="adv-sync-id" placeholder="Click Generate button ->" style="flex:1;">
-                              <button id="adv-sync-gen-id-btn" type="button" class="adv-modal-button" style="white-space:nowrap;">Generate</button>
+                      <div class="adv-settings-section-header" style="display:flex; justify-content:space-between; align-items:center; margin-top:24px; border-bottom:none; padding-bottom:0;">
+                          <div style="display:flex; align-items:center; gap:6px;">
+                              <span>Cloud Sync</span>
+                              <span class="adv-chip primary" style="font-size:10px; padding:2px 6px; height:auto; cursor:default;">Beta</span>
                           </div>
+                          <label class="adv-switch" title="Enable Cloud Sync">
+                              <input id="adv-settings-sync-enable" type="checkbox">
+                              <span class="adv-slider"></span>
+                          </label>
                       </div>
-                      <div class="adv-settings-group">
-                          <label>Encryption Password</label>
-                          <input type="password" id="adv-sync-secret" placeholder="Random secure password">
-                      </div>
-                      <div class="adv-settings-group">
-                          <div style="display:flex; justify-content:space-between; align-items:center;">
-                              <div style="font-size:12px; color:var(--modal-text-secondary);" id="adv-sync-status">Status: Idle</div>
-                              <button id="adv-sync-now-btn" type="button" class="adv-modal-button primary">Sync Now</button>
+
+                      <div id="adv-sync-settings-container" style="display:none; margin-top:7px; margin-bottom:4px; padding:16px; background:rgba(128,128,128,0.05); border-radius:12px; border:1px solid var(--modal-border);">
+
+                          <div class="adv-settings-group" style="margin-bottom:16px;">
+                              <label style="font-size:13px; margin-bottom:6px; color:var(--modal-text-primary);">Endpoint URL</label>
+                              <input type="url" id="adv-sync-endpoint" placeholder="https://your-worker.workers.dev"
+                                  style="width:100%; box-sizing:border-box; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:13px; padding:10px 12px; border-radius:6px;">
+                          </div>
+
+                          <div class="adv-settings-group" style="margin-bottom:16px;">
+                              <label style="font-size:13px; margin-bottom:6px; color:var(--modal-text-primary);">Sync ID (UUID)</label>
+                              <div style="display:flex; gap:8px;">
+                                  <input type="text" id="adv-sync-id" placeholder="Paste or Generate UUID"
+                                      style="flex:1; min-width:0; box-sizing:border-box; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:13px; padding:10px 12px; border-radius:6px; letter-spacing:0.5px;">
+                                  <button id="adv-sync-gen-id-btn" type="button" class="adv-modal-button"
+                                      style="white-space:nowrap; padding:0 16px; border-radius:6px; font-size:13px;">Generate</button>
+                              </div>
+                          </div>
+
+                          <div class="adv-settings-group">
+                              <label style="font-size:13px; margin-bottom:6px; color:var(--modal-text-primary);">Encryption Password</label>
+                              <div style="position:relative; display:flex; align-items:center;">
+                                  <input type="password" id="adv-sync-secret" placeholder="Strong password required"
+                                      style="width:100%; box-sizing:border-box; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:13px; padding:10px 40px 10px 12px; border-radius:6px; letter-spacing:1px;">
+
+                                  <button type="button" id="adv-sync-secret-toggle" class="adv-modal-button"
+                                      style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; padding:4px; height:auto; color:var(--modal-text-secondary); cursor:pointer; display:flex; align-items:center; justify-content:center;"
+                                      title="Show/Hide Password">
+                                      <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:currentColor;">
+                                          <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"></path>
+                                      </svg>
+                                  </button>
+                              </div>
+                              <div style="font-size:11px; color:var(--modal-text-secondary); margin-top:6px; line-height:1.4;">
+                                  * Data is encrypted locally before upload. The server never sees this password.
+                              </div>
+                          </div>
+
+                          <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--modal-border); display:flex; justify-content:space-between; align-items:center;">
+                              <div id="adv-sync-status" style="font-size:12px; color:var(--modal-text-secondary); font-weight:700; display:flex; align-items:center; gap:6px;">
+                                  <span style="width:8px; height:8px; background:var(--modal-text-secondary); border-radius:50%; display:inline-block; opacity:0.5;"></span>
+                                  Status: Idle
+                              </div>
+                              <button id="adv-sync-now-btn" type="button" class="adv-modal-button primary" style="padding:8px 20px; border-radius:9999px;">Sync Now</button>
                           </div>
                       </div>
 
@@ -4907,10 +4941,24 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
     const initialize = async () => {
         i18n.init();
 
+        let syncManager = null;
+
         const kv = {
             get(key, def) { try { return GM_getValue(key, def); } catch (_) { return def; } },
             set(key, val) { try { GM_setValue(key, val); } catch (_) {} },
             del(key)      { try { GM_deleteValue(key); } catch (_) {} },
+        };
+
+        // 削除ログ管理
+        const DELETED_LOG_KEY = 'advDeletedLog_v1';
+        // 削除済みIDとそのタイムスタンプを管理 { [id]: timestamp }
+        const loadDeletedLog = () => loadJSON(DELETED_LOG_KEY, {});
+        const markAsDeleted = (id) => {
+            if (!id) return;
+            const log = loadDeletedLog();
+            log[id] = Date.now();
+            // 古いログの掃除（例として90日以上前の削除記録は消すなどしても良いが、今回は単純保持）
+            saveJSON(DELETED_LOG_KEY, log);
         };
 
         // インポート中かどうかを判定するフラグ
@@ -4925,7 +4973,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         // Debounce helper for sync
         let _syncTimeout;
         const triggerAutoSync = () => {
-            if (typeof syncManager !== 'undefined') {
+            if (syncManager) {
                 clearTimeout(_syncTimeout);
                 _syncTimeout = setTimeout(() => syncManager.executeSync(), 5000); // 5秒後に同期
             }
@@ -5990,6 +6038,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
         const trigger = document.createElement('button');
         const HISTORY_SORT_KEY = 'advHistorySort_v1';
+        const SYNC_ENABLED_KEY = 'advSyncEnabled_v1';
+        const UNASSIGNED_IDX_KEYS = {
+            saved: 'advSavedUnassignedIndex_v1',
+            accounts: 'advAccountsUnassignedIndex_v1',
+            lists: 'advListsUnassignedIndex_v1'
+        };
         trigger.id = 'advanced-search-trigger';
         trigger.type = 'button';
         trigger.innerHTML = SEARCH_SVG;
@@ -6375,6 +6429,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         };
 
         const deleteFavorite = (id) => {
+            markAsDeleted(id);
             // 1. お気に入りリストから削除
             const list = loadFavorites().filter(x => x.id !== id);
             saveFavorites(list); // ここで _favSet も更新される
@@ -7266,6 +7321,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
             v: SETTINGS_EXPORT_VERSION,
 
+            // クラウド同期設定を含める
+            syncConfig: safeParse(SYNC_CFG_KEY, null),
+
+            // 削除ログを含める
+            deletedLog: (typeof loadDeletedLog === 'function') ? loadDeletedLog() : {},
+
             // 言語・除外設定・ミュート
             lang: kv.get(LANG_OVERRIDE_KEY, ''),
             initialTab: kv.get(INITIAL_TAB_KEY, 'last'),
@@ -7282,6 +7343,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             // シークレットモード・履歴ソート
             secret: kv.get(SECRET_KEY, '0') === '1',
             historySort: kv.get(HISTORY_SORT_KEY, 'newest'),
+
+            favSort: kv.get(FAV_SORT_KEY, 'saved_newest'),
 
             // 検索窓の幅
             nativeSearchWidth: kv.get(NATIVE_SEARCH_WIDTH_KEY, null),
@@ -7333,10 +7396,16 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             // ローカルの全データを取得
             const fullData = JSON.parse(buildSettingsExportJSON());
 
+            // 削除ログを読み込む
+            const deletedLog = loadDeletedLog();
+
             // 同期対象とするキー（コンテンツ・データ）のみを抽出
             const syncData = {
                 appName: fullData.appName,
                 v: fullData.v,
+
+                // 削除ログを含める
+                deletedLog: deletedLog,
 
                 // --- 同期するデータ (Content) ---
                 history: fullData.history,           // 検索履歴
@@ -7406,6 +7475,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 }
                 // バリデーション終了
 
+                // 削除ログの保存
+                if (data.deletedLog && typeof data.deletedLog === 'object') {
+                    try { saveJSON(DELETED_LOG_KEY, data.deletedLog); } catch (_) {}
+                }
+
                 // --- 基本設定（v1/v2 共通） ---
                 if (data.lang !== undefined) {
                     try { kv.set(LANG_OVERRIDE_KEY, data.lang || ''); } catch (_) {}
@@ -7455,6 +7529,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 }
                 if (data.historySort) {
                     try { kv.set(HISTORY_SORT_KEY, data.historySort); } catch (_) {}
+                }
+                if (data.favSort) {
+                    try { kv.set(FAV_SORT_KEY, data.favSort); } catch (_) {}
                 }
                 // 検索窓の幅復元
                 if (data.nativeSearchWidth !== undefined) {
@@ -7513,6 +7590,28 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     if ('saved' in data.unassignedIndex) try { kv.set('advSavedUnassignedIndex_v1', String(data.unassignedIndex.saved | 0)); } catch (_) {}
                     if ('accounts' in data.unassignedIndex) try { kv.set('advAccountsUnassignedIndex_v1', String(data.unassignedIndex.accounts | 0)); } catch (_) {}
                     if ('lists' in data.unassignedIndex) try { kv.set('advListsUnassignedIndex_v1', String(data.unassignedIndex.lists | 0)); } catch (_) {}
+                }
+
+                // クラウド同期設定の復元
+                if (data.syncConfig && typeof data.syncConfig === 'object') {
+                    try {
+                        // ストレージに保存
+                        kv.set(SYNC_CFG_KEY, JSON.stringify(data.syncConfig));
+
+                        // メモリ上のマネージャーにも即座に反映 (UI更新のため)
+                        if (typeof syncManager !== 'undefined') {
+                            syncManager.loadConfig();
+                            // UIの入力欄にも値をセット
+                            if (syncEpInput) syncEpInput.value = syncManager.endpoint;
+                            if (syncIdInput) syncIdInput.value = syncManager.syncId;
+                            if (syncScInput) syncScInput.value = syncManager.secret;
+
+                            // 状態表示を更新
+                            if (syncManager.endpoint && syncManager.secret) {
+                                syncManager.updateStatus('Config Loaded');
+                            }
+                        }
+                    } catch (_) {}
                 }
 
                 /* --- Favorite Tags Data --- */
@@ -8447,17 +8546,20 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               TABS_VISIBILITY_KEY,
               LANG_OVERRIDE_KEY,
               HISTORY_SORT_KEY,
+              FAV_SORT_KEY,
               EXC_NAME_KEY,
               EXC_HANDLE_KEY,
               EXC_REPOSTS_KEY,
               EXC_HASHTAGS_KEY,
               NATIVE_SEARCH_WIDTH_KEY,
               FAV_KEY,
-              'advSavedUnassignedIndex_v1',
-              'advAccountsUnassignedIndex_v1',
-              'advListsUnassignedIndex_v1',
+              ...Object.values(UNASSIGNED_IDX_KEYS), // 定数を使用
               ...Object.values(ZOOM_KEYS),
               FT_STATE_KEY,
+              DELETED_LOG_KEY,
+              SYNC_CFG_KEY,
+              DATA_REVISION_KEY,
+              DIRTY_KEY
             ];
 
             KEYS_TO_DELETE.forEach(k => {
@@ -8565,6 +8667,20 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               keepTriggerInViewport();
             } catch (_) {}
 
+            // SyncManagerのメモリ状態もリセット
+            if (typeof syncManager !== 'undefined') {
+                syncManager.endpoint = '';
+                syncManager.secret = '';
+                syncManager.syncId = '';
+                syncManager.encryptionKey = null;
+                syncManager.signingKey = null;
+                // UIの入力欄もクリア
+                if (syncEpInput) syncEpInput.value = '';
+                if (syncIdInput) syncIdInput.value = '';
+                if (syncScInput) syncScInput.value = '';
+                if (typeof syncManager.updateStatus === 'function') syncManager.updateStatus('Reset');
+            }
+
             showToast(i18n.t('toastReset'));
           });
         }
@@ -8651,6 +8767,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         };
 
         const deleteHistory = (id) => {
+            markAsDeleted(id);
             const listRaw = loadJSON(HISTORY_KEY, []);
             const list = migrateList(listRaw);
             const next = list.filter(it => it.id !== id);
@@ -8682,6 +8799,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         };
 
         const deleteSaved = (id) => {
+            markAsDeleted(id);
             const listRaw = loadJSON(SAVED_KEY, []);
             const list = migrateList(listRaw);
             const next = list.filter(it => it.id !== id);
@@ -10627,6 +10745,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           return 'unchanged';
         };
         const deleteAccount = (id) => {
+            markAsDeleted(id);
             // ▼ 削除対象のハンドルを保持しておく
             const accounts = loadAccounts();
             const deletedAccount = accounts.find(x => x.id === id);
@@ -10904,6 +11023,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         };
 
         const deleteList = (id) => {
+            markAsDeleted(id);
             // ▼ 削除対象のURLを保持しておく
             const lists = loadLists();
             const deletedList = lists.find(x => x.id === id);
@@ -12510,21 +12630,43 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             _mergeData(local, server) {
                 const merged = { ...local };
 
-                // 配列データのマージ (IDとタイムスタンプ ts を比較)
+                // ▼▼▼ 1. 削除ログのマージ (IDごとに新しいタイムスタンプを採用)
+                const localDel = local.deletedLog || {};
+                const serverDel = server.deletedLog || {};
+                const mergedDel = { ...localDel };
+
+                Object.keys(serverDel).forEach(id => {
+                    const sTs = serverDel[id] || 0;
+                    const lTs = mergedDel[id] || 0;
+                    if (sTs > lTs) {
+                        mergedDel[id] = sTs;
+                    }
+                });
+                // マージ結果に削除ログを含める
+                merged.deletedLog = mergedDel;
+
+                // 配列データのマージ (IDとタイムスタンプ ts を比較しつつ、削除済みIDは除外)
                 const smartMergeList = (locArr, srvArr) => {
-                    if (!Array.isArray(srvArr)) return locArr;
-                    if (!Array.isArray(locArr)) return srvArr;
+                    if (!Array.isArray(srvArr)) srvArr = []; // 安全策
+                    if (!Array.isArray(locArr)) locArr = [];
 
                     const map = new Map();
 
                     // まずローカルを展開
-                    locArr.forEach(item => map.set(item.id, item));
+                    locArr.forEach(item => {
+                        // 削除ログにあるIDなら無視
+                        if (mergedDel[item.id]) return;
+                        map.set(item.id, item);
+                    });
 
                     // サーバーデータを比較しながらマージ
                     srvArr.forEach(srvItem => {
+                        // 削除ログにあるIDなら無視
+                        if (mergedDel[srvItem.id]) return;
+
                         const locItem = map.get(srvItem.id);
                         if (!locItem) {
-                            // ローカルにない -> 新規追加 (本来は削除済みかどうかの判定が必要だが、今回は追加を採用)
+                            // ローカルになく、削除ログにもない -> 新規追加
                             map.set(srvItem.id, srvItem);
                         } else {
                             // ID衝突 -> タイムスタンプ比較 (サーバーの方が新しければ上書き)
@@ -12539,11 +12681,19 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 };
 
                 // Muted word merge (Word key)
+                // ※ ミュート設定はID管理ではなく単語管理の場合があるため既存ロジック維持だが、
+                // IDがある場合は deletedLog の対象にしても良い。
+                // ここでは既存のロジックのままにします（配列マージで対応）
                 const mergeMuted = (locArr, srvArr) => {
                     if (!Array.isArray(srvArr)) return locArr;
                     const map = new Map();
-                    locArr.forEach(i => map.set(i.word, i));
+                    // 削除ログ対応: IDを持っているエントリならチェック
+                    locArr.forEach(i => {
+                        if (i.id && mergedDel[i.id]) return;
+                        map.set(i.word, i);
+                    });
                     srvArr.forEach(i => {
+                        if (i.id && mergedDel[i.id]) return;
                         const loc = map.get(i.word);
                         if (!loc || (i.ts || 0) > (loc.ts || 0)) {
                             map.set(i.word, i);
@@ -12562,11 +12712,14 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 // Tags logic
                 if (local.favoriteTags && server.favoriteTags) {
                     merged.favoriteTags = { ...local.favoriteTags };
+                    // タグ自体のマージ (IDがあるので smartMergeList が使える)
                     merged.favoriteTags.tags = smartMergeList(local.favoriteTags.tags || [], server.favoriteTags.tags || []);
+
                     // TweetTags (Map) Merge
+                    // ツイートIDに対するタグ付け情報。ここも削除ログ(TweetID)と照合してもいいが、
+                    // 本体(favorites)が消えればUIに出なくなるので、ここは単純マージでOK。
                     merged.favoriteTags.tweetTags = { ...(local.favoriteTags.tweetTags || {}) };
                     Object.entries(server.favoriteTags.tweetTags || {}).forEach(([tid, tagId]) => {
-                        // シンプルに後勝ち（マージの厳密なTS管理がないためサーバーデータを信頼して結合）
                         if (!merged.favoriteTags.tweetTags[tid]) {
                             merged.favoriteTags.tweetTags[tid] = tagId;
                         }
@@ -12583,6 +12736,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
             async executeSync() {
                 if (this.isSyncing) return;
+
+                // マスター設定がOFFなら中止
+                if (GM_getValue(SYNC_ENABLED_KEY, '0') !== '1') return;
+
                 await this.readyPromise;
 
                 if (!this.endpoint || !this.syncId || !this.encryptionKey) {
@@ -12718,31 +12875,65 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             }
         }
 
-        const syncManager = new SyncManager();
+        syncManager = new SyncManager();
 
         // UI Event Listeners for Sync
+        const syncEnableToggle = document.getElementById('adv-settings-sync-enable');
+        const syncContainer = document.getElementById('adv-sync-settings-container');
         const syncEpInput = document.getElementById('adv-sync-endpoint');
-        const syncIdInput = document.getElementById('adv-sync-id'); // 追加
+        const syncIdInput = document.getElementById('adv-sync-id');
         const syncScInput = document.getElementById('adv-sync-secret');
-        const syncGenBtn  = document.getElementById('adv-sync-gen-id-btn'); // 追加
+        const syncSecretToggle = document.getElementById('adv-sync-secret-toggle');
+        const syncGenBtn  = document.getElementById('adv-sync-gen-id-btn');
         const syncBtn     = document.getElementById('adv-sync-now-btn');
 
-        if (syncEpInput && syncIdInput && syncScInput && syncBtn) {
+        // トグル制御と実行ガードの追加
+        if (syncEpInput && syncIdInput && syncScInput && syncBtn && syncEnableToggle && syncContainer) {
+
+            // 1. 初期状態の適用 (ON/OFF)
+            const isSyncEnabled = kv.get(SYNC_ENABLED_KEY, '0') === '1';
+            syncEnableToggle.checked = isSyncEnabled;
+            syncContainer.style.display = isSyncEnabled ? 'block' : 'none';
+
+            // 2. 値のセット
             syncEpInput.value = syncManager.endpoint;
-            syncIdInput.value = syncManager.syncId; // IDを表示
+            syncIdInput.value = syncManager.syncId;
             syncScInput.value = syncManager.secret;
 
-            // 設定保存関数 (IDも含めるように変更)
             const saveConf = () => syncManager.saveConfig(syncEpInput.value, syncScInput.value, syncIdInput.value);
 
+            // 3. トグルのイベントリスナー
+            syncEnableToggle.addEventListener('change', () => {
+                const enabled = syncEnableToggle.checked;
+                kv.set(SYNC_ENABLED_KEY, enabled ? '1' : '0');
+                syncContainer.style.display = enabled ? 'block' : 'none';
+
+                // ONになった瞬間にまだ同期していなければ、自動で走らせても親切かもしれないが
+                // ここではユーザーの意図しない通信を防ぐため手動または自動トリガーに任せる
+            });
+
             syncEpInput.addEventListener('change', saveConf);
-            syncIdInput.addEventListener('change', saveConf); // ID変更検知
+            syncIdInput.addEventListener('change', saveConf);
             syncScInput.addEventListener('change', saveConf);
 
-            // ID生成ボタンの処理
+            // パスワード表示切り替えロジック
+            if (syncScInput && syncSecretToggle) {
+                const EYE_OPEN_SVG = `<svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:currentColor;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"></path></svg>`;
+                const EYE_CLOSED_SVG = `<svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:currentColor;"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"></path></svg>`;
+
+                syncSecretToggle.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const isPassword = syncScInput.type === 'password';
+                    syncScInput.type = isPassword ? 'text' : 'password';
+                    syncSecretToggle.innerHTML = isPassword ? EYE_CLOSED_SVG : EYE_OPEN_SVG;
+                    syncSecretToggle.title = isPassword ? 'Hide Password' : 'Show Password';
+                });
+            }
+
             if (syncGenBtn) {
                 syncGenBtn.addEventListener('click', () => {
-                    // UUID v4 生成
                     const uuid = crypto.randomUUID
                         ? crypto.randomUUID()
                         : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -12750,18 +12941,22 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                             return v.toString(16);
                           });
                     syncIdInput.value = uuid;
-                    saveConf(); // 生成したら即保存
+                    saveConf();
                 });
             }
 
             syncBtn.addEventListener('click', async () => {
                 await saveConf();
-                syncManager.executeSync();
+                // 実行時にも念のためONかチェック (UI上は隠れているが、コード呼び出しの整合性として)
+                if (syncEnableToggle.checked) {
+                    syncManager.executeSync();
+                }
             });
         }
 
-        // Auto-sync on load if configured
-        if (syncManager.endpoint && syncManager.secret) {
+        // Auto-sync on load if configured AND ENABLED
+        // ロード時の自動同期も、トグルがONのときのみ実行する
+        if (kv.get(SYNC_ENABLED_KEY, '0') === '1' && syncManager.endpoint && syncManager.secret) {
             setTimeout(() => syncManager.executeSync(), 2000);
         }
 
