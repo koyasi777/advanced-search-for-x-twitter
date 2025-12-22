@@ -3029,17 +3029,17 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         /* Header Sync Button */
         .adv-header-sync-btn {
             background: transparent; border: none; cursor: pointer; padding: 0;
-            width: 32px; height: 32px; border-radius: 50%;
+            width: 28px; height: 28px; border-radius: 50%; /* 32px -> 28px */
             display: flex; align-items: center; justify-content: center;
             color: var(--modal-text-secondary, #8b98a5);
             transition: background-color .2s, color .2s;
-            margin-right: 4px;
+            margin: 0; /* マージンは親のflex gapに任せる */
         }
         .adv-header-sync-btn:hover {
             background-color: var(--modal-button-hover-bg, rgba(231,233,234,.1));
             color: var(--modal-primary-color, #1d9bf0);
         }
-        .adv-header-sync-btn svg { width: 18px; height: 18px; fill: currentColor; }
+        .adv-header-sync-btn svg { width: 16px; height: 16px; fill: currentColor; } /* 18px -> 16px */
         .adv-header-sync-btn.spinning svg { animation: adv-spin 1s linear infinite; }
         @keyframes adv-spin { 100% { transform: rotate(360deg); } }
 
@@ -4517,11 +4517,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     <button id="adv-settings-button" class="adv-settings-btn" type="button" data-i18n-title="tooltipSettings">
                         ${SETTINGS_SVG}
                     </button>
-                </div>
-                <div class="adv-secret-wrap">
                     <button id="adv-header-sync-btn" class="adv-header-sync-btn" title="Sync Now" style="display:none;">
                         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-4.41 3.59-8 8-8 4.41 0 8 3.59 8 8 0 4.41-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" transform="scale(0)"/><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
                     </button>
+                    </div>
+                <div class="adv-secret-wrap">
                     <button id="adv-secret-btn" class="adv-secret-btn off" data-i18n-title="tooltipSecret" title="">
                         <span class="dot" aria-hidden="true"></span>
                         <span id="adv-secret-label" data-i18n="secretMode"></span>
