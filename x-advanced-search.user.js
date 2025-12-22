@@ -243,10 +243,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 placeholderSettingsJSON: "Paste backup JSON here...",
                 tooltipSettings: "Open settings",
                 toastImported: "Imported.",
+                toastExported: "Exported to file.",
                 alertInvalidJSON: "Invalid JSON file.",
                 alertInvalidData: "Invalid data format.",
                 alertInvalidApp: 'This file is not a valid backup for "Advanced Search for X".',
-                toastExported: "Exported to file.",
                 buttonReset: "Reset all data",
                 confirmResetAll: "Reset all data? This cannot be undone.",
                 toastReset: "All data has been reset.",
@@ -284,6 +284,33 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 FT_SETTINGS_DISPLAY_MODE_FULL: 'Full path',
                 FT_CONFIRM_DELETE_TAG_MSG: 'Delete tag "{tagName}"?\nFavorites with this tag will become "Uncategorized".',
                 FT_SETTINGS_BUTTON_TITLE: 'Favorite Tag Settings',
+
+                /* --- Cloud Sync --- */
+                settingsTitleSync: "Cloud Sync",
+                chipBeta: "Beta",
+                labelSyncEndpoint: "Endpoint URL",
+                placeholderSyncEndpoint: "https://your-worker.workers.dev",
+                labelSyncId: "Sync ID (UUID)",
+                placeholderSyncId: "Paste or Generate UUID",
+                buttonGenerate: "Generate",
+                labelSyncPassword: "Encryption Password",
+                placeholderSyncPassword: "Strong password required",
+                tooltipShowHidePassword: "Show/Hide Password",
+                noteSyncEncryption: "* Data is encrypted locally before upload. The server never sees this password.",
+                labelSyncStatus: "Status: ",
+                buttonSyncNow: "Sync Now",
+
+                /* Sync Status Messages */
+                toastSynced: "Cloud Sync Complete.",
+                toastSyncFailed: "Cloud Sync Failed.",
+                syncStatusIdle: "Idle",
+                syncStatusNotConfigured: "Not Configured",
+                syncStatusConnecting: "Connecting...",
+                syncStatusPulling: "Pulling...",
+                syncStatusPushing: "Pushing...",
+                syncStatusMerging: "Merging...",
+                syncStatusSynced: "Synced",
+                syncStatusError: "Error",
             },
             'ja': {
                 modalTitle: "高度な検索",
@@ -514,6 +541,33 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 FT_SETTINGS_DISPLAY_MODE_FULL: 'フルパス (full)',
                 FT_CONFIRM_DELETE_TAG_MSG: 'タグ「{tagName}」を削除しますか？\nこのタグが付いていたお気に入りは未分類になります。',
                 FT_SETTINGS_BUTTON_TITLE: 'お気に入りタグ設定',
+
+                /* --- Cloud Sync --- */
+                settingsTitleSync: "クラウド同期",
+                chipBeta: "ベータ",
+                labelSyncEndpoint: "エンドポイント URL",
+                placeholderSyncEndpoint: "https://your-worker.workers.dev",
+                labelSyncId: "同期 ID (UUID)",
+                placeholderSyncId: "UUIDを貼り付け、または生成",
+                buttonGenerate: "生成",
+                labelSyncPassword: "暗号化パスワード",
+                placeholderSyncPassword: "強力なパスワードを入力",
+                tooltipShowHidePassword: "パスワードを表示/非表示",
+                noteSyncEncryption: "* データはアップロード前にローカルで暗号化されます。サーバーがパスワードを知ることはありません。",
+                labelSyncStatus: "ステータス: ",
+                buttonSyncNow: "今すぐ同期",
+
+                /* Sync Status Messages */
+                toastSynced: "同期しました。",
+                toastSyncFailed: "同期に失敗しました。",
+                syncStatusIdle: "待機中",
+                syncStatusNotConfigured: "未設定",
+                syncStatusConnecting: "接続中...",
+                syncStatusPulling: "受信中...",
+                syncStatusPushing: "送信中...",
+                syncStatusMerging: "マージ中...",
+                syncStatusSynced: "同期完了",
+                syncStatusError: "エラー",
             },
             'zh-CN': {
                 modalTitle: "高级搜索",
@@ -743,6 +797,33 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 FT_SETTINGS_DISPLAY_MODE_FULL: '完整路径 (full)',
                 FT_CONFIRM_DELETE_TAG_MSG: '确定要删除标签“{tagName}”吗？\n带有此标签的收藏将变为“未分类”。',
                 FT_SETTINGS_BUTTON_TITLE: '收藏标签设置',
+
+                /* --- Cloud Sync --- */
+                settingsTitleSync: "云同步",
+                chipBeta: "Beta",
+                labelSyncEndpoint: "端点 URL",
+                placeholderSyncEndpoint: "https://your-worker.workers.dev",
+                labelSyncId: "同步 ID (UUID)",
+                placeholderSyncId: "粘贴或生成 UUID",
+                buttonGenerate: "生成",
+                labelSyncPassword: "加密密码",
+                placeholderSyncPassword: "请输入强密码",
+                tooltipShowHidePassword: "显示/隐藏密码",
+                noteSyncEncryption: "* 数据在上传前会在本地加密。服务器无法获知此密码。",
+                labelSyncStatus: "状态: ",
+                buttonSyncNow: "立即同步",
+
+                /* Sync Status Messages */
+                toastSynced: "同步完成。",
+                toastSyncFailed: "同步失败。",
+                syncStatusIdle: "空闲",
+                syncStatusNotConfigured: "未配置",
+                syncStatusConnecting: "连接中...",
+                syncStatusPulling: "拉取中...",
+                syncStatusPushing: "推送中...",
+                syncStatusMerging: "合并中...",
+                syncStatusSynced: "已同步",
+                syncStatusError: "错误",
             },
             'zh-TW': {
                 modalTitle: "進階搜尋",
@@ -972,6 +1053,33 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 FT_SETTINGS_DISPLAY_MODE_FULL: '完整路徑 (full)',
                 FT_CONFIRM_DELETE_TAG_MSG: '確定要刪除標籤「{tagName}」嗎？\n帶有此標籤的收藏將變為「未分類」。',
                 FT_SETTINGS_BUTTON_TITLE: '收藏標籤設定',
+
+                /* --- Cloud Sync --- */
+                settingsTitleSync: "雲端同步",
+                chipBeta: "Beta",
+                labelSyncEndpoint: "端點 URL",
+                placeholderSyncEndpoint: "https://your-worker.workers.dev",
+                labelSyncId: "同步 ID (UUID)",
+                placeholderSyncId: "貼上或產生 UUID",
+                buttonGenerate: "產生",
+                labelSyncPassword: "加密密碼",
+                placeholderSyncPassword: "請輸入高強度密碼",
+                tooltipShowHidePassword: "顯示/隱藏密碼",
+                noteSyncEncryption: "* 資料在上傳前會於本地加密。伺服器無法得知此密碼。",
+                labelSyncStatus: "狀態: ",
+                buttonSyncNow: "立即同步",
+
+                /* Sync Status Messages */
+                toastSynced: "同步完成。",
+                toastSyncFailed: "同步失敗。",
+                syncStatusIdle: "閒置",
+                syncStatusNotConfigured: "未設定",
+                syncStatusConnecting: "連線中...",
+                syncStatusPulling: "下載中...",
+                syncStatusPushing: "上傳中...",
+                syncStatusMerging: "合併中...",
+                syncStatusSynced: "已同步",
+                syncStatusError: "錯誤",
             },
             'ko': {
                 modalTitle: "고급 검색",
@@ -1163,10 +1271,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 placeholderSettingsJSON: "백업 JSON을 여기에 붙여넣으세요...",
                 tooltipSettings: "설정 열기",
                 toastImported: "가져오기가 완료되었습니다.",
+                toastExported: "파일로 내보냈습니다.",
                 alertInvalidJSON: "유효하지 않은 JSON 파일입니다.",
                 alertInvalidData: "유효하지 않은 데이터 형식입니다.",
                 alertInvalidApp: '"Advanced Search for X"의 백업 파일이 아닙니다.',
-                toastExported: "파일로 내보냈습니다.",
                 buttonReset: "모든 데이터 초기화",
                 confirmResetAll: "모든 데이터를 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
                 toastReset: "모든 데이터가 초기화되었습니다.",
@@ -1204,6 +1312,33 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 FT_SETTINGS_DISPLAY_MODE_FULL: '전체 경로 (full)',
                 FT_CONFIRM_DELETE_TAG_MSG: '태그 "{tagName}"을(를) 삭제하시겠습니까?\n이 태그가 지정된 항목은 "미분류"가 됩니다.',
                 FT_SETTINGS_BUTTON_TITLE: '태그 설정',
+
+                /* --- Cloud Sync --- */
+                settingsTitleSync: "클라우드 동기화",
+                chipBeta: "베타",
+                labelSyncEndpoint: "엔드포인트 URL",
+                placeholderSyncEndpoint: "https://your-worker.workers.dev",
+                labelSyncId: "동기화 ID (UUID)",
+                placeholderSyncId: "UUID 붙여넣기 또는 생성",
+                buttonGenerate: "생성",
+                labelSyncPassword: "암호화 비밀번호",
+                placeholderSyncPassword: "강력한 비밀번호 필요",
+                tooltipShowHidePassword: "비밀번호 표시/숨기기",
+                noteSyncEncryption: "* 데이터는 업로드 전 로컬에서 암호화됩니다. 서버는 비밀번호를 알 수 없습니다.",
+                labelSyncStatus: "상태: ",
+                buttonSyncNow: "지금 동기화",
+
+                /* Sync Status Messages */
+                toastSynced: "동기화 완료.",
+                toastSyncFailed: "동기화 실패.",
+                syncStatusIdle: "대기 중",
+                syncStatusNotConfigured: "설정되지 않음",
+                syncStatusConnecting: "연결 중...",
+                syncStatusPulling: "가져오는 중...",
+                syncStatusPushing: "보내는 중...",
+                syncStatusMerging: "병합 중...",
+                syncStatusSynced: "동기화됨",
+                syncStatusError: "오류",
             },
             'fr': {
                 modalTitle: "Recherche avancée",
@@ -1433,6 +1568,33 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 FT_SETTINGS_DISPLAY_MODE_FULL: 'Chemin complet',
                 FT_CONFIRM_DELETE_TAG_MSG: 'Supprimer le tag "{tagName}" ?\nLes favoris associés deviendront "Non classé".',
                 FT_SETTINGS_BUTTON_TITLE: 'Réglages des tags',
+
+                /* --- Cloud Sync --- */
+                settingsTitleSync: "Synchro Cloud",
+                chipBeta: "Bêta",
+                labelSyncEndpoint: "URL Endpoint",
+                placeholderSyncEndpoint: "https://your-worker.workers.dev",
+                labelSyncId: "ID de Synchro (UUID)",
+                placeholderSyncId: "Coller ou générer UUID",
+                buttonGenerate: "Générer",
+                labelSyncPassword: "Mot de passe de chiffrement",
+                placeholderSyncPassword: "Mot de passe fort requis",
+                tooltipShowHidePassword: "Afficher/Masquer",
+                noteSyncEncryption: "* Données chiffrées localement avant envoi. Le serveur ne voit jamais ce mot de passe.",
+                labelSyncStatus: "Statut : ",
+                buttonSyncNow: "Synchroniser",
+
+                /* Sync Status Messages */
+                toastSynced: "Synchronisation terminée.",
+                toastSyncFailed: "Échec de la synchronisation.",
+                syncStatusIdle: "Inactif",
+                syncStatusNotConfigured: "Non configuré",
+                syncStatusConnecting: "Connexion...",
+                syncStatusPulling: "Réception...",
+                syncStatusPushing: "Envoi...",
+                syncStatusMerging: "Fusion...",
+                syncStatusSynced: "Synchronisé",
+                syncStatusError: "Erreur",
             },
             'es': {
                 modalTitle: "Búsqueda avanzada",
@@ -1662,6 +1824,33 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 FT_SETTINGS_DISPLAY_MODE_FULL: 'Ruta completa (full)',
                 FT_CONFIRM_DELETE_TAG_MSG: '¿Eliminar la etiqueta "{tagName}"?\nLos favoritos con esta etiqueta pasarán a "Sin categoría".',
                 FT_SETTINGS_BUTTON_TITLE: 'Configuración de etiquetas',
+
+                /* --- Cloud Sync --- */
+                settingsTitleSync: "Sincronización en la nube",
+                chipBeta: "Beta",
+                labelSyncEndpoint: "URL del Endpoint",
+                placeholderSyncEndpoint: "https://your-worker.workers.dev",
+                labelSyncId: "ID de Sincronización (UUID)",
+                placeholderSyncId: "Pegar o generar UUID",
+                buttonGenerate: "Generar",
+                labelSyncPassword: "Contraseña de cifrado",
+                placeholderSyncPassword: "Se requiere contraseña segura",
+                tooltipShowHidePassword: "Mostrar/Ocultar",
+                noteSyncEncryption: "* Los datos se cifran localmente antes de subir. El servidor nunca ve esta contraseña.",
+                labelSyncStatus: "Estado: ",
+                buttonSyncNow: "Sincronizar ahora",
+
+                /* Sync Status Messages */
+                toastSynced: "Sincronización completada.",
+                toastSyncFailed: "Fallo de sincronización.",
+                syncStatusIdle: "Inactivo",
+                syncStatusNotConfigured: "No configurado",
+                syncStatusConnecting: "Conectando...",
+                syncStatusPulling: "Recibiendo...",
+                syncStatusPushing: "Enviando...",
+                syncStatusMerging: "Fusionando...",
+                syncStatusSynced: "Sincronizado",
+                syncStatusError: "Error",
             },
             'de': {
                 modalTitle: "Erweiterte Suche",
@@ -1891,6 +2080,33 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 FT_SETTINGS_DISPLAY_MODE_FULL: 'Voller Pfad (full)',
                 FT_CONFIRM_DELETE_TAG_MSG: 'Tag "{tagName}" löschen?\nFavoriten mit diesem Tag werden "Unkategorisiert".',
                 FT_SETTINGS_BUTTON_TITLE: 'Tag-Einstellungen',
+
+                /* --- Cloud Sync --- */
+                settingsTitleSync: "Cloud-Sync",
+                chipBeta: "Beta",
+                labelSyncEndpoint: "Endpunkt-URL",
+                placeholderSyncEndpoint: "https://your-worker.workers.dev",
+                labelSyncId: "Sync-ID (UUID)",
+                placeholderSyncId: "UUID einfügen oder generieren",
+                buttonGenerate: "Generieren",
+                labelSyncPassword: "Verschlüsselungspasswort",
+                placeholderSyncPassword: "Starkes Passwort erforderlich",
+                tooltipShowHidePassword: "Passwort anzeigen/verbergen",
+                noteSyncEncryption: "* Daten werden vor dem Upload lokal verschlüsselt. Der Server sieht dieses Passwort nie.",
+                labelSyncStatus: "Status: ",
+                buttonSyncNow: "Jetzt synchronisieren",
+
+                /* Sync Status Messages */
+                toastSynced: "Synchronisierung abgeschlossen.",
+                toastSyncFailed: "Synchronisierung fehlgeschlagen.",
+                syncStatusIdle: "Leerlauf",
+                syncStatusNotConfigured: "Nicht konfiguriert",
+                syncStatusConnecting: "Verbinden...",
+                syncStatusPulling: "Empfangen...",
+                syncStatusPushing: "Senden...",
+                syncStatusMerging: "Zusammenführen...",
+                syncStatusSynced: "Synchronisiert",
+                syncStatusError: "Fehler",
             },
             'pt-BR': {
                 modalTitle: "Busca avançada",
@@ -2120,6 +2336,33 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 FT_SETTINGS_DISPLAY_MODE_FULL: 'Caminho completo (full)',
                 FT_CONFIRM_DELETE_TAG_MSG: 'Excluir tag "{tagName}"?\nFavoritos com esta tag ficarão "Sem categoria".',
                 FT_SETTINGS_BUTTON_TITLE: 'Configurações de tags',
+
+                /* --- Cloud Sync --- */
+                settingsTitleSync: "Sincronização na nuvem",
+                chipBeta: "Beta",
+                labelSyncEndpoint: "URL do Endpoint",
+                placeholderSyncEndpoint: "https://your-worker.workers.dev",
+                labelSyncId: "ID de Sincronização (UUID)",
+                placeholderSyncId: "Colar ou gerar UUID",
+                buttonGenerate: "Gerar",
+                labelSyncPassword: "Senha de criptografia",
+                placeholderSyncPassword: "Senha forte necessária",
+                tooltipShowHidePassword: "Mostrar/Ocultar senha",
+                noteSyncEncryption: "* Os dados são criptografados localmente antes do envio. O servidor nunca vê esta senha.",
+                labelSyncStatus: "Status: ",
+                buttonSyncNow: "Sincronizar agora",
+
+                /* Sync Status Messages */
+                toastSynced: "Sincronização concluída.",
+                toastSyncFailed: "Falha na sincronização.",
+                syncStatusIdle: "Ocioso",
+                syncStatusNotConfigured: "Não configurado",
+                syncStatusConnecting: "Conectando...",
+                syncStatusPulling: "Baixando...",
+                syncStatusPushing: "Enviando...",
+                syncStatusMerging: "Mesclando...",
+                syncStatusSynced: "Sincronizado",
+                syncStatusError: "Erro",
             },
             'ru': {
                 modalTitle: "Расширенный поиск",
@@ -2349,6 +2592,33 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 FT_SETTINGS_DISPLAY_MODE_FULL: 'Полный путь (full)',
                 FT_CONFIRM_DELETE_TAG_MSG: 'Удалить тег "{tagName}"?\nЭлементы с этим тегом станут "Без категории".',
                 FT_SETTINGS_BUTTON_TITLE: 'Настройка тегов',
+
+                /* --- Cloud Sync --- */
+                settingsTitleSync: "Облачная синхронизация",
+                chipBeta: "Бета",
+                labelSyncEndpoint: "URL конечной точки",
+                placeholderSyncEndpoint: "https://your-worker.workers.dev",
+                labelSyncId: "ID синхронизации (UUID)",
+                placeholderSyncId: "Вставьте или сгенерируйте UUID",
+                buttonGenerate: "Создать",
+                labelSyncPassword: "Пароль шифрования",
+                placeholderSyncPassword: "Требуется надежный пароль",
+                tooltipShowHidePassword: "Показать/Скрыть пароль",
+                noteSyncEncryption: "* Данные шифруются локально перед отправкой. Сервер не видит этот пароль.",
+                labelSyncStatus: "Статус: ",
+                buttonSyncNow: "Синхронизировать",
+
+                /* Sync Status Messages */
+                toastSynced: "Синхронизация завершена.",
+                toastSyncFailed: "Ошибка синхронизации.",
+                syncStatusIdle: "Ожидание",
+                syncStatusNotConfigured: "Не настроено",
+                syncStatusConnecting: "Подключение...",
+                syncStatusPulling: "Получение...",
+                syncStatusPushing: "Отправка...",
+                syncStatusMerging: "Объединение...",
+                syncStatusSynced: "Синхронизировано",
+                syncStatusError: "Ошибка",
             }
         },
         lang: 'en',
@@ -3042,6 +3312,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         .adv-header-sync-btn svg { width: 16px; height: 16px; fill: currentColor; } /* 18px -> 16px */
         .adv-header-sync-btn.spinning svg { animation: adv-spin 1s linear infinite; }
         @keyframes adv-spin { 100% { transform: rotate(360deg); } }
+
+        /* 同期ステータス用カラー */
+        .adv-header-sync-btn.success { color: #17bf63 !important; } /* Twitter Green */
+        .adv-header-sync-btn.error { color: #f4212e !important; }   /* Twitter Red */
 
         .adv-list { display:flex; flex-direction:column; gap:8px; }
         .adv-item { position: relative; border:1px solid var(--modal-input-border,#38444d); background:var(--modal-input-bg,#202327); border-radius:8px; padding:8px; display:flex; gap:8px; align-items:flex-start; }
@@ -4895,10 +5169,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
                       <div class="adv-settings-section-header" style="display:flex; justify-content:space-between; align-items:center; margin-top:24px; border-bottom:none; padding-bottom:0;">
                           <div style="display:flex; align-items:center; gap:6px;">
-                              <span>Cloud Sync</span>
-                              <span class="adv-chip primary" style="font-size:10px; padding:2px 6px; height:auto; cursor:default;">Beta</span>
+                              <span data-i18n="settingsTitleSync">Cloud Sync</span>
+                              <span class="adv-chip primary" style="font-size:10px; padding:2px 6px; height:auto; cursor:default;" data-i18n="chipBeta">Beta</span>
                           </div>
-                          <label class="adv-switch" title="Enable Cloud Sync">
+                          <label class="adv-switch" title="" data-i18n-title="settingsTitleSync">
                               <input id="adv-settings-sync-enable" type="checkbox">
                               <span class="adv-slider"></span>
                           </label>
@@ -4907,36 +5181,36 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                       <div id="adv-sync-settings-container" style="display:none; margin-top:7px; margin-bottom:4px; padding:16px; background:rgba(128,128,128,0.05); border-radius:12px; border:1px solid var(--modal-border);">
 
                           <div class="adv-settings-group" style="margin-bottom:16px;">
-                              <label style="font-size:13px; margin-bottom:6px; color:var(--modal-text-primary);">Endpoint URL</label>
-                              <input type="url" id="adv-sync-endpoint" placeholder="https://your-worker.workers.dev"
+                              <label style="font-size:13px; margin-bottom:6px; color:var(--modal-text-primary);" data-i18n="labelSyncEndpoint">Endpoint URL</label>
+                              <input type="url" id="adv-sync-endpoint" data-i18n-placeholder="placeholderSyncEndpoint" placeholder="https://your-worker.workers.dev"
                                   style="width:100%; box-sizing:border-box; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:13px; padding:10px 12px; border-radius:6px;">
                           </div>
 
                           <div class="adv-settings-group" style="margin-bottom:16px;">
-                              <label style="font-size:13px; margin-bottom:6px; color:var(--modal-text-primary);">Sync ID (UUID)</label>
+                              <label style="font-size:13px; margin-bottom:6px; color:var(--modal-text-primary);" data-i18n="labelSyncId">Sync ID (UUID)</label>
                               <div style="display:flex; gap:8px;">
-                                  <input type="text" id="adv-sync-id" placeholder="Paste or Generate UUID"
+                                  <input type="text" id="adv-sync-id" data-i18n-placeholder="placeholderSyncId" placeholder="Paste or Generate UUID"
                                       style="flex:1; min-width:0; box-sizing:border-box; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:13px; padding:10px 12px; border-radius:6px; letter-spacing:0.5px;">
-                                  <button id="adv-sync-gen-id-btn" type="button" class="adv-modal-button"
+                                  <button id="adv-sync-gen-id-btn" type="button" class="adv-modal-button" data-i18n="buttonGenerate"
                                       style="white-space:nowrap; padding:0 16px; border-radius:6px; font-size:13px;">Generate</button>
                               </div>
                           </div>
 
                           <div class="adv-settings-group">
-                              <label style="font-size:13px; margin-bottom:6px; color:var(--modal-text-primary);">Encryption Password</label>
+                              <label style="font-size:13px; margin-bottom:6px; color:var(--modal-text-primary);" data-i18n="labelSyncPassword">Encryption Password</label>
                               <div style="position:relative; display:flex; align-items:center;">
-                                  <input type="password" id="adv-sync-secret" placeholder="Strong password required"
+                                  <input type="password" id="adv-sync-secret" data-i18n-placeholder="placeholderSyncPassword" placeholder="Strong password required"
                                       style="width:100%; box-sizing:border-box; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:13px; padding:10px 40px 10px 12px; border-radius:6px; letter-spacing:1px;">
 
                                   <button type="button" id="adv-sync-secret-toggle" class="adv-modal-button"
                                       style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; padding:4px; height:auto; color:var(--modal-text-secondary); cursor:pointer; display:flex; align-items:center; justify-content:center;"
-                                      title="Show/Hide Password">
+                                      data-i18n-title="tooltipShowHidePassword" title="Show/Hide Password">
                                       <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:currentColor;">
                                           <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"></path>
                                       </svg>
                                   </button>
                               </div>
-                              <div style="font-size:11px; color:var(--modal-text-secondary); margin-top:6px; line-height:1.4;">
+                              <div style="font-size:11px; color:var(--modal-text-secondary); margin-top:6px; line-height:1.4;" data-i18n="noteSyncEncryption">
                                   * Data is encrypted locally before upload. The server never sees this password.
                               </div>
                           </div>
@@ -4944,9 +5218,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                           <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--modal-border); display:flex; justify-content:space-between; align-items:center;">
                               <div id="adv-sync-status" style="font-size:12px; color:var(--modal-text-secondary); font-weight:700; display:flex; align-items:center; gap:6px;">
                                   <span style="width:8px; height:8px; background:var(--modal-text-secondary); border-radius:50%; display:inline-block; opacity:0.5;"></span>
-                                  Status: Idle
+                                  <span data-i18n="labelSyncStatus">Status: </span><span id="adv-sync-status-text" data-i18n="syncStatusIdle">Idle</span>
                               </div>
-                              <button id="adv-sync-now-btn" type="button" class="adv-modal-button primary" style="padding:8px 20px; border-radius:9999px;">Sync Now</button>
+                              <button id="adv-sync-now-btn" type="button" class="adv-modal-button primary" style="padding:8px 20px; border-radius:9999px;" data-i18n="buttonSyncNow">Sync Now</button>
                           </div>
                       </div>
 
@@ -12783,11 +13057,18 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 return merged;
             }
 
-            updateStatus(msg) {
-                const el = document.getElementById('adv-sync-status');
-                if (el) el.textContent = `Status: ${msg}`;
+            updateStatus(msgKey, rawMsg = null) {
+                // メッセージキー(i18n)を受け取る仕様に変更。rawMsgがあればそのまま表示(エラー詳細など)
+                const text = rawMsg ? rawMsg : (msgKey ? i18n.t(msgKey) : '');
 
-                // ヘッダーアイコンのアニメーション制御
+                // HTML構造変更に伴い、"Status: " ラベルとは別の <span> にテキストを入れる
+                const el = document.getElementById('adv-sync-status-text');
+                if (el) el.textContent = text;
+
+                // 旧構造へのフォールバック（念のため）
+                const oldEl = document.getElementById('adv-sync-status');
+                if (oldEl && !el) oldEl.textContent = `${i18n.t('labelSyncStatus')} ${text}`;
+
                 if (headerSyncBtn) {
                     if (this.isSyncing) headerSyncBtn.classList.add('spinning');
                     else headerSyncBtn.classList.remove('spinning');
@@ -12800,24 +13081,36 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 // マスター設定がOFFなら中止
                 if (GM_getValue(SYNC_ENABLED_KEY, '0') !== '1') return;
 
-                // 開始時刻を記録し、演出用の最低時間を定義
                 const startTime = Date.now();
-                const MIN_DURATION = 1500; // 1.5秒間は回し続ける
+                const MIN_DURATION = 2000;
 
                 await this.readyPromise;
 
                 if (!this.endpoint || !this.syncId || !this.encryptionKey) {
-                    this.updateStatus('Not Configured');
+                    this.updateStatus('syncStatusNotConfigured');
+                    if (headerSyncBtn) {
+                        headerSyncBtn.classList.add('error');
+                        headerSyncBtn.title = i18n.t('toastSyncFailed');
+                        setTimeout(() => headerSyncBtn.classList.remove('error'), 3000);
+                    }
+                    showToast(i18n.t('toastSyncFailed'));
                     return;
                 }
 
                 this.isSyncing = true;
-                this.updateStatus('Connecting...');
+                this.updateStatus('syncStatusConnecting');
+
+                if (headerSyncBtn) {
+                    headerSyncBtn.classList.remove('success', 'error');
+                    headerSyncBtn.title = i18n.t('syncStatusConnecting');
+                }
+
+                let success = false;
+                let errorMsg = "";
 
                 try {
                     // 1. Check Server (GET)
                     const localRev = parseInt(GM_getValue(DATA_REVISION_KEY, '0')) || 0;
-                    // 変更があるか確認
                     const isDirty = GM_getValue(DIRTY_KEY, '0') === '1';
 
                     const headers = {
@@ -12825,7 +13118,6 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                         'X-Sync-ID': this.syncId
                     };
 
-                    // URLにタイムスタンプを付与してキャッシュを回避する
                     const cacheBuster = (this.endpoint.includes('?') ? '&' : '?') + 't=' + Date.now();
                     const getRes = await gmFetch(this.endpoint + cacheBuster, { method: 'GET', headers });
 
@@ -12833,124 +13125,123 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                         const serverWrapper = JSON.parse(getRes.responseText);
                         const serverRev = serverWrapper.revision || 0;
 
-                        // Case A: Pull (Server is newer)
                         if (serverRev > localRev) {
-                            this.updateStatus('Pulling...');
+                            this.updateStatus('syncStatusPulling');
                             if (serverWrapper.data) {
-                                // 署名は「更新前のリビジョン(N-1)」で行われているため、1引いて検証する
                                 const decrypted = await this.decryptPayload(serverWrapper.data, serverRev - 1);
-
-                                // 現在のローカルデータとマージしてから保存
                                 const currentLocal = JSON.parse(buildCloudSyncPayload());
                                 const merged = this._mergeData(currentLocal, decrypted);
-
                                 const importSuccess = applySettingsImportJSON(JSON.stringify(merged));
                                 if (importSuccess) {
                                     GM_setValue(DATA_REVISION_KEY, serverRev.toString());
-                                    // ★追加: Pull成功＝最新になったのでDirtyフラグを消す
                                     GM_deleteValue(DIRTY_KEY);
-
-                                    this.updateStatus('Synced (Pulled)');
-                                    showToast(i18n.t('updated'));
-                                    return;
+                                    this.updateStatus('syncStatusSynced');
+                                    success = true;
                                 } else {
                                     throw new Error("Import failed");
                                 }
                             }
-                        }
-                        // Case B: Synced check
-                        // リビジョンが同じでも、ローカルに変更(isDirty)があればここに入らずPushへ進む
-                        else if (serverRev === localRev && !isDirty) {
-                            this.updateStatus('Idle (Synced)');
-                            return;
+                        } else if (serverRev === localRev && !isDirty) {
+                            this.updateStatus('syncStatusIdle');
+                            success = true;
                         }
                     }
 
-                    // 2. Push (Serverが古い、またはリビジョン同じだがローカルに変更がある場合)
-                    this.updateStatus('Pushing...');
-                    const rawData = JSON.parse(buildCloudSyncPayload());
-                    const encryptedBody = await this.encryptPayload(rawData, localRev);
+                    // 2. PushIfNeeded
+                    if (!success) {
+                        this.updateStatus('syncStatusPushing');
+                        const rawData = JSON.parse(buildCloudSyncPayload());
+                        const encryptedBody = await this.encryptPayload(rawData, localRev);
 
-                    // 送信前にペイロードサイズをチェック (Worker制限: 50MB)
-                    const payloadString = JSON.stringify(encryptedBody);
-                    if (new Blob([payloadString]).size > 49 * 1024 * 1024) {
-                        throw new Error("Payload too large (>50MB). Sync aborted.");
-                    }
-
-                    const postRes = await gmFetch(this.endpoint, {
-                        method: 'POST',
-                        headers,
-                        body: payloadString // 文字列化したものを送る
-                    });
-
-                    if (postRes.status === 200) {
-                        // Success
-                        const resJson = JSON.parse(postRes.responseText);
-                        if (resJson.newRevision) {
-                            GM_setValue(DATA_REVISION_KEY, resJson.newRevision.toString());
-                            // Push成功したのでDirtyフラグを消す
-                            GM_deleteValue(DIRTY_KEY);
+                        const payloadString = JSON.stringify(encryptedBody);
+                        if (new Blob([payloadString]).size > 49 * 1024 * 1024) {
+                            throw new Error("Payload too large (>50MB). Sync aborted.");
                         }
-                        this.updateStatus('Synced (Pushed)');
-                        showToast(i18n.t('toastSaved'));
-                    }
-                    else if (postRes.status === 409) {
-                        // Conflict: Server has newer data
-                        this.updateStatus('Merging...');
-                        console.warn('[Sync] Conflict detected. Auto-merging...');
 
-                        const conflictBody = JSON.parse(postRes.responseText);
-                        const serverEncryptedData = conflictBody.serverData;
-                        const serverCurrentRev = conflictBody.currentRevision;
+                        const postRes = await gmFetch(this.endpoint, {
+                            method: 'POST',
+                            headers,
+                            body: payloadString
+                        });
 
-                        if (serverEncryptedData) {
-                            // serverCurrentRev を渡して署名検証を行う
-                            const serverData = await this.decryptPayload(serverEncryptedData, serverCurrentRev - 1);
-                            const currentLocal = JSON.parse(buildCloudSyncPayload());
-                            const merged = this._mergeData(currentLocal, serverData);
-
-                            applySettingsImportJSON(JSON.stringify(merged));
-
-                            // Retry Push
-                            const mergedEncrypted = await this.encryptPayload(merged, serverCurrentRev);
-
-                            const retryRes = await gmFetch(this.endpoint, {
-                                method: 'POST',
-                                headers,
-                                body: JSON.stringify(mergedEncrypted)
-                            });
-
-                            if (retryRes.status === 200) {
-                                const retryJson = JSON.parse(retryRes.responseText);
-                                GM_setValue(DATA_REVISION_KEY, retryJson.newRevision.toString());
-                                // マージPush成功したのでDirtyフラグを消す
+                        if (postRes.status === 200) {
+                            const resJson = JSON.parse(postRes.responseText);
+                            if (resJson.newRevision) {
+                                GM_setValue(DATA_REVISION_KEY, resJson.newRevision.toString());
                                 GM_deleteValue(DIRTY_KEY);
-
-                                this.updateStatus('Synced (Merged)');
-                                showToast(i18n.t('updated'));
-                            } else {
-                                throw new Error(`Merge retry failed: ${retryRes.status}`);
                             }
+                            this.updateStatus('syncStatusSynced');
+                            success = true;
+                        } else if (postRes.status === 409) {
+                            this.updateStatus('syncStatusMerging');
+                            console.warn('[Sync] Conflict detected. Auto-merging...');
+                            const conflictBody = JSON.parse(postRes.responseText);
+                            const serverEncryptedData = conflictBody.serverData;
+                            const serverCurrentRev = conflictBody.currentRevision;
+
+                            if (serverEncryptedData) {
+                                const serverData = await this.decryptPayload(serverEncryptedData, serverCurrentRev - 1);
+                                const currentLocal = JSON.parse(buildCloudSyncPayload());
+                                const merged = this._mergeData(currentLocal, serverData);
+                                applySettingsImportJSON(JSON.stringify(merged));
+
+                                const mergedEncrypted = await this.encryptPayload(merged, serverCurrentRev);
+                                const retryRes = await gmFetch(this.endpoint, {
+                                    method: 'POST',
+                                    headers,
+                                    body: JSON.stringify(mergedEncrypted)
+                                });
+
+                                if (retryRes.status === 200) {
+                                    const retryJson = JSON.parse(retryRes.responseText);
+                                    GM_setValue(DATA_REVISION_KEY, retryJson.newRevision.toString());
+                                    GM_deleteValue(DIRTY_KEY);
+                                    this.updateStatus('syncStatusSynced');
+                                    success = true;
+                                } else {
+                                    throw new Error(`Merge retry failed: ${retryRes.status}`);
+                                }
+                            }
+                        } else {
+                            const errorText = postRes.responseText;
+                            throw new Error(`Upload failed: ${postRes.status} - ${errorText}`);
                         }
-                    } else {
-                        const errorText = postRes.responseText;
-                        console.error('[Sync] Server Error Body:', errorText);
-                        throw new Error(`Upload failed: ${postRes.status} - ${errorText}`);
                     }
 
                 } catch (e) {
                     console.error('[Sync] Error:', e);
-                    this.updateStatus(e.message || 'Error');
+                    errorMsg = e.message || 'Error';
+                    this.updateStatus('syncStatusError', `${i18n.t('syncStatusError')}: ${errorMsg}`);
+                    success = false;
                 } finally {
-                    // 最低時間が経過するまで待機してからスピンを止める
                     const elapsed = Date.now() - startTime;
                     const remaining = MIN_DURATION - elapsed;
                     if (remaining > 0) {
                         await new Promise(r => setTimeout(r, remaining));
                     }
+
                     this.isSyncing = false;
-                    // 処理完了時に確実に回転アニメーションを削除する
-                    if (headerSyncBtn) headerSyncBtn.classList.remove('spinning');
+
+                    if (headerSyncBtn) {
+                        headerSyncBtn.classList.remove('spinning');
+
+                        if (success) {
+                            headerSyncBtn.classList.add('success');
+                            headerSyncBtn.title = i18n.t('toastSynced');
+                            showToast(i18n.t('toastSynced'));
+                        } else {
+                            headerSyncBtn.classList.add('error');
+                            headerSyncBtn.title = `${i18n.t('toastSyncFailed')}: ${errorMsg}`;
+                            showToast(i18n.t('toastSyncFailed'));
+                        }
+
+                        setTimeout(() => {
+                            if (headerSyncBtn) {
+                                headerSyncBtn.classList.remove('success', 'error');
+                                headerSyncBtn.title = i18n.t('buttonSyncNow');
+                            }
+                        }, 3000);
+                    }
                 }
             }
         }
