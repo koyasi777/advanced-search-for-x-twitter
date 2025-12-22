@@ -3131,7 +3131,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         .adv-form-group label{display:block;margin-bottom:6px;font-size:14px;font-weight:700;color:var(--modal-text-secondary,#8b98a5)}
         .adv-form-group input[type=text],.adv-form-group input[type=number],.adv-form-group input[type=date],.adv-form-group select{width:100%;background-color:var(--modal-input-bg,#202327);border:1px solid var(--modal-input-border,#38444d);border-radius:4px;padding:8px 12px;color:var(--modal-text-primary,#e7e9ea);font-size:15px;box-sizing:border-box}
         .adv-form-group input:focus,.adv-form-group select:focus{outline:0;border-color:var(--modal-primary-color)}
-        .adv-form-group input::placeholder{color:var(--modal-text-secondary,#536471)}
+        .adv-form-group input::placeholder,
+        .adv-settings-group input::placeholder,
+        #adv-sync-settings-container input::placeholder {
+            color: var(--modal-text-secondary,#536471);
+            opacity: 0.5;
+        }
         .adv-form-group-date-container {display:flex;gap:8px;align-items: center;}
         .adv-form-group-header {
             display: flex;
