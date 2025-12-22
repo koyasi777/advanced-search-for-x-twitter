@@ -5215,12 +5215,19 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                               </div>
                           </div>
 
-                          <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--modal-border); display:flex; justify-content:space-between; align-items:center;">
-                              <div id="adv-sync-status" style="font-size:12px; color:var(--modal-text-secondary); font-weight:700; display:flex; align-items:center; gap:6px;">
-                                  <span style="width:8px; height:8px; background:var(--modal-text-secondary); border-radius:50%; display:inline-block; opacity:0.5;"></span>
-                                  <span data-i18n="labelSyncStatus">Status: </span><span id="adv-sync-status-text" data-i18n="syncStatusIdle">Idle</span>
+                          <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--modal-border);">
+                              <div style="display:flex; justify-content:space-between; align-items:center;">
+                                  <div id="adv-sync-status" style="font-size:12px; color:var(--modal-text-secondary); font-weight:700; display:flex; align-items:center; gap:6px;">
+                                      <span id="adv-sync-status-dot" style="width:10px; height:10px; background:var(--modal-text-secondary); border-radius:50%; display:inline-block; opacity:0.5; transition: background-color 0.3s;"></span>
+                                      <span data-i18n="labelSyncStatus">Status: </span><span id="adv-sync-status-text" data-i18n="syncStatusIdle">Idle</span>
+                                      <svg id="adv-sync-spinner" viewBox="0 0 24 24" style="width:14px; height:14px; fill:var(--modal-primary-color); display:none; animation: adv-spin 1s linear infinite;">
+                                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-4.41 3.59-8 8-8 4.41 0 8 3.59 8 8 0 4.41-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" style="opacity:0.3"></path>
+                                          <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8z"></path>
+                                      </svg>
+                                  </div>
+                                  <button id="adv-sync-now-btn" type="button" class="adv-modal-button primary" style="padding:8px 20px; border-radius:9999px; min-width:100px;" data-i18n="buttonSyncNow">Sync Now</button>
                               </div>
-                              <button id="adv-sync-now-btn" type="button" class="adv-modal-button primary" style="padding:8px 20px; border-radius:9999px;" data-i18n="buttonSyncNow">Sync Now</button>
+                              <div id="adv-sync-error-log" style="display:none; margin-top:10px; padding:10px; background:rgba(244, 33, 46, 0.1); color:#f4212e; font-size:11px; border-radius:6px; white-space:pre-wrap; word-break:break-all; font-family:monospace;"></div>
                           </div>
                       </div>
 
@@ -13065,10 +13072,44 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 const el = document.getElementById('adv-sync-status-text');
                 if (el) el.textContent = text;
 
-                // 旧構造へのフォールバック（念のため）
-                const oldEl = document.getElementById('adv-sync-status');
-                if (oldEl && !el) oldEl.textContent = `${i18n.t('labelSyncStatus')} ${text}`;
+                // --- ドットの色 / スピナー / ボタン状態の更新 ---
+                const dot = document.getElementById('adv-sync-status-dot');
+                const spinner = document.getElementById('adv-sync-spinner'); // ★ スピナー要素取得
+                const btn = document.getElementById('adv-sync-now-btn');
 
+                if (dot) {
+                    dot.style.opacity = '1';
+                    if (msgKey === 'syncStatusSynced' || (msgKey === 'syncStatusIdle' && this.endpoint && this.secret)) {
+                        dot.style.backgroundColor = '#17bf63'; // Green (Success/Connected)
+                    } else if (msgKey === 'syncStatusError' || msgKey === 'toastSyncFailed') {
+                        dot.style.backgroundColor = '#f4212e'; // Red (Error)
+                    } else if (msgKey === 'syncStatusNotConfigured' || (!this.endpoint)) {
+                        dot.style.backgroundColor = 'var(--modal-text-secondary)'; // Grey
+                        dot.style.opacity = '0.5';
+                    } else {
+                        dot.style.backgroundColor = '#1d9bf0'; // Blue (Working...)
+                    }
+                }
+
+                // スピナーの表示制御 (同期中なら表示)
+                if (spinner) {
+                    spinner.style.display = this.isSyncing ? 'block' : 'none';
+                }
+
+                if (btn) {
+                    if (this.isSyncing) {
+                        btn.disabled = true;
+                        // ★ i18n対応: 既存の 'syncStatusConnecting' ("接続中...") などを流用してローカライズ
+                        btn.textContent = i18n.t('syncStatusConnecting');
+                        btn.style.opacity = '0.7';
+                    } else {
+                        btn.disabled = false;
+                        btn.textContent = i18n.t('buttonSyncNow');
+                        btn.style.opacity = '1';
+                    }
+                }
+
+                // ヘッダーボタンの更新
                 if (headerSyncBtn) {
                     if (this.isSyncing) headerSyncBtn.classList.add('spinning');
                     else headerSyncBtn.classList.remove('spinning');
@@ -13082,9 +13123,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 if (GM_getValue(SYNC_ENABLED_KEY, '0') !== '1') return;
 
                 const startTime = Date.now();
-                const MIN_DURATION = 2000;
+                const MIN_DURATION = 1360; // 読み込み中のタイミングを担保(1.36秒)
 
                 await this.readyPromise;
+
+                // エラー表示をリセット
+                const errLog = document.getElementById('adv-sync-error-log');
+                if (errLog) { errLog.style.display = 'none'; errLog.textContent = ''; }
 
                 if (!this.endpoint || !this.syncId || !this.encryptionKey) {
                     this.updateStatus('syncStatusNotConfigured');
@@ -13098,7 +13143,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 }
 
                 this.isSyncing = true;
-                this.updateStatus('syncStatusConnecting');
+                this.updateStatus('syncStatusConnecting'); // ここで青色・Syncing...になる
 
                 if (headerSyncBtn) {
                     headerSyncBtn.classList.remove('success', 'error');
@@ -13211,7 +13256,15 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 } catch (e) {
                     console.error('[Sync] Error:', e);
                     errorMsg = e.message || 'Error';
-                    this.updateStatus('syncStatusError', `${i18n.t('syncStatusError')}: ${errorMsg}`);
+
+                    // ステータス欄には短い "Error" を表示
+                    this.updateStatus('syncStatusError');
+
+                    // 詳細なエラー内容は下のボックスに表示
+                    if (errLog) {
+                        errLog.textContent = errorMsg;
+                        errLog.style.display = 'block';
+                    }
                     success = false;
                 } finally {
                     const elapsed = Date.now() - startTime;
@@ -13221,6 +13274,15 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     }
 
                     this.isSyncing = false;
+
+                    // 処理完了後、成功なら Idle(Connected) に戻す。エラーならそのまま。
+                    // updateStatusを呼ぶことでボタンのdisabledも解除される
+                    if (success) {
+                        this.updateStatus('syncStatusIdle');
+                    } else {
+                        // エラー時はボタンを戻すが、ステータスは赤のままにするため再呼び出し
+                        this.updateStatus('syncStatusError');
+                    }
 
                     if (headerSyncBtn) {
                         headerSyncBtn.classList.remove('spinning');
