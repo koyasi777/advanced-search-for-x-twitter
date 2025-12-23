@@ -5333,6 +5333,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             del(key)      { try { GM_deleteValue(key); } catch (_) {} },
         };
 
+        // ▼▼▼ メモリキャッシュを追加し、即時反映させる ▼▼▼
+        const _memCache = {};
+
         // 削除ログ管理
         const DELETED_LOG_KEY = 'advDeletedLog_v1';
         // 削除済みIDとそのタイムスタンプを管理 { [id]: timestamp }
@@ -5349,11 +5352,20 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         let __IS_IMPORTING__ = false;
 
         const loadJSON = (key, def) => {
+            // 1. キャッシュにあれば、そのコピーを返す（即時反映）
+            if (Object.prototype.hasOwnProperty.call(_memCache, key)) {
+                try { return JSON.parse(JSON.stringify(_memCache[key])); } catch(_) {}
+            }
+            // 2. なければストレージから読む
             try {
-                const raw = kv.get(key, JSON.stringify(def));
-                return JSON.parse(raw);
+                const raw = kv.get(key, undefined);
+                if (raw === undefined) return def;
+                const val = JSON.parse(raw);
+                _memCache[key] = val; // キャッシュにも保存
+                return val;
             } catch(_) { return def; }
         };
+
         // Debounce helper for sync
         let _syncTimeout;
         const triggerAutoSync = () => {
@@ -5364,20 +5376,19 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         };
 
         const saveJSON = (key, value) => {
-            // インポート中はロックを無視して即書き込み (デッドロック防止)
+            // 1. 即座にメモリキャッシュを更新する（これで直後の loadJSON は最新データを返す）
+            _memCache[key] = value;
+
+            // 2. ストレージへの書き込みは排他制御付きでゆっくり行う
             if (__IS_IMPORTING__) {
                 try { kv.set(key, JSON.stringify(value)); } catch(_) {}
                 return;
             }
 
-            // 通常時はロックを獲得してから書き込む
             withIoLock(async () => {
                 try { kv.set(key, JSON.stringify(value)); } catch(_) {}
 
-                // リビジョン（サーバー同期番号）は触らず、変更フラグ(Dirty)を立てる
                 try { kv.set(DIRTY_KEY, '1'); } catch(_) {}
-
-                // Hook for auto-sync
                 triggerAutoSync();
             });
         };
