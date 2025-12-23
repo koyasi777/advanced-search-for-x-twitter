@@ -297,6 +297,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 placeholderSyncPassword: "Strong password required",
                 tooltipShowHidePassword: "Show/Hide Password",
                 noteSyncEncryption: "* Data is encrypted locally before upload. The server never sees this password.",
+                labelSyncChangePass: "Change",
+                promptNewPassword: "Enter new password:",
+                confirmRotation: "Change password and re-encrypt all data?\n\n* Make sure you have the latest data synced.\n* This action cannot be undone.",
+                toastPassChanged: "Password changed successfully.",
+                toastRotationFailed: "Rotation Failed",
+                syncStatusRotating: "Rotating Keys...",
                 labelSyncStatus: "Status: ",
                 buttonSyncNow: "Sync Now",
 
@@ -554,6 +560,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 placeholderSyncPassword: "強力なパスワードを入力",
                 tooltipShowHidePassword: "パスワードを表示/非表示",
                 noteSyncEncryption: "* データはアップロード前にローカルで暗号化されます。サーバーがパスワードを知ることはありません。",
+                labelSyncChangePass: "変更",
+                promptNewPassword: "新しいパスワードを入力してください:",
+                confirmRotation: "パスワードを変更し、データを再暗号化しますか？\n\n* 必ず最新のデータが同期されている状態で実行してください。\n* この操作は元に戻せません。",
+                toastPassChanged: "パスワードを変更しました。",
+                toastRotationFailed: "変更に失敗しました",
+                syncStatusRotating: "キー更新中...",
                 labelSyncStatus: "ステータス: ",
                 buttonSyncNow: "今すぐ同期",
 
@@ -810,6 +822,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 placeholderSyncPassword: "请输入强密码",
                 tooltipShowHidePassword: "显示/隐藏密码",
                 noteSyncEncryption: "* 数据在上传前会在本地加密。服务器无法获知此密码。",
+                labelSyncChangePass: "更改",
+                promptNewPassword: "请输入新密码：",
+                confirmRotation: "更改密码并重新加密所有数据？\n\n* 请确保您已同步最新数据。\n* 此操作无法撤消。",
+                toastPassChanged: "密码已更改。",
+                toastRotationFailed: "更改失败",
+                syncStatusRotating: "更新密钥...",
                 labelSyncStatus: "状态: ",
                 buttonSyncNow: "立即同步",
 
@@ -1066,6 +1084,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 placeholderSyncPassword: "請輸入高強度密碼",
                 tooltipShowHidePassword: "顯示/隱藏密碼",
                 noteSyncEncryption: "* 資料在上傳前會於本地加密。伺服器無法得知此密碼。",
+                labelSyncChangePass: "變更",
+                promptNewPassword: "請輸入新密碼：",
+                confirmRotation: "變更密碼並重新加密所有資料？\n\n* 請確保您已同步最新資料。\n* 此操作無法復原。",
+                toastPassChanged: "密碼已變更。",
+                toastRotationFailed: "變更失敗",
+                syncStatusRotating: "更新金鑰...",
                 labelSyncStatus: "狀態: ",
                 buttonSyncNow: "立即同步",
 
@@ -1325,6 +1349,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 placeholderSyncPassword: "강력한 비밀번호 필요",
                 tooltipShowHidePassword: "비밀번호 표시/숨기기",
                 noteSyncEncryption: "* 데이터는 업로드 전 로컬에서 암호화됩니다. 서버는 비밀번호를 알 수 없습니다.",
+                labelSyncChangePass: "변경",
+                promptNewPassword: "새 비밀번호를 입력하세요:",
+                confirmRotation: "비밀번호를 변경하고 모든 데이터를 다시 암호화하시겠습니까?\n\n* 최신 데이터가 동기화되어 있는지 확인하세요.\n* 이 작업은 취소할 수 없습니다.",
+                toastPassChanged: "비밀번호가 변경되었습니다.",
+                toastRotationFailed: "변경 실패",
+                syncStatusRotating: "키 갱신 중...",
                 labelSyncStatus: "상태: ",
                 buttonSyncNow: "지금 동기화",
 
@@ -1581,6 +1611,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 placeholderSyncPassword: "Mot de passe fort requis",
                 tooltipShowHidePassword: "Afficher/Masquer",
                 noteSyncEncryption: "* Données chiffrées localement avant envoi. Le serveur ne voit jamais ce mot de passe.",
+                labelSyncChangePass: "Modifier",
+                promptNewPassword: "Veuillez entrer le nouveau mot de passe :",
+                confirmRotation: "Modifier le mot de passe et rechiffrer toutes les données ?\n\n* Assurez-vous d'avoir synchronisé les dernières données.\n* Cette action est irréversible.",
+                toastPassChanged: "Mot de passe modifié.",
+                toastRotationFailed: "Échec de la modification",
+                syncStatusRotating: "Renouvellement des clés...",
                 labelSyncStatus: "Statut : ",
                 buttonSyncNow: "Synchroniser",
 
@@ -1837,6 +1873,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 placeholderSyncPassword: "Se requiere contraseña segura",
                 tooltipShowHidePassword: "Mostrar/Ocultar",
                 noteSyncEncryption: "* Los datos se cifran localmente antes de subir. El servidor nunca ve esta contraseña.",
+                labelSyncChangePass: "Cambiar",
+                promptNewPassword: "Introduce la nueva contraseña:",
+                confirmRotation: "¿Cambiar la contraseña y volver a cifrar todos los datos?\n\n* Asegúrate de tener los datos más recientes sincronizados.\n* Esta acción no se puede deshacer.",
+                toastPassChanged: "Contraseña cambiada.",
+                toastRotationFailed: "Fallo al cambiar",
+                syncStatusRotating: "Rotando claves...",
                 labelSyncStatus: "Estado: ",
                 buttonSyncNow: "Sincronizar ahora",
 
@@ -2093,6 +2135,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 placeholderSyncPassword: "Starkes Passwort erforderlich",
                 tooltipShowHidePassword: "Passwort anzeigen/verbergen",
                 noteSyncEncryption: "* Daten werden vor dem Upload lokal verschlüsselt. Der Server sieht dieses Passwort nie.",
+                labelSyncChangePass: "Ändern",
+                promptNewPassword: "Neues Passwort eingeben:",
+                confirmRotation: "Passwort ändern und alle Daten neu verschlüsseln?\n\n* Stellen Sie sicher, dass Sie die neuesten Daten synchronisiert haben.\n* Dies kann nicht rückgängig gemacht werden.",
+                toastPassChanged: "Passwort geändert.",
+                toastRotationFailed: "Änderung fehlgeschlagen",
+                syncStatusRotating: "Schlüssel werden erneuert...",
                 labelSyncStatus: "Status: ",
                 buttonSyncNow: "Jetzt synchronisieren",
 
@@ -2349,6 +2397,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 placeholderSyncPassword: "Senha forte necessária",
                 tooltipShowHidePassword: "Mostrar/Ocultar senha",
                 noteSyncEncryption: "* Os dados são criptografados localmente antes do envio. O servidor nunca vê esta senha.",
+                labelSyncChangePass: "Alterar",
+                promptNewPassword: "Digite a nova senha:",
+                confirmRotation: "Alterar a senha e recriptografar todos os dados?\n\n* Certifique-se de ter os dados mais recentes sincronizados.\n* Esta ação não pode ser desfeita.",
+                toastPassChanged: "Senha alterada.",
+                toastRotationFailed: "Falha na alteração",
+                syncStatusRotating: "Rotacionando chaves...",
                 labelSyncStatus: "Status: ",
                 buttonSyncNow: "Sincronizar agora",
 
@@ -2605,6 +2659,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 placeholderSyncPassword: "Требуется надежный пароль",
                 tooltipShowHidePassword: "Показать/Скрыть пароль",
                 noteSyncEncryption: "* Данные шифруются локально перед отправкой. Сервер не видит этот пароль.",
+                labelSyncChangePass: "Изменить",
+                promptNewPassword: "Введите новый пароль:",
+                confirmRotation: "Изменить пароль и перешифровать все данные?\n\n* Убедитесь, что у вас синхронизированы последние данные.\n* Это действие нельзя отменить.",
+                toastPassChanged: "Пароль изменен.",
+                toastRotationFailed: "Ошибка изменения",
+                syncStatusRotating: "Обновление ключей...",
                 labelSyncStatus: "Статус: ",
                 buttonSyncNow: "Синхронизировать",
 
@@ -5215,8 +5275,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                                       </svg>
                                   </button>
                               </div>
-                              <div style="font-size:11px; color:var(--modal-text-secondary); margin-top:6px; line-height:1.4;" data-i18n="noteSyncEncryption">
-                                  * Data is encrypted locally before upload. The server never sees this password.
+
+                              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-top:6px;">
+                                <div style="font-size:11px; color:var(--modal-text-secondary); line-height:1.4; max-width:70%;" data-i18n="noteSyncEncryption">
+                                    * Data is encrypted locally before upload. The server never sees this password.
+                                </div>
+                                <button id="adv-sync-change-pass-btn" type="button" class="adv-chip" style="font-size:11px; padding:2px 8px;" data-i18n="labelSyncChangePass">Change</button>
                               </div>
                           </div>
 
@@ -5246,6 +5310,20 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
     const initialize = async () => {
         i18n.init();
+
+        // 排他制御用ロック (Data Loss Prevention)
+        let _ioLock = Promise.resolve();
+        const withIoLock = async (fn) => {
+            const prev = _ioLock;
+            let nextResolve;
+            _ioLock = new Promise(r => nextResolve = r);
+            try {
+                await prev;
+                return await fn();
+            } finally {
+                nextResolve();
+            }
+        };
 
         let syncManager = null;
 
@@ -5286,16 +5364,22 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         };
 
         const saveJSON = (key, value) => {
-            try { kv.set(key, JSON.stringify(value)); } catch(_) {}
+            // インポート中はロックを無視して即書き込み (デッドロック防止)
+            if (__IS_IMPORTING__) {
+                try { kv.set(key, JSON.stringify(value)); } catch(_) {}
+                return;
+            }
 
-            // インポート中でない場合のみ、リビジョン更新と同期トリガーを行う
-            if (!__IS_IMPORTING__) {
+            // 通常時はロックを獲得してから書き込む
+            withIoLock(async () => {
+                try { kv.set(key, JSON.stringify(value)); } catch(_) {}
+
                 // リビジョン（サーバー同期番号）は触らず、変更フラグ(Dirty)を立てる
                 try { kv.set(DIRTY_KEY, '1'); } catch(_) {}
 
                 // Hook for auto-sync
                 triggerAutoSync();
-            }
+            });
         };
 
         const DEFAULT_TABS = ['search', 'history', 'saved', 'favorites', 'mute', 'lists', 'accounts'];
@@ -12799,7 +12883,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     url: url,
                     headers: headers,
                     data: options.body,
-                    timeout: 15000, // 圧縮処理などを考慮し少し長めに
+                    timeout: 30000, // 圧縮処理などを考慮し少し長めに
                     onload: (res) => resolve(res),
                     onerror: (err) => reject(new Error('Network error')),
                     ontimeout: () => reject(new Error('Timeout'))
@@ -12854,66 +12938,43 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 return Promise.resolve();
             }
 
-            // Zero-Knowledge Key Derivation with Dynamic Salt
-            // Salt is now passed as an argument, not generated from ID locally.
+            // Zero-Knowledge Key Derivation
+            // saltHex: Data Salt (クライアント間で共有されるソルト) を使用して、認証トークンと暗号化キーの両方を生成する
             async deriveKeys(saltHex) {
                 if (!this.secret || !saltHex) return;
 
                 try {
-                    // Tampermonkey環境での crypto オブジェクト取得の保険
-                    const cryptoObj = (typeof unsafeWindow !== 'undefined' && unsafeWindow.crypto)
-                                      ? unsafeWindow.crypto
-                                      : (window.crypto || window.msCrypto);
+                    const cryptoObj = (typeof unsafeWindow !== 'undefined' && unsafeWindow.crypto) ? unsafeWindow.crypto : (window.crypto || window.msCrypto);
                     const subtle = cryptoObj.subtle;
                     const enc = new TextEncoder();
 
-                    // PBKDF2用のキー素材 (パスワード) をインポート
                     const keyMaterial = await subtle.importKey(
-                        "raw",
-                        enc.encode(this.secret),
-                        { name: "PBKDF2" },
-                        false,
-                        ["deriveKey", "deriveBits"]
+                        "raw", enc.encode(this.secret), { name: "PBKDF2" }, false, ["deriveKey", "deriveBits"]
                     );
 
-                    // =========================================================
-                    // 鍵の分離生成 (Domain Separation)
-                    // サーバーから取得したランダムSaltを使用
-                    // =========================================================
+                    const ITERATIONS = 600000;
 
-                    const ITERATIONS = 600000; // OWASP推奨
-
-                    // A. 認証トークンの生成 (Auth Token)
-                    const authSalt = enc.encode(saltHex + "|auth");
+                    // A. 認証トークンの生成
+                    // 以前の修正ではここに serverSalt を使おうとしましたが、Device A/B間の不整合を防ぐため
+                    // 共有されている saltHex (Data Salt) に "|auth" を付与して使用します。
                     const authBits = await subtle.deriveBits(
-                        { name: "PBKDF2", salt: authSalt, iterations: ITERATIONS, hash: "SHA-256" },
-                        keyMaterial,
-                        256
+                        { name: "PBKDF2", salt: enc.encode(saltHex + "|auth"), iterations: ITERATIONS, hash: "SHA-256" },
+                        keyMaterial, 256
                     );
-                    this.authToken = Array.from(new Uint8Array(authBits))
-                        .map(b => b.toString(16).padStart(2, '0')).join('');
+                    this.authToken = Array.from(new Uint8Array(authBits)).map(b => b.toString(16).padStart(2, '0')).join('');
 
-                    // B. 暗号化キーの生成 (AES-GCM Key)
-                    const encSalt = enc.encode(saltHex + "|enc");
+                    // B. 暗号化キーの生成
                     this.encryptionKey = await subtle.deriveKey(
-                        { name: "PBKDF2", salt: encSalt, iterations: ITERATIONS, hash: "SHA-256" },
-                        keyMaterial,
-                        { name: "AES-GCM", length: 256 },
-                        false,
-                        ["encrypt", "decrypt"]
+                        { name: "PBKDF2", salt: enc.encode(saltHex + "|enc"), iterations: ITERATIONS, hash: "SHA-256" },
+                        keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
                     );
 
-                    // C. 署名キーの生成 (HMAC Key)
-                    const signSalt = enc.encode(saltHex + "|sign");
+                    // C. 署名キーの生成
                     this.signingKey = await subtle.deriveKey(
-                        { name: "PBKDF2", salt: signSalt, iterations: ITERATIONS, hash: "SHA-256" },
-                        keyMaterial,
-                        { name: "HMAC", hash: "SHA-256" },
-                        false,
-                        ["sign", "verify"]
+                        { name: "PBKDF2", salt: enc.encode(saltHex + "|sign"), iterations: ITERATIONS, hash: "SHA-256" },
+                        keyMaterial, { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]
                     );
 
-                    // 現在使用中のSaltを保持
                     this.currentSalt = saltHex;
 
                 } catch (e) {
@@ -12951,8 +13012,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 });
                 const ivHex = Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join('');
 
-                // 5. Sign (IV + Cipher + Revision)
-                const signSource = new TextEncoder().encode(`${ivHex}.${base64Cipher}.${baseRevision}`);
+                // 5. Sign (IV + Cipher + Revision + SyncID) -> Replay Attack防止強化
+                const signSource = new TextEncoder().encode(`${ivHex}.${base64Cipher}.${baseRevision}.${this.syncId}`);
                 const signatureBuf = await cryptoObj.subtle.sign(
                     "HMAC", this.signingKey, signSource
                 );
@@ -12974,7 +13035,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
                 // 1. Verify HMAC
                 if (signature && revision) {
-                    const signSource = new TextEncoder().encode(`${iv}.${ciphertext}.${revision}`);
+                    const signSource = new TextEncoder().encode(`${iv}.${ciphertext}.${revision}.${this.syncId}`);
                     const signatureBuf = new Uint8Array(signature.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
                     const isValid = await cryptoObj.subtle.verify(
                         "HMAC", this.signingKey, signatureBuf, signSource
@@ -13005,6 +13066,150 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     return JSON.parse(jsonStr);
                 } catch (e) {
                     throw new Error("Decryption/Decompression Failed");
+                }
+            }
+
+            // 鍵生成ヘルパー (内部利用)
+            async _calcKeysFromSecret(secretStr, saltHex) {
+                const cryptoObj = (typeof unsafeWindow !== 'undefined' && unsafeWindow.crypto) ? unsafeWindow.crypto : (window.crypto || window.msCrypto);
+                const subtle = cryptoObj.subtle;
+                const enc = new TextEncoder();
+                const keyMaterial = await subtle.importKey("raw", enc.encode(secretStr), { name: "PBKDF2" }, false, ["deriveKey", "deriveBits"]);
+                const ITERATIONS = 600000;
+
+                // Auth Token
+                const authBits = await subtle.deriveBits(
+                    { name: "PBKDF2", salt: enc.encode(saltHex + "|auth"), iterations: ITERATIONS, hash: "SHA-256" },
+                    keyMaterial, 256
+                );
+                const authToken = Array.from(new Uint8Array(authBits)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+                // Enc Key
+                const encryptionKey = await subtle.deriveKey(
+                    { name: "PBKDF2", salt: enc.encode(saltHex + "|enc"), iterations: ITERATIONS, hash: "SHA-256" },
+                    keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+                );
+
+                // Sign Key
+                const signingKey = await subtle.deriveKey(
+                    { name: "PBKDF2", salt: enc.encode(saltHex + "|sign"), iterations: ITERATIONS, hash: "SHA-256" },
+                    keyMaterial, { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]
+                );
+
+                return { authToken, encryptionKey, signingKey };
+            }
+
+            // パスワード変更メソッド
+            async changePassword(newPassword) {
+                if (this.isSyncing) return;
+                if (!this.endpoint || !this.syncId || !this.secret) {
+                    // ここは設定不備なので英語アラートのままでも許容、または i18n 追加
+                    alert(i18n.t('syncStatusNotConfigured') || "Not Configured");
+                    return;
+                }
+
+                const confirmed = confirm(i18n.t('confirmRotation'));
+                if (!confirmed) return;
+
+                this.isSyncing = true;
+                this.updateStatus('syncStatusPushing', i18n.t('syncStatusRotating'));
+
+                let success = false;
+
+                try {
+                    // 1. 新しいソルトを生成
+                    const cryptoObj = (typeof unsafeWindow !== 'undefined' && unsafeWindow.crypto) ? unsafeWindow.crypto : window.crypto;
+                    const arr1 = new Uint8Array(16); cryptoObj.getRandomValues(arr1);
+                    const newSalt = Array.from(arr1).map(b => b.toString(16).padStart(2, '0')).join('');
+
+                    // 2. 新しいキーペアを生成
+                    const newKeys = await this._calcKeysFromSecret(newPassword, newSalt);
+
+                    // 3. 現在のローカルデータを準備
+                    const rawData = JSON.parse(buildCloudSyncPayload());
+
+                    // 4. 新しいキーで暗号化
+                    const oldEncKey = this.encryptionKey;
+                    const oldSignKey = this.signingKey;
+
+                    this.encryptionKey = newKeys.encryptionKey;
+                    this.signingKey = newKeys.signingKey;
+
+                    let encryptedBody;
+                    try {
+                        const localRev = parseInt(GM_getValue(DATA_REVISION_KEY, '0')) || 0;
+                        encryptedBody = await this.encryptPayload(rawData, localRev);
+                    } finally {
+                        this.encryptionKey = oldEncKey;
+                        this.signingKey = oldSignKey;
+                    }
+
+                    // 5. PUTリクエスト送信
+                    const payloadToSend = {
+                        ...encryptedBody,
+                        salt: newSalt,
+                        newAuthToken: newKeys.authToken
+                    };
+
+                    const authHeaders = {
+                        'Content-Type': 'application/json',
+                        'X-Sync-ID': this.syncId,
+                        'Authorization': 'Bearer ' + this.authToken
+                    };
+
+                    const res = await gmFetch(this.endpoint, {
+                        method: 'PUT', headers: authHeaders, body: JSON.stringify(payloadToSend)
+                    });
+
+                    if (res.status === 200) {
+                        const resJson = JSON.parse(res.responseText);
+
+                        // 6. 成功したらローカル設定を更新
+                        this.secret = newPassword;
+                        this.currentSalt = newSalt;
+                        this.authToken = newKeys.authToken;
+                        this.encryptionKey = newKeys.encryptionKey;
+                        this.signingKey = newKeys.signingKey;
+
+                        await this.saveConfig(this.endpoint, newPassword, this.syncId);
+
+                        if (resJson.newRevision) {
+                            GM_setValue(DATA_REVISION_KEY, resJson.newRevision.toString());
+                            GM_deleteValue(DIRTY_KEY);
+                        }
+
+                        // UIの入力欄も更新
+                        const uiInput = document.getElementById('adv-sync-secret');
+                        if(uiInput) uiInput.value = newPassword;
+
+                        success = true;
+
+                    } else {
+                        throw new Error(`Server returned ${res.status}: ${res.responseText}`);
+                    }
+
+                } catch(e) {
+                    console.error("Change Password Failed:", e);
+                    // エラーはトーストで表示（アラートだと操作を阻害するため）
+                    showToast(`${i18n.t('toastRotationFailed')}: ${e.message}`);
+                    this.updateStatus('syncStatusError', i18n.t('toastRotationFailed'));
+                } finally {
+                    // 7. 終了処理
+                    this.isSyncing = false;
+
+                    if (success) {
+                        // 成功時: 緑アイコンにする
+                        this.updateStatus('syncStatusSynced');
+                        // 成功トースト
+                        showToast(i18n.t('toastPassChanged'));
+                    } else {
+                        // 失敗時: エラー状態を維持 (再描画)
+                        const currentTextEl = document.getElementById('adv-sync-status-text');
+                        const currentMsg = currentTextEl ? currentTextEl.textContent : 'Error';
+                        this.updateStatus(null, currentMsg);
+                    }
+
+                    updateHeaderSyncVisibility();
                 }
             }
 
@@ -13127,7 +13332,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 if (GM_getValue(SYNC_ENABLED_KEY, '0') !== '1') return;
 
                 const startTime = Date.now();
-                const MIN_DURATION = 1360; // 読み込み中のタイミングを担保(1.36秒)
+                const MIN_DURATION = 1360;
 
                 const errLog = document.getElementById('adv-sync-error-log');
                 if (errLog) { errLog.style.display = 'none'; errLog.textContent = ''; }
@@ -13138,8 +13343,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 }
 
                 this.isSyncing = true;
-                this.updateStatus('syncStatusConnecting'); // Connecting...
-
+                this.updateStatus('syncStatusConnecting');
                 if (headerSyncBtn) {
                     headerSyncBtn.classList.remove('success', 'error');
                     headerSyncBtn.title = i18n.t('syncStatusConnecting');
@@ -13149,14 +13353,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 let errorMsg = "";
 
                 try {
-                    // ------------------------------------------------------------
-                    // Phase 1: Salt Handshake (Pre-flight)
-                    // ------------------------------------------------------------
-                    const handshakeHeaders = {
-                        'Content-Type': 'application/json',
-                        'X-Sync-ID': this.syncId
-                    };
-
+                    // Phase 1: Handshake
+                    const handshakeHeaders = { 'Content-Type': 'application/json', 'X-Sync-ID': this.syncId };
                     const handshakeRes = await gmFetch(this.endpoint, { method: 'GET', headers: handshakeHeaders });
 
                     let targetSalt = null;
@@ -13164,13 +13362,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     if (handshakeRes.status === 200) {
                         const info = JSON.parse(handshakeRes.responseText);
                         if (info.status === 'exists' && info.salt) {
+                            // 既存レコード: サーバーからData Saltを取得
                             targetSalt = info.salt;
                         } else {
-                            // 新規レコード用: クライアント側で強力なランダムSaltを生成
-                            const array = new Uint8Array(16);
+                            // 新規レコード: クライアント側でData Saltを生成
                             const cryptoObj = (typeof unsafeWindow !== 'undefined' && unsafeWindow.crypto) ? unsafeWindow.crypto : window.crypto;
-                            cryptoObj.getRandomValues(array);
-                            targetSalt = Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
+                            const arr1 = new Uint8Array(16); cryptoObj.getRandomValues(arr1);
+                            targetSalt = Array.from(arr1).map(b => b.toString(16).padStart(2, '0')).join('');
                         }
                     } else if (handshakeRes.status === 400) {
                          throw new Error("Invalid Sync ID format");
@@ -13178,14 +13376,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                          throw new Error(`Handshake failed: ${handshakeRes.status}`);
                     }
 
-                    // ------------------------------------------------------------
-                    // Phase 2: Key Derivation
-                    // ------------------------------------------------------------
+                    // Phase 2: Key Derivation (Data Saltのみを使用)
+                    await new Promise(r => setTimeout(r, 50));
                     await this.deriveKeys(targetSalt);
 
-                    // ------------------------------------------------------------
-                    // Phase 3: Authenticated Sync (Main)
-                    // ------------------------------------------------------------
+                    // Phase 3: Authenticated Sync
                     const localRev = parseInt(GM_getValue(DATA_REVISION_KEY, '0')) || 0;
                     const isDirty = GM_getValue(DIRTY_KEY, '0') === '1';
 
@@ -13205,11 +13400,22 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
                         if (serverRev > localRev) {
                             this.updateStatus('syncStatusPulling');
-                            if (serverWrapper.data) {
-                                const decrypted = await this.decryptPayload(serverWrapper.data, serverRev - 1);
-                                const currentLocal = JSON.parse(buildCloudSyncPayload());
-                                const merged = this._mergeData(currentLocal, decrypted);
-                                const importSuccess = applySettingsImportJSON(JSON.stringify(merged));
+                            if (serverWrapper.chunks) {
+                                // クライアント側で結合
+                                const fullCipherStr = serverWrapper.chunks.map(c => c.data).join("");
+                                const serverDataObj = JSON.parse(fullCipherStr);
+
+                                const decrypted = await this.decryptPayload(serverDataObj, serverRev - 1);
+
+                                // マージから保存完了までをロックして保護
+                                let importSuccess = false;
+                                await withIoLock(async () => {
+                                    // ロック内で最新のローカル状態を再取得
+                                    const currentLocal = JSON.parse(buildCloudSyncPayload());
+                                    const merged = this._mergeData(currentLocal, decrypted);
+                                    // 保存実行 (applySettingsImportJSONは内部で __IS_IMPORTING__ フラグを立てるため saveJSON のロック待機を回避できる)
+                                    importSuccess = applySettingsImportJSON(JSON.stringify(merged));
+                                });
 
                                 if (importSuccess) {
                                     GM_setValue(DATA_REVISION_KEY, serverRev.toString());
@@ -13219,8 +13425,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                                     throw new Error("Import failed");
                                 }
                             }
-                        }
-                        else if (serverRev === localRev && !isDirty) {
+                        } else if (serverRev === localRev && !isDirty) {
                             success = true;
                         }
                     } else if (getRes.status === 403 || getRes.status === 401) {
@@ -13239,14 +13444,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                         };
 
                         const payloadString = JSON.stringify(payloadToSend);
-                        if (new Blob([payloadString]).size > 49 * 1024 * 1024) {
-                            throw new Error("Payload too large (>50MB).");
-                        }
-
                         const postRes = await gmFetch(this.endpoint, {
-                            method: 'POST',
-                            headers: authHeaders,
-                            body: payloadString
+                            method: 'POST', headers: authHeaders, body: payloadString
                         });
 
                         if (postRes.status === 200) {
@@ -13258,39 +13457,42 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                             success = true;
                         } else if (postRes.status === 409) {
                             this.updateStatus('syncStatusMerging');
-                            console.warn('[Sync] Conflict detected. Auto-merging...');
                             const conflictBody = JSON.parse(postRes.responseText);
 
-                            // ソルト不一致時の鍵再生成ロジック
-                            const serverSalt = conflictBody.salt;
-                            if (serverSalt && serverSalt !== this.currentSalt) {
-                                console.warn('[Sync] Salt mismatch detected. Re-deriving keys...');
-                                // サーバーのSaltに合わせて鍵を作り直す
-                                await this.deriveKeys(serverSalt);
-                                // deriveKeys内で this.currentSalt も更新される
+                            // サーバーとローカルでSaltが食い違っている場合（初期化競合など）、鍵を再生成する
+                            if (conflictBody.salt && conflictBody.salt !== this.currentSalt) {
+                                console.warn("[Sync] Salt mismatch detected on conflict. Re-deriving keys...");
+                                await this.deriveKeys(conflictBody.salt);
+                                // 認証ヘッダーも新しいトークンで更新が必要
+                                authHeaders['Authorization'] = 'Bearer ' + this.authToken;
                             }
 
-                            const serverEncryptedData = conflictBody.serverData;
-                            const serverCurrentRev = conflictBody.currentRevision;
+                            const sChunks = conflictBody.serverChunks || [];
+                            const sCipherStr = sChunks.map(c => c.data).join("");
+                            const sEncData = JSON.parse(sCipherStr);
 
-                            if (serverEncryptedData) {
-                                const serverData = await this.decryptPayload(serverEncryptedData, serverCurrentRev - 1);
-                                const currentLocal = JSON.parse(buildCloudSyncPayload());
-                                const merged = this._mergeData(currentLocal, serverData);
-                                applySettingsImportJSON(JSON.stringify(merged));
+                            const sRev = conflictBody.currentRevision;
 
-                                const mergedEncrypted = await this.encryptPayload(merged, serverCurrentRev);
+                            if (sEncData) {
+                                const sData = await this.decryptPayload(sEncData, sRev - 1);
+
+                                // 競合解消マージと保存をロックして保護
+                                let merged = null;
+                                await withIoLock(async () => {
+                                    const currentLocal = JSON.parse(buildCloudSyncPayload());
+                                    merged = this._mergeData(currentLocal, sData);
+                                    applySettingsImportJSON(JSON.stringify(merged));
+                                });
+
+                                const mergedEncrypted = await this.encryptPayload(merged, sRev);
                                 const retryPayload = { ...mergedEncrypted, salt: this.currentSalt };
 
                                 const retryRes = await gmFetch(this.endpoint, {
-                                    method: 'POST',
-                                    headers: authHeaders,
-                                    body: JSON.stringify(retryPayload)
+                                    method: 'POST', headers: authHeaders, body: JSON.stringify(retryPayload)
                                 });
-
                                 if (retryRes.status === 200) {
-                                    const retryJson = JSON.parse(retryRes.responseText);
-                                    GM_setValue(DATA_REVISION_KEY, retryJson.newRevision.toString());
+                                    const rJson = JSON.parse(retryRes.responseText);
+                                    GM_setValue(DATA_REVISION_KEY, rJson.newRevision.toString());
                                     GM_deleteValue(DIRTY_KEY);
                                     success = true;
                                 } else {
@@ -13298,8 +13500,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                                 }
                             }
                         } else {
-                            const errorText = postRes.responseText;
-                            throw new Error(`Upload failed: ${postRes.status} - ${errorText}`);
+                            throw new Error(`Upload failed: ${postRes.status}`);
                         }
                     }
 
@@ -13317,19 +13518,14 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     if (remaining > 0) await new Promise(r => setTimeout(r, remaining));
 
                     this.isSyncing = false;
-
                     if (success) {
-                        // 成功時も updateStatus を呼び出し、ボタンのロック(disabled)を解除させる
-                        // 'syncStatusSynced' または 'syncStatusIdle' を渡すことでボタンが "Sync Now" に戻る
                         this.updateStatus('syncStatusSynced');
-
                         if (headerSyncBtn) {
                             headerSyncBtn.classList.add('success');
                             headerSyncBtn.title = i18n.t('toastSynced');
                             showToast(i18n.t('toastSynced'));
                         }
                     } else {
-                        // 失敗時
                         this.updateStatus('syncStatusError');
                         if (headerSyncBtn) {
                             headerSyncBtn.classList.add('error');
@@ -13337,7 +13533,6 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                             showToast(i18n.t('toastSyncFailed'));
                         }
                     }
-
                     if (headerSyncBtn) {
                         headerSyncBtn.classList.remove('spinning');
                         setTimeout(() => {
@@ -13429,11 +13624,22 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     syncManager.executeSync();
                 }
             });
+
+            // パスワード変更ボタンのイベントリスナー
+            const changePassBtn = document.getElementById('adv-sync-change-pass-btn');
+            if (changePassBtn) {
+                changePassBtn.addEventListener('click', () => {
+                    const newPass = prompt(i18n.t('promptNewPassword'), "");
+                    if (newPass && newPass.trim()) {
+                        syncManager.changePassword(newPass.trim());
+                    }
+                });
+            }
         }
 
         // Auto-sync on load if configured AND ENABLED
         // ロード時の自動同期も、トグルがONのときのみ実行する
-        if (kv.get(SYNC_ENABLED_KEY, '0') === '1' && syncManager.endpoint && syncManager.secret) {
+        if (kv.get(SYNC_ENABLED_KEY, '0') === '1' && syncManager.endpoint && syncManager.secret && syncManager.syncId) {
             setTimeout(() => syncManager.executeSync(), 2000);
         }
 
