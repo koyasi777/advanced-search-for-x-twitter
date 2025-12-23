@@ -8948,6 +8948,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               FT_STATE_KEY,
               DELETED_LOG_KEY,
               SYNC_CFG_KEY,
+              SYNC_ENABLED_KEY,
               DATA_REVISION_KEY,
               DIRTY_KEY
             ];
@@ -9069,6 +9070,36 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 if (syncIdInput) syncIdInput.value = '';
                 if (syncScInput) syncScInput.value = '';
                 if (typeof syncManager.updateStatus === 'function') syncManager.updateStatus('Reset');
+            }
+
+            // ▼▼▼ 設定モーダルのUI表示を強制的に初期値に戻す ▼▼▼
+
+            // 1. 言語設定リセット
+            if (settingsLangSel) settingsLangSel.value = '';
+
+            // 2. 初期タブ設定リセット
+            if (settingsInitialTabSel) settingsInitialTabSel.value = 'last';
+
+            // 3. タブ表示トグルのリセット（すべてONに戻す）
+            if (typeof DEFAULT_TABS !== 'undefined') {
+                DEFAULT_TABS.forEach(tabName => {
+                    const toggle = document.getElementById(`adv-settings-tab-toggle-${tabName}`);
+                    if (toggle) toggle.checked = true;
+                });
+            }
+
+            // 4. クラウド同期設定のリセット（入力欄クリア & トグルOFF）
+            if (syncEnableToggle) {
+                syncEnableToggle.checked = false;
+                if (syncContainer) syncContainer.style.display = 'none';
+            }
+            if (typeof syncEpInput !== 'undefined') syncEpInput.value = '';
+            if (typeof syncIdInput !== 'undefined') syncIdInput.value = '';
+            if (typeof syncScInput !== 'undefined') syncScInput.value = '';
+
+            // 5. ヘッダーの同期アイコンを消す
+            if (typeof updateHeaderSyncVisibility === 'function') {
+                updateHeaderSyncVisibility();
             }
 
             showToast(i18n.t('toastReset'));
@@ -13569,7 +13600,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             syncIdInput.value = syncManager.syncId;
             syncScInput.value = syncManager.secret;
 
-            const saveConf = () => syncManager.saveConfig(syncEpInput.value, syncScInput.value, syncIdInput.value);
+            const saveConf = async () => {
+                await syncManager.saveConfig(syncEpInput.value, syncScInput.value, syncIdInput.value);
+                updateHeaderSyncVisibility();
+            };
 
             // 3. トグルのイベントリスナー
             syncEnableToggle.addEventListener('change', () => {
