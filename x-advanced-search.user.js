@@ -48,6 +48,36 @@
 const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
     'use strict';
 
+    // Trusted Types 対応ヘルパー (UserScript/Extension両対応)
+    let ttPolicy = null;
+
+    // UserScript環境では unsafeWindow を使う必要がある
+    const targetWindow = (typeof unsafeWindow !== 'undefined') ? unsafeWindow : window;
+
+    if (targetWindow.trustedTypes && targetWindow.trustedTypes.createPolicy) {
+        try {
+            // ポリシー名の重複エラーを防ぐため、ランダムなサフィックスを付与して一意にする
+            const policyName = 'advSearchPolicy_' + Math.floor(Math.random() * 1000000);
+            ttPolicy = targetWindow.trustedTypes.createPolicy(policyName, {
+                createHTML: (string) => string, // HTML内容を信頼してパススルー
+            });
+        } catch (e) {
+            console.warn('Trusted Types policy creation failed:', e);
+        }
+    }
+
+    // innerHTMLへ安全に代入する関数
+    const setInnerHTML = (element, html) => {
+        if (!element) return;
+        if (ttPolicy) {
+            // 再帰呼び出しではなく、プロパティへの代入を行う
+            element.innerHTML = ttPolicy.createHTML(html);
+        } else {
+            // ここも直接代入
+            element.innerHTML = html;
+        }
+    };
+
     if (window.__X_ADV_SEARCH_INITED__) return;
     window.__X_ADV_SEARCH_INITED__ = true;
 
@@ -2745,12 +2775,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;
         margin-right:8px;color:inherit;flex:0 0 auto;
       `;
-      btn.innerHTML = collapsed ? FOLDER_TOGGLE_CLOSED_SVG : FOLDER_TOGGLE_OPEN_SVG;
+      setInnerHTML(btn,collapsed ? FOLDER_TOGGLE_CLOSED_SVG : FOLDER_TOGGLE_OPEN_SVG);
       return btn;
     }
     function updateFolderToggleButton(btn, collapsed) {
       if (!btn) return;
-      btn.innerHTML = collapsed ? FOLDER_TOGGLE_CLOSED_SVG : FOLDER_TOGGLE_OPEN_SVG;
+      setInnerHTML(btn,collapsed ? FOLDER_TOGGLE_CLOSED_SVG : FOLDER_TOGGLE_OPEN_SVG);
       btn.setAttribute('aria-label', collapsed ? 'Expand' : 'Collapse');
       btn.setAttribute('title', collapsed ? 'Expand' : 'Collapse');
       btn.setAttribute('aria-expanded', (!collapsed).toString());
@@ -6162,7 +6192,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 return { row: items[idx], mode: 'before' };
             }
             function rebuildTagList() {
-                tagListEl.innerHTML = '';
+                setInnerHTML(tagListEl,'');
                 const entries = ft_getTagListWithUncategorized();
                 if (entries.length === 1 && entries[0].kind === 'uncat') {
                     const empty = document.createElement('div'); empty.style.opacity = '0.7'; empty.style.fontSize = '12px'; empty.textContent = i18n.t('FT_SETTINGS_EMPTY_TAG_LIST'); tagListEl.appendChild(empty);
@@ -6179,7 +6209,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     orderDiv.appendChild(upBtn); orderDiv.appendChild(downBtn);
                     const delBtn = document.createElement('button'); delBtn.className = 'ft-modal-tag-delete'; delBtn.textContent = i18n.t('FT_SETTINGS_DELETE_BUTTON'); delBtn.type='button';
                     mainCell.appendChild(colorInput); mainCell.appendChild(nameInput);
-                    const dragHandle = document.createElement('div'); dragHandle.className = 'ft-modal-tag-drag-handle'; dragHandle.innerHTML = '≡';
+                    const dragHandle = document.createElement('div'); dragHandle.className = 'ft-modal-tag-drag-handle'; setInnerHTML(dragHandle,'≡');
 
                     if (entry.kind === 'uncat') {
                         row.draggable = false; dragHandle.draggable = false; dragHandle.title = i18n.t('FT_SETTINGS_UNCATEGORIZED_DELETE_TOOLTIP');
@@ -6447,7 +6477,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         };
         trigger.id = 'advanced-search-trigger';
         trigger.type = 'button';
-        trigger.innerHTML = SEARCH_SVG;
+        setInnerHTML(trigger,SEARCH_SVG);
         trigger.classList.add('adv-trigger-search');
         trigger.setAttribute('aria-label', i18n.t('tooltipTrigger'));
         trigger.setAttribute('aria-haspopup', 'dialog');
@@ -6455,7 +6485,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         document.body.appendChild(trigger);
 
         const modalContainer = document.createElement('div');
-        modalContainer.innerHTML = modalHTML;
+        setInnerHTML(modalContainer,modalHTML);
         // bodyへの単純追加をやめ、#layers と同じ階層に挿入
         const mountModal = () => {
             const layers = document.getElementById('layers');
@@ -7053,7 +7083,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
             const userUrl = `/${escapeAttr(item.user.handle)}`;
 
-            row.innerHTML = `
+            setInnerHTML(row,`
                 ${item.user.avatar
                     ? `<a class="adv-item-avatar-link adv-link adv-link-user" href="${userUrl}">
                          <img class="adv-item-avatar" src="${escapeAttr(item.user.avatar)}">
@@ -7078,7 +7108,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
                 <button class="adv-chip primary adv-fav-btn-pos adv-fav-btn-top" data-action="open">${i18n.t('buttonOpen')}</button>
                 <button class="adv-chip danger adv-fav-btn-pos adv-fav-btn-bottom" data-action="delete">${i18n.t('delete')}</button>
-            `;
+            `);
 
             // 既存コードにあるこの処理が、adv-link クラスを持つ要素にSPA遷移イベントを一括登録
             row.querySelectorAll('a.adv-link').forEach(a => {
@@ -7133,7 +7163,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             state.sentinelClass = `adv-sentinel-${key}`;
 
             // 表示クリア
-            container.innerHTML = '';
+            setInnerHTML(container,'');
 
             // 空の場合
             if (items.length === 0) {
@@ -7217,7 +7247,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 const bar = document.createElement('div');
                 bar.className = 'adv-folder-toolbar';
                 // タグ絞り込みボタン、ソート選択、検索ボックス
-                bar.innerHTML = `
+                setInnerHTML(bar,`
                     <div style="display:flex; gap:6px; align-items:center; flex:0 0 auto;">
                         <button id="adv-favorites-tag-filter-btn" class="ft-filter-button" type="button">
                             <span class="ft-filter-button-label"></span>
@@ -7231,7 +7261,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                         </select>
                     </div>
                     <input id="adv-favorites-search" class="adv-input" type="text" placeholder="${i18n.t('placeholderSearchSaved')}" style="flex:1; min-width:80px;">
-                `;
+                `);
 
                 // 翻訳適用（動的生成のためここで適用）
                 bar.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = i18n.t(el.dataset.i18n); });
@@ -9359,7 +9389,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 row.className = 'adv-item';
                 row.dataset.id = item.id;
 
-                row.innerHTML = `
+                setInnerHTML(row,`
                   <div class="adv-item-main">
                     <div class="adv-item-title">${escapeHTML(item.q)}</div>
                     <div class="adv-item-sub">
@@ -9371,7 +9401,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     <button class="adv-chip primary" data-action="run">${i18n.t('run')}</button>
                     <button class="adv-chip danger" data-action="delete">${i18n.t('delete')}</button>
                   </div>
-                `;
+                `);
 
                 row.querySelector('[data-action="run"]').addEventListener('click', () => {
                     parseQueryAndApplyToModal(item.q);
@@ -9429,7 +9459,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               row.className = 'adv-item';
               row.draggable = true;
               row.dataset.id = item.id;
-              row.innerHTML = `
+              setInnerHTML(row,`
                 <div class="adv-item-handle" title="Drag">≡</div>
                 <div class="adv-item-main">
                   <div class="adv-item-title">${escapeHTML(item.q)}</div>
@@ -9442,7 +9472,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                   <button class="adv-chip primary" data-action="run">${i18n.t('run')}</button>
                   <button class="adv-chip danger"  data-action="delete">${i18n.t('delete')}</button>
                 </div>
-              `;
+              `);
               row.querySelector('[data-action="run"]').addEventListener('click', ()=>{
                 parseQueryAndApplyToModal(item.q);
                 applyScopesToControls({pf:!!item.pf, lf:!!item.lf});
@@ -9544,7 +9574,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           // 4) フィルタUI（セレクト＆検索＆新規フォルダ）
           if (sel) {
             const prev = sel.value;
-            sel.innerHTML = '';
+            setInnerHTML(sel,'');
             const optAll = document.createElement('option'); optAll.value='__ALL__'; optAll.textContent=i18n.t('folderFilterAll'); sel.appendChild(optAll);
             const optUn  = document.createElement('option'); optUn.value='__UNASSIGNED__'; optUn.textContent=i18n.t('folderFilterUnassigned'); sel.appendChild(optUn);
             folders.forEach(f=>{
@@ -9588,7 +9618,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               return !q || targetText.includes(q);
           };
 
-          host.innerHTML = '';
+          setInnerHTML(host,'');
           empty.textContent = items.length ? '' : (emptyMessage || '');
 
           // 5) Unassigned インデックス保持
@@ -9778,10 +9808,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
             const actions = document.createElement('div');
             actions.className = 'adv-folder-actions';
-            actions.innerHTML = `
+            setInnerHTML(actions,`
               <button class="adv-chip"        data-action="rename"  title="${i18n.t('folderRenameTitle')}">${i18n.t('folderRename')}</button>
               <button class="adv-chip danger" data-action="delete"  title="${i18n.t('folderDeleteTitle')}">${i18n.t('folderDelete')}</button>
-            `;
+            `);
 
             header.appendChild(titleWrap);
             header.appendChild(actions);
@@ -10594,12 +10624,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                             ph.className = 'adv-collapsed-placeholder';
 
                             // ここで triggerWord を表示する
-                            ph.innerHTML = `
+                            setInnerHTML(ph,`
                                 <div class="adv-collapsed-label">
                                     <span style="opacity:0.8">${i18n.t('muteLabel')} ${escapeHTML(triggerWord)}</span>
                                 </div>
                                 <button class="adv-btn-show">${i18n.t('buttonShow')}</button>
-                            `;
+                            `);
 
                             const uncollapse = (e) => {
                                 e.stopPropagation();
@@ -10613,7 +10643,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                             cell.appendChild(ph);
                         } else {
                             const labelEl = ph.querySelector('.adv-collapsed-label span');
-                            if (labelEl) labelEl.innerHTML = `${i18n.t('muteLabel')} ${escapeHTML(triggerWord)}`;
+                            if (labelEl) setInnerHTML(labelEl,`${i18n.t('muteLabel')} ${escapeHTML(triggerWord)}`);
                         }
                     } else {
                         // [完全非表示モード] (Hard Hide または hidden設定)
@@ -10899,7 +10929,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           const title = escapeHTML(item.name || `@${item.handle}`);
           const sub   = escapeHTML(`@${item.handle}`);
 
-          row.innerHTML = `
+          setInnerHTML(row,`
             <div class="adv-item-handle" title="Drag">≡</div>
             ${
               item.avatar
@@ -10923,7 +10953,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               <button class="adv-chip primary" data-action="confirm">${i18n.t('buttonConfirm')}</button>
               <button class="adv-chip danger" data-action="delete">${i18n.t('delete')}</button>
             </div>
-          `;
+          `);
 
           row.querySelector('[data-action="confirm"]').addEventListener('click', (e) => {
             spaNavigate(`/${item.handle}`, { ctrlMeta: e.ctrlKey || e.metaKey });
@@ -10988,7 +11018,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           const title = escapeHTML(item.name);
           const sub   = escapeHTML(item.url);
 
-          row.innerHTML = `
+          setInnerHTML(row,`
             <div class="adv-item-handle" title="Drag">≡</div>
             <div class="adv-item-main">
               <div class="adv-item-title">
@@ -11003,7 +11033,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               <button class="adv-chip primary" data-action="confirm">${i18n.t('buttonConfirm')}</button>
               <button class="adv-chip danger" data-action="delete">${i18n.t('delete')}</button>
             </div>
-          `;
+          `);
 
           row.querySelector('[data-action="confirm"]').addEventListener('click', (e) => {
             spaNavigate(item.url, { ctrlMeta: e.ctrlKey || e.metaKey });
@@ -11071,11 +11101,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             if (target && !target.previousElementSibling?.classList?.contains('adv-folder-toolbar')) {
               const bar = document.createElement('div');
               bar.className = 'adv-folder-toolbar';
-              bar.innerHTML = `
+              setInnerHTML(bar,`
                 <select id="adv-accounts-folder-filter" class="adv-select"></select>
                 <input id="adv-accounts-search" class="adv-input" type="text" data-i18n-placeholder="placeholderFilterAccounts" placeholder="${i18n.t('placeholderFilterAccounts')}">
                 <button id="adv-accounts-new-folder" class="adv-chip" data-i18n="buttonAddFolder">${i18n.t('buttonAddFolder')}</button>
-              `;
+              `);
               target.parentElement.insertBefore(bar, target);
             }
           }
@@ -11087,11 +11117,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             if (target && !target.previousElementSibling?.classList?.contains('adv-folder-toolbar')) {
               const bar = document.createElement('div');
               bar.className = 'adv-folder-toolbar';
-              bar.innerHTML = `
+              setInnerHTML(bar,`
                 <select id="adv-lists-folder-filter" class="adv-select"></select>
                 <input id="adv-lists-search" class="adv-input" type="text" data-i18n-placeholder="placeholderFilterLists" placeholder="${i18n.t('placeholderFilterLists')}">
                 <button id="adv-lists-new-folder" class="adv-chip" data-i18n="buttonAddFolder">${i18n.t('buttonAddFolder')}</button>
-              `;
+              `);
               target.parentElement.insertBefore(bar, target);
             }
           }
@@ -11103,11 +11133,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             if (target && !target.previousElementSibling?.classList?.contains('adv-folder-toolbar')) {
               const bar = document.createElement('div');
               bar.className = 'adv-folder-toolbar';
-              bar.innerHTML = `
+              setInnerHTML(bar,`
                 <select id="adv-saved-folder-filter" class="adv-select"></select>
                 <input id="adv-saved-search" class="adv-input" type="text" data-i18n-placeholder="placeholderSearchSaved" placeholder="${i18n.t('placeholderSearchSaved')}">
                 <button id="adv-saved-new-folder" class="adv-chip" data-i18n="buttonAddFolder">${i18n.t('buttonAddFolder')}</button>
-              `;
+              `);
               target.parentElement.insertBefore(bar, target);
             }
           }
@@ -11364,7 +11394,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           const ICON_PATH_CHECK = 'M23 8l-5 5-3-3 1.5-1.5L18 10l3.5-3.5L23 8z'; // 右上に配置したチェック
           const iconPath = isAdded ? ICON_PATH_CHECK : ICON_PATH_ADD;
 
-          btn.innerHTML = `
+          setInnerHTML(btn,`
             <div dir="ltr" class="${innerCls}" style="${innerStyle}">
               <svg
                 viewBox="0 0 24 24"
@@ -11379,7 +11409,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               </svg>
               <span class="${spanCls}"></span>
             </div>
-          `;
+          `);
 
           btn.addEventListener('click', () => {
             if (isAdded) {
@@ -11679,14 +11709,14 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           const iconPath = isAdded ? ICON_PATH_CHECK : ICON_PATH_ADD;
 
           // ▼ iconPath を使用するように innerHTML を変更
-          btn.innerHTML = `
+          setInnerHTML(btn,`
               <div dir="ltr" class="${innerCls}" style="${innerStyle}">
                   <svg viewBox="0 0 24 24" aria-hidden="true" class="${svgCls}" fill="currentColor">
                       <g><path d="${iconPath}"></path></g>
                   </svg>
                   <span class="${spanCls}"></span>
               </div>
-          `;
+          `);
 
           // ▼ クリックイベントのロジックをトグルに変更
           btn.addEventListener('click', () => {
@@ -11982,7 +12012,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 const row = document.createElement('div');
                 row.className = 'adv-mute-item';
                 if (!item.enabled) row.classList.add('disabled');
-                row.innerHTML = `
+                setInnerHTML(row,`
                   <div class="adv-mute-content-left">
                       <div class="adv-mute-word">${escapeHTML(item.word)}</div>
                       <div class="adv-mute-options-row">
@@ -12003,7 +12033,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                   <div class="adv-mute-actions-right">
                     <button class="adv-chip danger" data-action="delete" style="padding:2px 8px; font-size:11px;">${i18n.t('delete')}</button>
                   </div>
-                `;
+                `);
                 row.querySelector('[data-action="toggle-enabled"]').addEventListener('change', () => toggleMutedEnabled(item.id));
                 row.querySelector('[data-action="toggle-cs"]').addEventListener('change', () => toggleMutedCS(item.id));
                 row.querySelector('[data-action="toggle-wb"]').addEventListener('change', () => toggleMutedWB(item.id));
@@ -12624,10 +12654,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             btn.title = i18n.t('tabFavorites');
 
             // SVG (Star)
-            btn.innerHTML = `
+            setInnerHTML(btn,`
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
-            </svg>`;
+            </svg>`);
 
             const updateState = () => {
                 const active = isFavorited(tweetId);
@@ -13644,7 +13674,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
                     const isPassword = syncScInput.type === 'password';
                     syncScInput.type = isPassword ? 'text' : 'password';
-                    syncSecretToggle.innerHTML = isPassword ? EYE_CLOSED_SVG : EYE_OPEN_SVG;
+                    setInnerHTML(syncSecretToggle,isPassword ? EYE_CLOSED_SVG : EYE_OPEN_SVG);
                     syncSecretToggle.title = isPassword ? 'Hide Password' : 'Show Password';
                 });
             }
