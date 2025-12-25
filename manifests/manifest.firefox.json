@@ -1,12 +1,11 @@
 {
   "manifest_version": 3,
-
   "name": "__MSG_extensionName__",
   "description": "__MSG_extensionDescription__",
-
   "version": "6.6.2",
   "author": "koyasi777",
   "homepage_url": "https://github.com/koyasi777/advanced-search-for-x-twitter",
+  "default_locale": "en",
 
   "icons": {
     "32": "icons/icon-32.png",
@@ -23,17 +22,18 @@
 
   "host_permissions": [
     "https://x.com/*",
-    "https://twitter.com/*"
+    "https://twitter.com/*",
+    "https://*.workers.dev/*"
   ],
+
+  "background": {
+    "scripts": ["background.js"]
+  },
 
   "browser_specific_settings": {
     "gecko": {
       "id": "advanced-search-for-x-twitter@koyasi777.github.io",
-      "data_collection_permissions": {
-        "required": [
-          "none"
-        ]
-      }
+      "strict_min_version": "109.0"
     }
   },
 
@@ -53,7 +53,5 @@
       ],
       "run_at": "document_idle"
     }
-  ],
-
-  "default_locale": "en"
+  ]
 }
