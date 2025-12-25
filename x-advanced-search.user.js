@@ -13347,6 +13347,19 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 merged.lists = smartMergeList(local.lists, server.lists);
                 merged.muted = mergeMuted(local.muted, server.muted);
 
+                // --- フォルダ構造のマージ ---
+                merged.folders = {
+                    accounts: smartMergeList(local.folders?.accounts, server.folders?.accounts),
+                    lists:    smartMergeList(local.folders?.lists,    server.folders?.lists),
+                    saved:    smartMergeList(local.folders?.saved,    server.folders?.saved)
+                };
+
+                // --- 未分類位置(Unassigned Index)のマージ ---
+                merged.unassignedIndex = {
+                    ...(local.unassignedIndex || {}),
+                    ...(server.unassignedIndex || {})
+                };
+
                 if (local.favoriteTags && server.favoriteTags) {
                     merged.favoriteTags = { ...local.favoriteTags };
                     merged.favoriteTags.tags = smartMergeList(local.favoriteTags.tags || [], server.favoriteTags.tags || []);
