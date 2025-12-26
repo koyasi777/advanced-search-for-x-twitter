@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      7.0.0
+// @version      7.0.1
 // @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
 // @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
 // @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
@@ -2815,6 +2815,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 '--modal-scrollbar-thumb': '#aab8c2', '--modal-scrollbar-track': '#eff3f4', '--modal-close-color': '#0f1419',
                 '--modal-close-hover-bg': 'rgba(15, 20, 25, 0.1)', '--hr-color': '#eff3f4',
                 '--modal-tabs-shadow': '0 1px 12px rgba(0, 0, 0, 0.22)',
+                '--danger-text': '#f4212e', '--danger-border': '#f4212e', '--danger-hover-bg': 'rgba(244, 33, 46, 0.1)',
             },
             dim: {
                 '--modal-bg': '#15202b', '--modal-text-primary': '#f7f9f9', '--modal-text-secondary': '#8899a6', '--modal-border': '#38444d',
@@ -2822,6 +2823,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 '--modal-scrollbar-thumb': '#536471', '--modal-scrollbar-track': '#192734', '--modal-close-color': '#f7f9f9',
                 '--modal-close-hover-bg': 'rgba(247, 249, 249, 0.1)', '--hr-color': '#38444d',
                 '--modal-tabs-shadow': '0 5px 12px rgba(0, 0, 0, 0.27)',
+                '--danger-text': '#ffb3b3', '--danger-border': '#8b0000', '--danger-hover-bg': 'rgba(244, 33, 46, 0.15)',
             },
             dark: {
                 '--modal-bg': '#000000', '--modal-text-primary': '#e7e9ea', '--modal-text-secondary': '#71767b', '--modal-border': '#2f3336',
@@ -2829,6 +2831,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 '--modal-scrollbar-thumb': '#536471', '--modal-scrollbar-track': '#16181c', '--modal-close-color': '#e7e9ea',
                 '--modal-close-hover-bg': 'rgba(231, 233, 234, 0.1)', '--hr-color': '#2f3336',
                 '--modal-tabs-shadow': '0 5px 12px rgba(0, 0, 0, 0.27)',
+                '--danger-text': '#ffb3b3', '--danger-border': '#8b0000', '--danger-hover-bg': 'rgba(244, 33, 46, 0.15)',
             }
         },
         applyTheme: function(modalElement, triggerEl) {
@@ -3451,13 +3454,17 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         .adv-fav-btn-pos { position: absolute; right: 8px; }
         .adv-fav-btn-top { top: 8px; }
         .adv-fav-btn-bottom { bottom: 8px; }
-        .adv-chip.danger { border-color:#8b0000; color:#ffb3b3; }
-        .adv-modal-button.danger {
-          border-color:#8b0000;
-          color:#ffb3b3;
+        .adv-chip.danger {
+          border-color: var(--danger-border, #8b0000);
+          color: var(--danger-text, #ffb3b3);
         }
-        .adv-modal-button.danger:hover{
-          background-color:rgba(139,0,0,0.2);
+        .adv-modal-button.danger {
+          border-color: var(--danger-border, #8b0000);
+          color: var(--danger-text, #ffb3b3);
+        }
+        .adv-modal-button.danger:hover,
+        .adv-chip.danger:hover {
+          background-color: var(--danger-hover-bg, rgba(244, 33, 46, 0.1));
         }
         .adv-chip.scope { padding:2px 6px; font-size:11px; line-height:1.2; opacity:0.95; }
 
