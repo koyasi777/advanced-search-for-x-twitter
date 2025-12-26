@@ -12341,10 +12341,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 const extracted = [];
 
                 // コンテナ(tweetPhoto)を基準にループすることで、DOM上の表示順序(1,2,3,4)を維持する
-                const mediaContainers = Array.from(rootElement.querySelectorAll('div[data-testid="tweetPhoto"]'));
+                // tweetPhoto だけでなく videoPlayer も対象にする
+                const mediaContainers = Array.from(rootElement.querySelectorAll('div[data-testid="tweetPhoto"], div[data-testid="videoPlayer"]'));
 
-                // 同じコンテナを二重に処理しないためのセット（念のため）
+                // 同じコンテナや同じ動画を二重に処理しないためのセット
                 const processedUrls = new Set();
+                const processedElements = new Set();
 
                 mediaContainers.forEach(container => {
                     // 引用枠内の除外判定
@@ -12357,6 +12359,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                         if (url && !processedUrls.has(url)) {
                             extracted.push({ type: 'video', url: url });
                             processedUrls.add(url);
+                            processedElements.add(container);
                         }
                         return; // 動画が見つかったらこのコンテナは処理終了
                     }
@@ -12365,9 +12368,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     const img = container.querySelector('img');
                     if (img && img.src) {
                         const url = img.src;
-                        if (!processedUrls.has(url)) {
+                        if (url && !processedUrls.has(url)) {
+                            // アイコンや絵文字を拾わないように簡単なフィルタ
                             extracted.push({ type: 'image', url: url });
                             processedUrls.add(url);
+                            processedElements.add(container);
                         }
                     }
                 });
