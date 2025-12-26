@@ -6812,45 +6812,62 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             return _favCache;
         };
 
-        // 保存時にキャッシュとSetも同時に更新する
+        // 保存用タイマー変数
+        let _favSaveTimer = null;
+
+        // 保存時にキャッシュとSetは即時更新し、ストレージ保存は遅延させる
         const saveFavorites = (arr) => {
+            // 1. メモリ上のデータは即時更新 (これでUI判定や検索は一瞬で反映される)
             _favCache = arr;
             _favSet = new Set(arr.map(x => x.id));
-            saveJSON(FAV_KEY, arr);
+
+            // 2. 既存の保存予約があればキャンセル (連打対策)
+            if (_favSaveTimer) clearTimeout(_favSaveTimer);
+
+            // 3. 重たい書き込み処理を非同期で遅延実行
+            // ユーザーが操作を終えてから 500ms 後、あるいは UI描画が落ち着いた後に実行
+            _favSaveTimer = setTimeout(() => {
+                // ここで初めて重い JSON.stringify が走る
+                saveJSON(FAV_KEY, arr);
+                _favSaveTimer = null;
+            }, 500);
         };
 
         const toggleFavorite = (tweetMeta) => {
-            // loadFavoritesはキャッシュを返すので高速
+            // 1. キャッシュからデータを取得 (ロード済み前提)
             const list = loadFavorites();
             const idx = list.findIndex(x => x.id === tweetMeta.id);
+            const isAdding = idx < 0;
 
-            if (idx >= 0) {
-                // --- 削除 (Remove) ---
-                // 配列を直接変更せず、新しい配列を作って整合性を保つのがベストだが
-                // ここでは元のロジックに合わせて破壊的変更をしてから saveFavorites で全体更新する
+            // 2. メモリ上のデータを更新 (saveFavorites内部で遅延保存が予約される)
+            if (isAdding) {
+                list.unshift({ ...tweetMeta, ts: Date.now() });
+                showToast(i18n.t('toastFavorited'));
+            } else {
                 list.splice(idx, 1);
-                saveFavorites(list); // ここで _favSet も更新される
-
-                // 解除時はタグデータも削除する
+                // 解除時はタグデータも削除
                 if (ft_state && ft_state.tweetTags && ft_state.tweetTags[tweetMeta.id]) {
                     delete ft_state.tweetTags[tweetMeta.id];
                     ft_saveState();
                 }
-
-                renderFavorites(); // (お気に入りタブが開いている場合用)
                 showToast(i18n.t('toastUnfavorited'));
-            } else {
-                list.unshift({ ...tweetMeta, ts: Date.now() });
-                saveFavorites(list); // ここで _favSet も更新される
-                renderFavorites();
-                showToast(i18n.t('toastFavorited'));
             }
 
-            // 最後に全同期
-            updateAllFavoriteButtons();          // ボタン更新
-            refreshTagChipsForTweet(tweetMeta.id); // タグチップ更新
+            // 3. 変更をコミット (ここが高速化のキモ：保存は非同期になる)
+            saveFavorites(list);
 
-            return idx < 0; // 追加されたら true
+            // 4. UIを即座に更新
+            // キャッシュ(_favSet)は更新済みなので、isFavorited() は正しい値を返す
+            updateAllFavoriteButtons();
+            refreshTagChipsForTweet(tweetMeta.id);
+
+            // お気に入りタブが開かれている場合のみ再描画 (重いので)
+            if (document.getElementById('adv-tab-favorites').classList.contains('active')) {
+                // ここも少し遅らせてメインスレッドを解放しても良い
+                requestAnimationFrame(() => renderFavorites());
+            }
+
+            return isAdding;
         };
 
         // Setを使った超高速判定 (JSON.parseが発生しない)
@@ -6861,23 +6878,26 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
         const deleteFavorite = (id) => {
             markAsDeleted(id);
-            // 1. お気に入りリストから削除
-            const list = loadFavorites().filter(x => x.id !== id);
-            saveFavorites(list); // ここで _favSet も更新される
 
-            // 2. タグデータも削除する (データのクリーンアップ)
+            // 1. メモリ操作 & 遅延保存予約
+            const list = loadFavorites().filter(x => x.id !== id);
+            saveFavorites(list);
+
+            // 2. タグデータ削除
             if (ft_state && ft_state.tweetTags && ft_state.tweetTags[id]) {
                 delete ft_state.tweetTags[id];
-                ft_saveState(); // 状態を保存
+                ft_saveState();
             }
 
-            // 3. UI更新 (リスト再描画 & トースト)
-            renderFavorites();
+            // 3. UI即時更新
             showToast(i18n.t('toastDeleted'));
+            updateAllFavoriteButtons();
+            refreshTagChipsForTweet(id);
 
-            // 4. タイムライン上の見た目を同期
-            updateAllFavoriteButtons();   // ボタンの色を更新
-            refreshTagChipsForTweet(id);  // タグチップを消去
+            // 4. リスト再描画 (タブが開いている場合のみ)
+            if (document.getElementById('adv-tab-favorites').classList.contains('active')) {
+                 requestAnimationFrame(() => renderFavorites());
+            }
         };
 
         // お気に入りリストのイベント委譲ハンドラ
