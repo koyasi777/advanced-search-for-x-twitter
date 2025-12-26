@@ -320,6 +320,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 chipBeta: "Beta",
                 labelSyncEndpoint: "Endpoint URL",
                 linkSyncSetup: "Setup Guide",
+                urlSyncHelp: "https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README_en.md",
                 placeholderSyncEndpoint: "https://your-worker.workers.dev",
                 labelSyncId: "Sync ID (UUID)",
                 placeholderSyncId: "Paste or Generate UUID",
@@ -584,6 +585,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 chipBeta: "ベータ",
                 labelSyncEndpoint: "エンドポイント URL",
                 linkSyncSetup: "セットアップガイド",
+                urlSyncHelp: "https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README.md",
                 placeholderSyncEndpoint: "https://your-worker.workers.dev",
                 labelSyncId: "同期 ID (UUID)",
                 placeholderSyncId: "UUIDを貼り付け、または生成",
@@ -847,6 +849,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 chipBeta: "Beta",
                 labelSyncEndpoint: "端点 URL",
                 linkSyncSetup: "设置指南",
+                urlSyncHelp: "https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README_zh-CN.md",
                 placeholderSyncEndpoint: "https://your-worker.workers.dev",
                 labelSyncId: "同步 ID (UUID)",
                 placeholderSyncId: "粘贴或生成 UUID",
@@ -1110,6 +1113,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 chipBeta: "Beta",
                 labelSyncEndpoint: "端點 URL",
                 linkSyncSetup: "設定指南",
+                urlSyncHelp: "https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README_zh-TW.md",
                 placeholderSyncEndpoint: "https://your-worker.workers.dev",
                 labelSyncId: "同步 ID (UUID)",
                 placeholderSyncId: "貼上或產生 UUID",
@@ -1376,6 +1380,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 chipBeta: "베타",
                 labelSyncEndpoint: "엔드포인트 URL",
                 linkSyncSetup: "설정 가이드",
+                urlSyncHelp: "https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README_ko.md",
                 placeholderSyncEndpoint: "https://your-worker.workers.dev",
                 labelSyncId: "동기화 ID (UUID)",
                 placeholderSyncId: "UUID 붙여넣기 또는 생성",
@@ -1639,6 +1644,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 chipBeta: "Bêta",
                 labelSyncEndpoint: "URL Endpoint",
                 linkSyncSetup: "Guide de configuration",
+                urlSyncHelp: "https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README_fr.md",
                 placeholderSyncEndpoint: "https://your-worker.workers.dev",
                 labelSyncId: "ID de Synchro (UUID)",
                 placeholderSyncId: "Coller ou générer UUID",
@@ -1902,6 +1908,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 chipBeta: "Beta",
                 labelSyncEndpoint: "URL del Endpoint",
                 linkSyncSetup: "Guía de configuración",
+                urlSyncHelp: "https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README_es.md",
                 placeholderSyncEndpoint: "https://your-worker.workers.dev",
                 labelSyncId: "ID de Sincronización (UUID)",
                 placeholderSyncId: "Pegar o generar UUID",
@@ -2165,6 +2172,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 chipBeta: "Beta",
                 labelSyncEndpoint: "Endpunkt-URL",
                 linkSyncSetup: "Einrichtungsanleitung",
+                urlSyncHelp: "https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README_de.md",
                 placeholderSyncEndpoint: "https://your-worker.workers.dev",
                 labelSyncId: "Sync-ID (UUID)",
                 placeholderSyncId: "UUID einfügen oder generieren",
@@ -2428,6 +2436,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 chipBeta: "Beta",
                 labelSyncEndpoint: "URL do Endpoint",
                 linkSyncSetup: "Guia de configuração",
+                urlSyncHelp: "https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README_pt-BR.md",
                 placeholderSyncEndpoint: "https://your-worker.workers.dev",
                 labelSyncId: "ID de Sincronização (UUID)",
                 placeholderSyncId: "Colar ou gerar UUID",
@@ -2691,6 +2700,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 chipBeta: "Бета",
                 labelSyncEndpoint: "URL конечной точки",
                 linkSyncSetup: "Руководство по настройке",
+                urlSyncHelp: "https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README_ru.md",
                 placeholderSyncEndpoint: "https://your-worker.workers.dev",
                 labelSyncId: "ID синхронизации (UUID)",
                 placeholderSyncId: "Вставьте или сгенерируйте UUID",
@@ -2735,6 +2745,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             container.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = this.t(el.dataset.i18n); });
             container.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = this.t(el.dataset.i18nPlaceholder); });
             container.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = this.t(el.dataset.i18nTitle); });
+            container.querySelectorAll('[data-i18n-href]').forEach(el => { el.href = this.t(el.dataset.i18nHref); });
         }
     };
 
@@ -5289,7 +5300,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                           <div class="adv-settings-group" style="margin-bottom:16px;">
                               <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:6px;">
                                   <label style="font-size:13px; margin-bottom:0; color:var(--modal-text-primary);" data-i18n="labelSyncEndpoint">Endpoint URL</label>
-                                  <a href="https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README.md" target="_blank" rel="noopener noreferrer"
+                                  <a href="https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README.md" data-i18n-href="urlSyncHelp" target="_blank" rel="noopener noreferrer"
                                      style="font-size:11px; color:var(--modal-primary-color); text-decoration:none; display:flex; align-items:center; gap:3px; opacity:0.9; transition:opacity 0.2s;"
                                      onmouseover="this.style.opacity='1';this.style.textDecoration='underline'"
                                      onmouseout="this.style.opacity='0.9';this.style.textDecoration='none'">
