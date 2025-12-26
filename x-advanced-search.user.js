@@ -4838,7 +4838,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             /* 設定モーダル等をメインモーダルと同じ最前面レイヤーに持ち上げる */
             /* これによりDOM順序が後の設定モーダルが手前に表示される */
             #adv-settings-modal.adv-settings-modal,
-            .ft-modal-backdrop {
+            .ft-modal-backdrop,
+            .adv-toast {
                 z-index: 2147483647 !important;
             }
             /* モーダル本体: 画面中央に固定し、サイズを強制適用 */
