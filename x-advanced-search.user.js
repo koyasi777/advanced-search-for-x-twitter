@@ -319,6 +319,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleSync: "Cloud Sync",
                 chipBeta: "Beta",
                 labelSyncEndpoint: "Endpoint URL",
+                linkSyncSetup: "Setup Guide",
                 placeholderSyncEndpoint: "https://your-worker.workers.dev",
                 labelSyncId: "Sync ID (UUID)",
                 placeholderSyncId: "Paste or Generate UUID",
@@ -582,6 +583,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleSync: "クラウド同期",
                 chipBeta: "ベータ",
                 labelSyncEndpoint: "エンドポイント URL",
+                linkSyncSetup: "セットアップガイド",
                 placeholderSyncEndpoint: "https://your-worker.workers.dev",
                 labelSyncId: "同期 ID (UUID)",
                 placeholderSyncId: "UUIDを貼り付け、または生成",
@@ -844,6 +846,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleSync: "云同步",
                 chipBeta: "Beta",
                 labelSyncEndpoint: "端点 URL",
+                linkSyncSetup: "设置指南",
                 placeholderSyncEndpoint: "https://your-worker.workers.dev",
                 labelSyncId: "同步 ID (UUID)",
                 placeholderSyncId: "粘贴或生成 UUID",
@@ -1106,6 +1109,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleSync: "雲端同步",
                 chipBeta: "Beta",
                 labelSyncEndpoint: "端點 URL",
+                linkSyncSetup: "設定指南",
                 placeholderSyncEndpoint: "https://your-worker.workers.dev",
                 labelSyncId: "同步 ID (UUID)",
                 placeholderSyncId: "貼上或產生 UUID",
@@ -1371,6 +1375,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleSync: "클라우드 동기화",
                 chipBeta: "베타",
                 labelSyncEndpoint: "엔드포인트 URL",
+                linkSyncSetup: "설정 가이드",
                 placeholderSyncEndpoint: "https://your-worker.workers.dev",
                 labelSyncId: "동기화 ID (UUID)",
                 placeholderSyncId: "UUID 붙여넣기 또는 생성",
@@ -1633,6 +1638,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleSync: "Synchro Cloud",
                 chipBeta: "Bêta",
                 labelSyncEndpoint: "URL Endpoint",
+                linkSyncSetup: "Guide de configuration",
                 placeholderSyncEndpoint: "https://your-worker.workers.dev",
                 labelSyncId: "ID de Synchro (UUID)",
                 placeholderSyncId: "Coller ou générer UUID",
@@ -1895,6 +1901,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleSync: "Sincronización en la nube",
                 chipBeta: "Beta",
                 labelSyncEndpoint: "URL del Endpoint",
+                linkSyncSetup: "Guía de configuración",
                 placeholderSyncEndpoint: "https://your-worker.workers.dev",
                 labelSyncId: "ID de Sincronización (UUID)",
                 placeholderSyncId: "Pegar o generar UUID",
@@ -2157,6 +2164,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleSync: "Cloud-Sync",
                 chipBeta: "Beta",
                 labelSyncEndpoint: "Endpunkt-URL",
+                linkSyncSetup: "Einrichtungsanleitung",
                 placeholderSyncEndpoint: "https://your-worker.workers.dev",
                 labelSyncId: "Sync-ID (UUID)",
                 placeholderSyncId: "UUID einfügen oder generieren",
@@ -2419,6 +2427,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleSync: "Sincronização na nuvem",
                 chipBeta: "Beta",
                 labelSyncEndpoint: "URL do Endpoint",
+                linkSyncSetup: "Guia de configuração",
                 placeholderSyncEndpoint: "https://your-worker.workers.dev",
                 labelSyncId: "ID de Sincronização (UUID)",
                 placeholderSyncId: "Colar ou gerar UUID",
@@ -2681,6 +2690,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleSync: "Облачная синхронизация",
                 chipBeta: "Бета",
                 labelSyncEndpoint: "URL конечной точки",
+                linkSyncSetup: "Руководство по настройке",
                 placeholderSyncEndpoint: "https://your-worker.workers.dev",
                 labelSyncId: "ID синхронизации (UUID)",
                 placeholderSyncId: "Вставьте или сгенерируйте UUID",
@@ -5277,9 +5287,20 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                       <div id="adv-sync-settings-container" style="display:none; margin-top:7px; margin-bottom:4px; padding:16px; background:rgba(128,128,128,0.05); border-radius:12px; border:1px solid var(--modal-border);">
 
                           <div class="adv-settings-group" style="margin-bottom:16px;">
-                              <label style="font-size:13px; margin-bottom:6px; color:var(--modal-text-primary);" data-i18n="labelSyncEndpoint">Endpoint URL</label>
+                              <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:6px;">
+                                  <label style="font-size:13px; margin-bottom:0; color:var(--modal-text-primary);" data-i18n="labelSyncEndpoint">Endpoint URL</label>
+                                  <a href="https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README.md" target="_blank" rel="noopener noreferrer"
+                                     style="font-size:11px; color:var(--modal-primary-color); text-decoration:none; display:flex; align-items:center; gap:3px; opacity:0.9; transition:opacity 0.2s;"
+                                     onmouseover="this.style.opacity='1';this.style.textDecoration='underline'"
+                                     onmouseout="this.style.opacity='0.9';this.style.textDecoration='none'">
+                                      <svg viewBox="0 0 24 24" aria-hidden="true" style="width:13px; height:13px; fill:currentColor;">
+                                        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                                      </svg>
+                                      <span data-i18n="linkSyncSetup">Setup Guide</span>
+                                  </a>
+                              </div>
                               <input type="url" id="adv-sync-endpoint" data-i18n-placeholder="placeholderSyncEndpoint" placeholder="https://your-worker.workers.dev"
-                                  style="width:100%; box-sizing:border-box; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:13px; padding:10px 12px; border-radius:6px;">
+                                     style="width:100%; box-sizing:border-box; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:13px; padding:10px 12px; border-radius:6px;">
                           </div>
 
                           <div class="adv-settings-group" style="margin-bottom:16px;">
