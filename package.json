@@ -5,7 +5,15 @@
         "prebuild": "npm run clean",
         "build": "shx cp x-advanced-search.user.js extension/content.js",
         "watch": "onchange \"x-advanced-search.user.js\" -- npm run build",
-        "pack": "npm run build && cd extension && bestzip ../package.zip *"
+        
+        "//_comment": "--- Browser Specific Packaging ---",
+        "copy:manifest:chrome": "shx cp manifests/manifest.chrome.json extension/manifest.json",
+        "copy:manifest:firefox": "shx cp manifests/manifest.firefox.json extension/manifest.json",
+        
+        "pack:chrome": "npm run build && npm run copy:manifest:chrome && cd extension && bestzip ../package-chrome.zip *",
+        "pack:firefox": "npm run build && npm run copy:manifest:firefox && cd extension && bestzip ../package-firefox.zip *",
+        
+        "pack": "echo \"\u001b[31mError: Please specify the target browser.\u001b[0m Use 'npm run pack:chrome' or 'npm run pack:firefox'.\" && exit 1"
     },
     "devDependencies": {
         "bestzip": "^2.2.1",

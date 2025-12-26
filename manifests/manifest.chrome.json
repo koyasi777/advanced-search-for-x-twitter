@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_extensionName__",
+  "description": "__MSG_extensionDescription__",
+  "version": "6.6.2",
+  "author": "koyasi777",
+  "homepage_url": "https://github.com/koyasi777/advanced-search-for-x-twitter",
+  "default_locale": "en",
+
+  "icons": {
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "64": "icons/icon-64.png",
+    "96": "icons/icon-96.png",
+    "128": "icons/icon-128.png"
+  },
+
+  "permissions": [
+    "storage",
+    "unlimitedStorage"
+  ],
+
+  "host_permissions": [
+    "https://x.com/*",
+    "https://twitter.com/*",
+    "https://*.workers.dev/*"
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*"
+      ],
+      "exclude_matches": [
+        "https://x.com/i/tweetdeck*",
+        "https://twitter.com/i/tweetdeck*"
+      ],
+      "js": [
+        "content.js",
+        "adapter.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}
