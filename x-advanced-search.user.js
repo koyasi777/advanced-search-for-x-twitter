@@ -5416,10 +5416,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         };
 
         const saveJSON = (key, value) => {
-            // 1. 即座にメモリキャッシュを更新する（これで直後の loadJSON は最新データを返す）
+            // 1. 即座にメモリキャッシュを更新
             _memCache[key] = value;
 
-            // 2. ストレージへの書き込みは排他制御付きでゆっくり行う
+            // 2. インポート中はストレージ書き込みのみで終了
             if (__IS_IMPORTING__) {
                 try { kv.set(key, JSON.stringify(value)); } catch(_) {}
                 return;
@@ -5427,8 +5427,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
             withIoLock(async () => {
                 try { kv.set(key, JSON.stringify(value)); } catch(_) {}
-
                 try { kv.set(DIRTY_KEY, '1'); } catch(_) {}
+
+                // SyncManagerに変更を通知（これで実行中の同期があっても再スケジュールされる）
+                if (syncManager) {
+                    syncManager.notifyChange();
+                }
+
                 triggerAutoSync();
             });
         };
@@ -13020,8 +13025,21 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 this.currentSalt = null;    // 初回送信用のソルト
                 this.isSyncing = false;
                 this.nextSyncScheduled = false; // 次回同期の予約フラグ
+
+                // 同期処理中に発生した変更を検知するフラグ
+                this.pendingChanges = false;
+
                 this.readyPromise = Promise.resolve();
                 this.loadConfig();
+            }
+
+            // 外部から変更を通知するメソッド
+            notifyChange() {
+                this.pendingChanges = true;
+                // もし現在同期中なら、終わった直後にもう一度走らせるよう予約を入れる
+                if (this.isSyncing) {
+                    this.nextSyncScheduled = true;
+                }
             }
 
             loadConfig() {
@@ -13489,10 +13507,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 }
 
                 this.isSyncing = true;
+                // 今回の同期サイクルで処理する変更分として、フラグを一旦下ろす
+                this.pendingChanges = false;
+
                 this.updateStatus('syncStatusConnecting');
-                if (headerSyncBtn) {
+                if (typeof headerSyncBtn !== 'undefined' && headerSyncBtn) {
                     headerSyncBtn.classList.remove('success', 'error');
-                    headerSyncBtn.title = i18n.t('syncStatusConnecting');
+                    headerSyncBtn.title = (typeof i18n !== 'undefined' ? i18n.t('syncStatusConnecting') : 'Connecting...');
                 }
 
                 let success = false;
@@ -13504,25 +13525,21 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     const handshakeRes = await gmFetch(this.endpoint, { method: 'GET', headers: handshakeHeaders });
 
                     let targetSalt = null;
-
                     if (handshakeRes.status === 200) {
                         const info = JSON.parse(handshakeRes.responseText);
                         if (info.status === 'exists' && info.salt) {
-                            // 既存レコード: サーバーからData Saltを取得
                             targetSalt = info.salt;
                         } else {
-                            // 新規レコード: クライアント側でData Saltを生成
                             const cryptoObj = (typeof unsafeWindow !== 'undefined' && unsafeWindow.crypto) ? unsafeWindow.crypto : window.crypto;
                             const arr1 = new Uint8Array(16); cryptoObj.getRandomValues(arr1);
                             targetSalt = Array.from(arr1).map(b => b.toString(16).padStart(2, '0')).join('');
                         }
                     } else if (handshakeRes.status === 400) {
-                         throw new Error("Invalid Sync ID format");
+                        throw new Error("Invalid Sync ID format");
                     } else {
-                         throw new Error(`Handshake failed: ${handshakeRes.status}`);
+                        throw new Error(`Handshake failed: ${handshakeRes.status}`);
                     }
 
-                    // Phase 2: Key Derivation (Data Saltのみを使用)
                     await new Promise(r => setTimeout(r, 50));
                     await this.deriveKeys(targetSalt);
 
@@ -13547,25 +13564,20 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                         if (serverRev > localRev) {
                             this.updateStatus('syncStatusPulling');
                             if (serverWrapper.chunks) {
-                                // クライアント側で結合
                                 const fullCipherStr = serverWrapper.chunks.map(c => c.data).join("");
                                 const serverDataObj = JSON.parse(fullCipherStr);
-
                                 const decrypted = await this.decryptPayload(serverDataObj, serverRev - 1);
 
-                                // マージから保存完了までをロックして保護
                                 let importSuccess = false;
                                 await withIoLock(async () => {
-                                    // ロック内で最新のローカル状態を再取得
                                     const currentLocal = JSON.parse(buildCloudSyncPayload());
                                     const merged = this._mergeData(currentLocal, decrypted);
-                                    // 保存実行 (applySettingsImportJSONは内部で __IS_IMPORTING__ フラグを立てるため saveJSON のロック待機を回避できる)
                                     importSuccess = applySettingsImportJSON(JSON.stringify(merged));
                                 });
 
                                 if (importSuccess) {
                                     GM_setValue(DATA_REVISION_KEY, serverRev.toString());
-                                    GM_deleteValue(DIRTY_KEY);
+                                    // Dirty削除は最後にまとめて行うためここではスキップ
                                     success = true;
                                 } else {
                                     throw new Error("Import failed");
@@ -13589,47 +13601,37 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                             salt: this.currentSalt
                         };
 
-                        const payloadString = JSON.stringify(payloadToSend);
                         const postRes = await gmFetch(this.endpoint, {
-                            method: 'POST', headers: authHeaders, body: payloadString
+                            method: 'POST', headers: authHeaders, body: JSON.stringify(payloadToSend)
                         });
 
                         if (postRes.status === 200) {
                             const resJson = JSON.parse(postRes.responseText);
                             if (resJson.newRevision) {
                                 GM_setValue(DATA_REVISION_KEY, resJson.newRevision.toString());
-                                GM_deleteValue(DIRTY_KEY);
                             }
                             success = true;
                         } else if (postRes.status === 409) {
                             this.updateStatus('syncStatusMerging');
                             const conflictBody = JSON.parse(postRes.responseText);
-
-                            // サーバーとローカルでSaltが食い違っている場合（初期化競合など）、鍵を再生成する
                             if (conflictBody.salt && conflictBody.salt !== this.currentSalt) {
-                                console.warn("[Sync] Salt mismatch detected on conflict. Re-deriving keys...");
+                                console.warn("[Sync] Salt mismatch detected. Re-deriving keys...");
                                 await this.deriveKeys(conflictBody.salt);
-                                // 認証ヘッダーも新しいトークンで更新が必要
                                 authHeaders['Authorization'] = 'Bearer ' + this.authToken;
                             }
-
                             const sChunks = conflictBody.serverChunks || [];
                             const sCipherStr = sChunks.map(c => c.data).join("");
                             const sEncData = JSON.parse(sCipherStr);
-
                             const sRev = conflictBody.currentRevision;
 
                             if (sEncData) {
                                 const sData = await this.decryptPayload(sEncData, sRev - 1);
-
-                                // 競合解消マージと保存をロックして保護
                                 let merged = null;
                                 await withIoLock(async () => {
                                     const currentLocal = JSON.parse(buildCloudSyncPayload());
                                     merged = this._mergeData(currentLocal, sData);
                                     applySettingsImportJSON(JSON.stringify(merged));
                                 });
-
                                 const mergedEncrypted = await this.encryptPayload(merged, sRev);
                                 const retryPayload = { ...mergedEncrypted, salt: this.currentSalt };
 
@@ -13639,7 +13641,6 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                                 if (retryRes.status === 200) {
                                     const rJson = JSON.parse(retryRes.responseText);
                                     GM_setValue(DATA_REVISION_KEY, rJson.newRevision.toString());
-                                    GM_deleteValue(DIRTY_KEY);
                                     success = true;
                                 } else {
                                     throw new Error(`Merge retry failed: ${retryRes.status}`);
@@ -13647,6 +13648,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                             }
                         } else {
                             throw new Error(`Upload failed: ${postRes.status}`);
+                        }
+                    }
+
+                    // 成功時に「今回の同期中に新たな変更がなかった場合のみ」フラグを消す
+                    if (success) {
+                        if (!this.pendingChanges) {
+                            GM_deleteValue(DIRTY_KEY);
                         }
                     }
 
@@ -13665,32 +13673,32 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
                     this.isSyncing = false;
 
-                    // 予約が入っていたら再実行する
-                    if (this.nextSyncScheduled) {
+                    // pendingChanges が true なら、Dirtyフラグが残っているので再実行する
+                    if (this.nextSyncScheduled || this.pendingChanges) {
                         this.nextSyncScheduled = false;
                         setTimeout(() => this.executeSync(), 100);
                     }
 
                     if (success) {
                         this.updateStatus('syncStatusSynced');
-                        if (headerSyncBtn) {
+                        if (typeof headerSyncBtn !== 'undefined' && headerSyncBtn) {
                             headerSyncBtn.classList.add('success');
-                            headerSyncBtn.title = i18n.t('toastSynced');
-                            showToast(i18n.t('toastSynced'));
+                            headerSyncBtn.title = (typeof i18n !== 'undefined' ? i18n.t('toastSynced') : 'Synced');
+                            showToast(typeof i18n !== 'undefined' ? i18n.t('toastSynced') : 'Synced');
                         }
                     } else {
                         this.updateStatus('syncStatusError');
-                        if (headerSyncBtn) {
+                        if (typeof headerSyncBtn !== 'undefined' && headerSyncBtn) {
                             headerSyncBtn.classList.add('error');
-                            headerSyncBtn.title = `${i18n.t('toastSyncFailed')}: ${errorMsg}`;
-                            showToast(i18n.t('toastSyncFailed'));
+                            headerSyncBtn.title = (typeof i18n !== 'undefined' ? `${i18n.t('toastSyncFailed')}: ${errorMsg}` : 'Failed');
+                            showToast(typeof i18n !== 'undefined' ? i18n.t('toastSyncFailed') : 'Failed');
                         }
                     }
-                    if (headerSyncBtn) {
+                    if (typeof headerSyncBtn !== 'undefined' && headerSyncBtn) {
                         headerSyncBtn.classList.remove('spinning');
                         setTimeout(() => {
                             headerSyncBtn.classList.remove('success', 'error');
-                            headerSyncBtn.title = i18n.t('buttonSyncNow');
+                            headerSyncBtn.title = (typeof i18n !== 'undefined' ? i18n.t('buttonSyncNow') : 'Sync Now');
                         }, 3000);
                     }
                 }
