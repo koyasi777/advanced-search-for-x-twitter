@@ -42,6 +42,36 @@
         return style;
     };
 
+    // Background Script経由の通信プロキシ
+    // X.comのCSP制限を回避するため、直接fetchせずService Workerに依頼する
+    window.GM_xmlhttpRequest = function(details) {
+        chrome.runtime.sendMessage({
+            type: 'GM_xmlhttpRequest',
+            details: {
+                method: details.method,
+                url: details.url,
+                headers: details.headers,
+                data: details.data
+            }
+        }, (response) => {
+            if (chrome.runtime.lastError) {
+                console.error("Runtime Error:", chrome.runtime.lastError);
+                if (details.onerror) details.onerror({ error: chrome.runtime.lastError.message });
+                return;
+            }
+
+            if (response && response.success) {
+                if (details.onload) {
+                    details.onload(response.response);
+                }
+            } else {
+                if (details.onerror) {
+                    details.onerror({ error: response ? response.error : 'Unknown error' });
+                }
+            }
+        });
+    };
+
     window.GM_info = {
         scriptHandler: "Chrome Extension Adapter",
         version: "6.0.0"
