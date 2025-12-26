@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      6.6.2
+// @version      7.0.0
 // @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
 // @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
 // @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
@@ -33,8 +33,10 @@
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_deleteValue
+// @grant        GM_xmlhttpRequest
 // @grant        GM_info
 // @grant        unsafeWindow
+// @connect      *
 // @run-at       document-idle
 // @license      MIT
 // @homepageURL  https://github.com/koyasi777/advanced-search-for-x-twitter
@@ -45,6 +47,36 @@
 
 const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
     'use strict';
+
+    // Trusted Types 対応ヘルパー (UserScript/Extension両対応)
+    let ttPolicy = null;
+
+    // UserScript環境では unsafeWindow を使う必要がある
+    const targetWindow = (typeof unsafeWindow !== 'undefined') ? unsafeWindow : window;
+
+    if (targetWindow.trustedTypes && targetWindow.trustedTypes.createPolicy) {
+        try {
+            // ポリシー名の重複エラーを防ぐため、ランダムなサフィックスを付与して一意にする
+            const policyName = 'advSearchPolicy_' + Math.floor(Math.random() * 1000000);
+            ttPolicy = targetWindow.trustedTypes.createPolicy(policyName, {
+                createHTML: (string) => string, // HTML内容を信頼してパススルー
+            });
+        } catch (e) {
+            console.warn('Trusted Types policy creation failed:', e);
+        }
+    }
+
+    // innerHTMLへ安全に代入する関数
+    const setInnerHTML = (element, html) => {
+        if (!element) return;
+        if (ttPolicy) {
+            // 再帰呼び出しではなく、プロパティへの代入を行う
+            element.innerHTML = ttPolicy.createHTML(html);
+        } else {
+            // ここも直接代入
+            element.innerHTML = html;
+        }
+    };
 
     if (window.__X_ADV_SEARCH_INITED__) return;
     window.__X_ADV_SEARCH_INITED__ = true;
@@ -241,10 +273,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 placeholderSettingsJSON: "Paste backup JSON here...",
                 tooltipSettings: "Open settings",
                 toastImported: "Imported.",
+                toastExported: "Exported to file.",
                 alertInvalidJSON: "Invalid JSON file.",
                 alertInvalidData: "Invalid data format.",
                 alertInvalidApp: 'This file is not a valid backup for "Advanced Search for X".',
-                toastExported: "Exported to file.",
                 buttonReset: "Reset all data",
                 confirmResetAll: "Reset all data? This cannot be undone.",
                 toastReset: "All data has been reset.",
@@ -282,6 +314,41 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 FT_SETTINGS_DISPLAY_MODE_FULL: 'Full path',
                 FT_CONFIRM_DELETE_TAG_MSG: 'Delete tag "{tagName}"?\nFavorites with this tag will become "Uncategorized".',
                 FT_SETTINGS_BUTTON_TITLE: 'Favorite Tag Settings',
+
+                /* --- Cloud Sync --- */
+                settingsTitleSync: "Cloud Sync",
+                chipBeta: "Beta",
+                labelSyncEndpoint: "Endpoint URL",
+                linkSyncSetup: "Setup Guide",
+                urlSyncHelp: "https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README_en.md",
+                placeholderSyncEndpoint: "https://your-worker.workers.dev",
+                labelSyncId: "Sync ID (UUID)",
+                placeholderSyncId: "Paste or Generate UUID",
+                buttonGenerate: "Generate",
+                labelSyncPassword: "Encryption Password",
+                placeholderSyncPassword: "Strong password required",
+                tooltipShowHidePassword: "Show/Hide Password",
+                noteSyncEncryption: "* Data is encrypted locally before upload. The server never sees this password.",
+                labelSyncChangePass: "Change",
+                promptNewPassword: "Enter new password:",
+                confirmRotation: "Change password and re-encrypt all data?\n\n* Make sure you have the latest data synced.\n* This action cannot be undone.",
+                toastPassChanged: "Password changed successfully.",
+                toastRotationFailed: "Rotation Failed",
+                syncStatusRotating: "Rotating Keys...",
+                labelSyncStatus: "Status: ",
+                buttonSyncNow: "Sync Now",
+
+                /* Sync Status Messages */
+                toastSynced: "Cloud Sync Complete.",
+                toastSyncFailed: "Cloud Sync Failed.",
+                syncStatusIdle: "Idle",
+                syncStatusNotConfigured: "Not Configured",
+                syncStatusConnecting: "Connecting...",
+                syncStatusPulling: "Pulling...",
+                syncStatusPushing: "Pushing...",
+                syncStatusMerging: "Merging...",
+                syncStatusSynced: "Synced",
+                syncStatusError: "Error",
             },
             'ja': {
                 modalTitle: "高度な検索",
@@ -512,6 +579,41 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 FT_SETTINGS_DISPLAY_MODE_FULL: 'フルパス (full)',
                 FT_CONFIRM_DELETE_TAG_MSG: 'タグ「{tagName}」を削除しますか？\nこのタグが付いていたお気に入りは未分類になります。',
                 FT_SETTINGS_BUTTON_TITLE: 'お気に入りタグ設定',
+
+                /* --- Cloud Sync --- */
+                settingsTitleSync: "クラウド同期",
+                chipBeta: "ベータ",
+                labelSyncEndpoint: "エンドポイント URL",
+                linkSyncSetup: "セットアップガイド",
+                urlSyncHelp: "https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README.md",
+                placeholderSyncEndpoint: "https://your-worker.workers.dev",
+                labelSyncId: "同期 ID (UUID)",
+                placeholderSyncId: "UUIDを貼り付け、または生成",
+                buttonGenerate: "生成",
+                labelSyncPassword: "暗号化パスワード",
+                placeholderSyncPassword: "強力なパスワードを入力",
+                tooltipShowHidePassword: "パスワードを表示/非表示",
+                noteSyncEncryption: "* データはアップロード前にローカルで暗号化されます。サーバーがパスワードを知ることはありません。",
+                labelSyncChangePass: "変更",
+                promptNewPassword: "新しいパスワードを入力してください:",
+                confirmRotation: "パスワードを変更し、データを再暗号化しますか？\n\n* 必ず最新のデータが同期されている状態で実行してください。\n* この操作は元に戻せません。",
+                toastPassChanged: "パスワードを変更しました。",
+                toastRotationFailed: "変更に失敗しました",
+                syncStatusRotating: "キー更新中...",
+                labelSyncStatus: "ステータス: ",
+                buttonSyncNow: "今すぐ同期",
+
+                /* Sync Status Messages */
+                toastSynced: "同期しました。",
+                toastSyncFailed: "同期に失敗しました。",
+                syncStatusIdle: "待機中",
+                syncStatusNotConfigured: "未設定",
+                syncStatusConnecting: "接続中...",
+                syncStatusPulling: "受信中...",
+                syncStatusPushing: "送信中...",
+                syncStatusMerging: "マージ中...",
+                syncStatusSynced: "同期完了",
+                syncStatusError: "エラー",
             },
             'zh-CN': {
                 modalTitle: "高级搜索",
@@ -741,6 +843,41 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 FT_SETTINGS_DISPLAY_MODE_FULL: '完整路径 (full)',
                 FT_CONFIRM_DELETE_TAG_MSG: '确定要删除标签“{tagName}”吗？\n带有此标签的收藏将变为“未分类”。',
                 FT_SETTINGS_BUTTON_TITLE: '收藏标签设置',
+
+                /* --- Cloud Sync --- */
+                settingsTitleSync: "云同步",
+                chipBeta: "Beta",
+                labelSyncEndpoint: "端点 URL",
+                linkSyncSetup: "设置指南",
+                urlSyncHelp: "https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README_zh-CN.md",
+                placeholderSyncEndpoint: "https://your-worker.workers.dev",
+                labelSyncId: "同步 ID (UUID)",
+                placeholderSyncId: "粘贴或生成 UUID",
+                buttonGenerate: "生成",
+                labelSyncPassword: "加密密码",
+                placeholderSyncPassword: "请输入强密码",
+                tooltipShowHidePassword: "显示/隐藏密码",
+                noteSyncEncryption: "* 数据在上传前会在本地加密。服务器无法获知此密码。",
+                labelSyncChangePass: "更改",
+                promptNewPassword: "请输入新密码：",
+                confirmRotation: "更改密码并重新加密所有数据？\n\n* 请确保您已同步最新数据。\n* 此操作无法撤消。",
+                toastPassChanged: "密码已更改。",
+                toastRotationFailed: "更改失败",
+                syncStatusRotating: "更新密钥...",
+                labelSyncStatus: "状态: ",
+                buttonSyncNow: "立即同步",
+
+                /* Sync Status Messages */
+                toastSynced: "同步完成。",
+                toastSyncFailed: "同步失败。",
+                syncStatusIdle: "空闲",
+                syncStatusNotConfigured: "未配置",
+                syncStatusConnecting: "连接中...",
+                syncStatusPulling: "拉取中...",
+                syncStatusPushing: "推送中...",
+                syncStatusMerging: "合并中...",
+                syncStatusSynced: "已同步",
+                syncStatusError: "错误",
             },
             'zh-TW': {
                 modalTitle: "進階搜尋",
@@ -970,6 +1107,41 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 FT_SETTINGS_DISPLAY_MODE_FULL: '完整路徑 (full)',
                 FT_CONFIRM_DELETE_TAG_MSG: '確定要刪除標籤「{tagName}」嗎？\n帶有此標籤的收藏將變為「未分類」。',
                 FT_SETTINGS_BUTTON_TITLE: '收藏標籤設定',
+
+                /* --- Cloud Sync --- */
+                settingsTitleSync: "雲端同步",
+                chipBeta: "Beta",
+                labelSyncEndpoint: "端點 URL",
+                linkSyncSetup: "設定指南",
+                urlSyncHelp: "https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README_zh-TW.md",
+                placeholderSyncEndpoint: "https://your-worker.workers.dev",
+                labelSyncId: "同步 ID (UUID)",
+                placeholderSyncId: "貼上或產生 UUID",
+                buttonGenerate: "產生",
+                labelSyncPassword: "加密密碼",
+                placeholderSyncPassword: "請輸入高強度密碼",
+                tooltipShowHidePassword: "顯示/隱藏密碼",
+                noteSyncEncryption: "* 資料在上傳前會於本地加密。伺服器無法得知此密碼。",
+                labelSyncChangePass: "變更",
+                promptNewPassword: "請輸入新密碼：",
+                confirmRotation: "變更密碼並重新加密所有資料？\n\n* 請確保您已同步最新資料。\n* 此操作無法復原。",
+                toastPassChanged: "密碼已變更。",
+                toastRotationFailed: "變更失敗",
+                syncStatusRotating: "更新金鑰...",
+                labelSyncStatus: "狀態: ",
+                buttonSyncNow: "立即同步",
+
+                /* Sync Status Messages */
+                toastSynced: "同步完成。",
+                toastSyncFailed: "同步失敗。",
+                syncStatusIdle: "閒置",
+                syncStatusNotConfigured: "未設定",
+                syncStatusConnecting: "連線中...",
+                syncStatusPulling: "下載中...",
+                syncStatusPushing: "上傳中...",
+                syncStatusMerging: "合併中...",
+                syncStatusSynced: "已同步",
+                syncStatusError: "錯誤",
             },
             'ko': {
                 modalTitle: "고급 검색",
@@ -1161,10 +1333,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 placeholderSettingsJSON: "백업 JSON을 여기에 붙여넣으세요...",
                 tooltipSettings: "설정 열기",
                 toastImported: "가져오기가 완료되었습니다.",
+                toastExported: "파일로 내보냈습니다.",
                 alertInvalidJSON: "유효하지 않은 JSON 파일입니다.",
                 alertInvalidData: "유효하지 않은 데이터 형식입니다.",
                 alertInvalidApp: '"Advanced Search for X"의 백업 파일이 아닙니다.',
-                toastExported: "파일로 내보냈습니다.",
                 buttonReset: "모든 데이터 초기화",
                 confirmResetAll: "모든 데이터를 초기화하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
                 toastReset: "모든 데이터가 초기화되었습니다.",
@@ -1202,6 +1374,41 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 FT_SETTINGS_DISPLAY_MODE_FULL: '전체 경로 (full)',
                 FT_CONFIRM_DELETE_TAG_MSG: '태그 "{tagName}"을(를) 삭제하시겠습니까?\n이 태그가 지정된 항목은 "미분류"가 됩니다.',
                 FT_SETTINGS_BUTTON_TITLE: '태그 설정',
+
+                /* --- Cloud Sync --- */
+                settingsTitleSync: "클라우드 동기화",
+                chipBeta: "베타",
+                labelSyncEndpoint: "엔드포인트 URL",
+                linkSyncSetup: "설정 가이드",
+                urlSyncHelp: "https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README_ko.md",
+                placeholderSyncEndpoint: "https://your-worker.workers.dev",
+                labelSyncId: "동기화 ID (UUID)",
+                placeholderSyncId: "UUID 붙여넣기 또는 생성",
+                buttonGenerate: "생성",
+                labelSyncPassword: "암호화 비밀번호",
+                placeholderSyncPassword: "강력한 비밀번호 필요",
+                tooltipShowHidePassword: "비밀번호 표시/숨기기",
+                noteSyncEncryption: "* 데이터는 업로드 전 로컬에서 암호화됩니다. 서버는 비밀번호를 알 수 없습니다.",
+                labelSyncChangePass: "변경",
+                promptNewPassword: "새 비밀번호를 입력하세요:",
+                confirmRotation: "비밀번호를 변경하고 모든 데이터를 다시 암호화하시겠습니까?\n\n* 최신 데이터가 동기화되어 있는지 확인하세요.\n* 이 작업은 취소할 수 없습니다.",
+                toastPassChanged: "비밀번호가 변경되었습니다.",
+                toastRotationFailed: "변경 실패",
+                syncStatusRotating: "키 갱신 중...",
+                labelSyncStatus: "상태: ",
+                buttonSyncNow: "지금 동기화",
+
+                /* Sync Status Messages */
+                toastSynced: "동기화 완료.",
+                toastSyncFailed: "동기화 실패.",
+                syncStatusIdle: "대기 중",
+                syncStatusNotConfigured: "설정되지 않음",
+                syncStatusConnecting: "연결 중...",
+                syncStatusPulling: "가져오는 중...",
+                syncStatusPushing: "보내는 중...",
+                syncStatusMerging: "병합 중...",
+                syncStatusSynced: "동기화됨",
+                syncStatusError: "오류",
             },
             'fr': {
                 modalTitle: "Recherche avancée",
@@ -1431,6 +1638,41 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 FT_SETTINGS_DISPLAY_MODE_FULL: 'Chemin complet',
                 FT_CONFIRM_DELETE_TAG_MSG: 'Supprimer le tag "{tagName}" ?\nLes favoris associés deviendront "Non classé".',
                 FT_SETTINGS_BUTTON_TITLE: 'Réglages des tags',
+
+                /* --- Cloud Sync --- */
+                settingsTitleSync: "Synchro Cloud",
+                chipBeta: "Bêta",
+                labelSyncEndpoint: "URL Endpoint",
+                linkSyncSetup: "Guide de configuration",
+                urlSyncHelp: "https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README_fr.md",
+                placeholderSyncEndpoint: "https://your-worker.workers.dev",
+                labelSyncId: "ID de Synchro (UUID)",
+                placeholderSyncId: "Coller ou générer UUID",
+                buttonGenerate: "Générer",
+                labelSyncPassword: "Mot de passe de chiffrement",
+                placeholderSyncPassword: "Mot de passe fort requis",
+                tooltipShowHidePassword: "Afficher/Masquer",
+                noteSyncEncryption: "* Données chiffrées localement avant envoi. Le serveur ne voit jamais ce mot de passe.",
+                labelSyncChangePass: "Modifier",
+                promptNewPassword: "Veuillez entrer le nouveau mot de passe :",
+                confirmRotation: "Modifier le mot de passe et rechiffrer toutes les données ?\n\n* Assurez-vous d'avoir synchronisé les dernières données.\n* Cette action est irréversible.",
+                toastPassChanged: "Mot de passe modifié.",
+                toastRotationFailed: "Échec de la modification",
+                syncStatusRotating: "Renouvellement des clés...",
+                labelSyncStatus: "Statut : ",
+                buttonSyncNow: "Synchroniser",
+
+                /* Sync Status Messages */
+                toastSynced: "Synchronisation terminée.",
+                toastSyncFailed: "Échec de la synchronisation.",
+                syncStatusIdle: "Inactif",
+                syncStatusNotConfigured: "Non configuré",
+                syncStatusConnecting: "Connexion...",
+                syncStatusPulling: "Réception...",
+                syncStatusPushing: "Envoi...",
+                syncStatusMerging: "Fusion...",
+                syncStatusSynced: "Synchronisé",
+                syncStatusError: "Erreur",
             },
             'es': {
                 modalTitle: "Búsqueda avanzada",
@@ -1660,6 +1902,41 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 FT_SETTINGS_DISPLAY_MODE_FULL: 'Ruta completa (full)',
                 FT_CONFIRM_DELETE_TAG_MSG: '¿Eliminar la etiqueta "{tagName}"?\nLos favoritos con esta etiqueta pasarán a "Sin categoría".',
                 FT_SETTINGS_BUTTON_TITLE: 'Configuración de etiquetas',
+
+                /* --- Cloud Sync --- */
+                settingsTitleSync: "Sincronización en la nube",
+                chipBeta: "Beta",
+                labelSyncEndpoint: "URL del Endpoint",
+                linkSyncSetup: "Guía de configuración",
+                urlSyncHelp: "https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README_es.md",
+                placeholderSyncEndpoint: "https://your-worker.workers.dev",
+                labelSyncId: "ID de Sincronización (UUID)",
+                placeholderSyncId: "Pegar o generar UUID",
+                buttonGenerate: "Generar",
+                labelSyncPassword: "Contraseña de cifrado",
+                placeholderSyncPassword: "Se requiere contraseña segura",
+                tooltipShowHidePassword: "Mostrar/Ocultar",
+                noteSyncEncryption: "* Los datos se cifran localmente antes de subir. El servidor nunca ve esta contraseña.",
+                labelSyncChangePass: "Cambiar",
+                promptNewPassword: "Introduce la nueva contraseña:",
+                confirmRotation: "¿Cambiar la contraseña y volver a cifrar todos los datos?\n\n* Asegúrate de tener los datos más recientes sincronizados.\n* Esta acción no se puede deshacer.",
+                toastPassChanged: "Contraseña cambiada.",
+                toastRotationFailed: "Fallo al cambiar",
+                syncStatusRotating: "Rotando claves...",
+                labelSyncStatus: "Estado: ",
+                buttonSyncNow: "Sincronizar ahora",
+
+                /* Sync Status Messages */
+                toastSynced: "Sincronización completada.",
+                toastSyncFailed: "Fallo de sincronización.",
+                syncStatusIdle: "Inactivo",
+                syncStatusNotConfigured: "No configurado",
+                syncStatusConnecting: "Conectando...",
+                syncStatusPulling: "Recibiendo...",
+                syncStatusPushing: "Enviando...",
+                syncStatusMerging: "Fusionando...",
+                syncStatusSynced: "Sincronizado",
+                syncStatusError: "Error",
             },
             'de': {
                 modalTitle: "Erweiterte Suche",
@@ -1889,6 +2166,41 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 FT_SETTINGS_DISPLAY_MODE_FULL: 'Voller Pfad (full)',
                 FT_CONFIRM_DELETE_TAG_MSG: 'Tag "{tagName}" löschen?\nFavoriten mit diesem Tag werden "Unkategorisiert".',
                 FT_SETTINGS_BUTTON_TITLE: 'Tag-Einstellungen',
+
+                /* --- Cloud Sync --- */
+                settingsTitleSync: "Cloud-Sync",
+                chipBeta: "Beta",
+                labelSyncEndpoint: "Endpunkt-URL",
+                linkSyncSetup: "Einrichtungsanleitung",
+                urlSyncHelp: "https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README_de.md",
+                placeholderSyncEndpoint: "https://your-worker.workers.dev",
+                labelSyncId: "Sync-ID (UUID)",
+                placeholderSyncId: "UUID einfügen oder generieren",
+                buttonGenerate: "Generieren",
+                labelSyncPassword: "Verschlüsselungspasswort",
+                placeholderSyncPassword: "Starkes Passwort erforderlich",
+                tooltipShowHidePassword: "Passwort anzeigen/verbergen",
+                noteSyncEncryption: "* Daten werden vor dem Upload lokal verschlüsselt. Der Server sieht dieses Passwort nie.",
+                labelSyncChangePass: "Ändern",
+                promptNewPassword: "Neues Passwort eingeben:",
+                confirmRotation: "Passwort ändern und alle Daten neu verschlüsseln?\n\n* Stellen Sie sicher, dass Sie die neuesten Daten synchronisiert haben.\n* Dies kann nicht rückgängig gemacht werden.",
+                toastPassChanged: "Passwort geändert.",
+                toastRotationFailed: "Änderung fehlgeschlagen",
+                syncStatusRotating: "Schlüssel werden erneuert...",
+                labelSyncStatus: "Status: ",
+                buttonSyncNow: "Jetzt synchronisieren",
+
+                /* Sync Status Messages */
+                toastSynced: "Synchronisierung abgeschlossen.",
+                toastSyncFailed: "Synchronisierung fehlgeschlagen.",
+                syncStatusIdle: "Leerlauf",
+                syncStatusNotConfigured: "Nicht konfiguriert",
+                syncStatusConnecting: "Verbinden...",
+                syncStatusPulling: "Empfangen...",
+                syncStatusPushing: "Senden...",
+                syncStatusMerging: "Zusammenführen...",
+                syncStatusSynced: "Synchronisiert",
+                syncStatusError: "Fehler",
             },
             'pt-BR': {
                 modalTitle: "Busca avançada",
@@ -2118,6 +2430,41 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 FT_SETTINGS_DISPLAY_MODE_FULL: 'Caminho completo (full)',
                 FT_CONFIRM_DELETE_TAG_MSG: 'Excluir tag "{tagName}"?\nFavoritos com esta tag ficarão "Sem categoria".',
                 FT_SETTINGS_BUTTON_TITLE: 'Configurações de tags',
+
+                /* --- Cloud Sync --- */
+                settingsTitleSync: "Sincronização na nuvem",
+                chipBeta: "Beta",
+                labelSyncEndpoint: "URL do Endpoint",
+                linkSyncSetup: "Guia de configuração",
+                urlSyncHelp: "https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README_pt-BR.md",
+                placeholderSyncEndpoint: "https://your-worker.workers.dev",
+                labelSyncId: "ID de Sincronização (UUID)",
+                placeholderSyncId: "Colar ou gerar UUID",
+                buttonGenerate: "Gerar",
+                labelSyncPassword: "Senha de criptografia",
+                placeholderSyncPassword: "Senha forte necessária",
+                tooltipShowHidePassword: "Mostrar/Ocultar senha",
+                noteSyncEncryption: "* Os dados são criptografados localmente antes do envio. O servidor nunca vê esta senha.",
+                labelSyncChangePass: "Alterar",
+                promptNewPassword: "Digite a nova senha:",
+                confirmRotation: "Alterar a senha e recriptografar todos os dados?\n\n* Certifique-se de ter os dados mais recentes sincronizados.\n* Esta ação não pode ser desfeita.",
+                toastPassChanged: "Senha alterada.",
+                toastRotationFailed: "Falha na alteração",
+                syncStatusRotating: "Rotacionando chaves...",
+                labelSyncStatus: "Status: ",
+                buttonSyncNow: "Sincronizar agora",
+
+                /* Sync Status Messages */
+                toastSynced: "Sincronização concluída.",
+                toastSyncFailed: "Falha na sincronização.",
+                syncStatusIdle: "Ocioso",
+                syncStatusNotConfigured: "Não configurado",
+                syncStatusConnecting: "Conectando...",
+                syncStatusPulling: "Baixando...",
+                syncStatusPushing: "Enviando...",
+                syncStatusMerging: "Mesclando...",
+                syncStatusSynced: "Sincronizado",
+                syncStatusError: "Erro",
             },
             'ru': {
                 modalTitle: "Расширенный поиск",
@@ -2347,6 +2694,41 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 FT_SETTINGS_DISPLAY_MODE_FULL: 'Полный путь (full)',
                 FT_CONFIRM_DELETE_TAG_MSG: 'Удалить тег "{tagName}"?\nЭлементы с этим тегом станут "Без категории".',
                 FT_SETTINGS_BUTTON_TITLE: 'Настройка тегов',
+
+                /* --- Cloud Sync --- */
+                settingsTitleSync: "Облачная синхронизация",
+                chipBeta: "Бета",
+                labelSyncEndpoint: "URL конечной точки",
+                linkSyncSetup: "Руководство по настройке",
+                urlSyncHelp: "https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README_ru.md",
+                placeholderSyncEndpoint: "https://your-worker.workers.dev",
+                labelSyncId: "ID синхронизации (UUID)",
+                placeholderSyncId: "Вставьте или сгенерируйте UUID",
+                buttonGenerate: "Создать",
+                labelSyncPassword: "Пароль шифрования",
+                placeholderSyncPassword: "Требуется надежный пароль",
+                tooltipShowHidePassword: "Показать/Скрыть пароль",
+                noteSyncEncryption: "* Данные шифруются локально перед отправкой. Сервер не видит этот пароль.",
+                labelSyncChangePass: "Изменить",
+                promptNewPassword: "Введите новый пароль:",
+                confirmRotation: "Изменить пароль и перешифровать все данные?\n\n* Убедитесь, что у вас синхронизированы последние данные.\n* Это действие нельзя отменить.",
+                toastPassChanged: "Пароль изменен.",
+                toastRotationFailed: "Ошибка изменения",
+                syncStatusRotating: "Обновление ключей...",
+                labelSyncStatus: "Статус: ",
+                buttonSyncNow: "Синхронизировать",
+
+                /* Sync Status Messages */
+                toastSynced: "Синхронизация завершена.",
+                toastSyncFailed: "Ошибка синхронизации.",
+                syncStatusIdle: "Ожидание",
+                syncStatusNotConfigured: "Не настроено",
+                syncStatusConnecting: "Подключение...",
+                syncStatusPulling: "Получение...",
+                syncStatusPushing: "Отправка...",
+                syncStatusMerging: "Объединение...",
+                syncStatusSynced: "Синхронизировано",
+                syncStatusError: "Ошибка",
             }
         },
         lang: 'en',
@@ -2363,6 +2745,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             container.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = this.t(el.dataset.i18n); });
             container.querySelectorAll('[data-i18n-placeholder]').forEach(el => { el.placeholder = this.t(el.dataset.i18nPlaceholder); });
             container.querySelectorAll('[data-i18n-title]').forEach(el => { el.title = this.t(el.dataset.i18nTitle); });
+            container.querySelectorAll('[data-i18n-href]').forEach(el => { el.href = this.t(el.dataset.i18nHref); });
         }
     };
 
@@ -2413,12 +2796,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;
         margin-right:8px;color:inherit;flex:0 0 auto;
       `;
-      btn.innerHTML = collapsed ? FOLDER_TOGGLE_CLOSED_SVG : FOLDER_TOGGLE_OPEN_SVG;
+      setInnerHTML(btn,collapsed ? FOLDER_TOGGLE_CLOSED_SVG : FOLDER_TOGGLE_OPEN_SVG);
       return btn;
     }
     function updateFolderToggleButton(btn, collapsed) {
       if (!btn) return;
-      btn.innerHTML = collapsed ? FOLDER_TOGGLE_CLOSED_SVG : FOLDER_TOGGLE_OPEN_SVG;
+      setInnerHTML(btn,collapsed ? FOLDER_TOGGLE_CLOSED_SVG : FOLDER_TOGGLE_OPEN_SVG);
       btn.setAttribute('aria-label', collapsed ? 'Expand' : 'Collapse');
       btn.setAttribute('title', collapsed ? 'Expand' : 'Collapse');
       btn.setAttribute('aria-expanded', (!collapsed).toString());
@@ -2859,7 +3242,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         .adv-form-group label{display:block;margin-bottom:6px;font-size:14px;font-weight:700;color:var(--modal-text-secondary,#8b98a5)}
         .adv-form-group input[type=text],.adv-form-group input[type=number],.adv-form-group input[type=date],.adv-form-group select{width:100%;background-color:var(--modal-input-bg,#202327);border:1px solid var(--modal-input-border,#38444d);border-radius:4px;padding:8px 12px;color:var(--modal-text-primary,#e7e9ea);font-size:15px;box-sizing:border-box}
         .adv-form-group input:focus,.adv-form-group select:focus{outline:0;border-color:var(--modal-primary-color)}
-        .adv-form-group input::placeholder{color:var(--modal-text-secondary,#536471)}
+        .adv-form-group input::placeholder,
+        .adv-settings-group input::placeholder,
+        #adv-sync-settings-container input::placeholder {
+            color: var(--modal-text-secondary,#536471);
+            opacity: 0.5;
+        }
         .adv-form-group-date-container {display:flex;gap:8px;align-items: center;}
         .adv-form-group-header {
             display: flex;
@@ -3023,6 +3411,27 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         .adv-secret-btn.off { opacity:0.9; }
         .adv-secret-btn.on { background-color:var(--modal-primary-color); border-color:var(--modal-primary-color); color:var(--modal-primary-text-color); }
         .adv-secret-btn.on .dot { background:#fff; box-shadow:0 0 8px rgba(255,255,255,.9); }
+
+        /* Header Sync Button */
+        .adv-header-sync-btn {
+            background: transparent; border: none; cursor: pointer; padding: 0;
+            width: 28px; height: 28px; border-radius: 50%; /* 32px -> 28px */
+            display: flex; align-items: center; justify-content: center;
+            color: var(--modal-text-secondary, #8b98a5);
+            transition: background-color .2s, color .2s;
+            margin: 0; /* マージンは親のflex gapに任せる */
+        }
+        .adv-header-sync-btn:hover {
+            background-color: var(--modal-button-hover-bg, rgba(231,233,234,.1));
+            color: var(--modal-primary-color, #1d9bf0);
+        }
+        .adv-header-sync-btn svg { width: 16px; height: 16px; fill: currentColor; } /* 18px -> 16px */
+        .adv-header-sync-btn.spinning svg { animation: adv-spin 1s linear infinite; }
+        @keyframes adv-spin { 100% { transform: rotate(360deg); } }
+
+        /* 同期ステータス用カラー */
+        .adv-header-sync-btn.success { color: #17bf63 !important; } /* Twitter Green */
+        .adv-header-sync-btn.error { color: #f4212e !important; }   /* Twitter Red */
 
         .adv-list { display:flex; flex-direction:column; gap:8px; }
         .adv-item { position: relative; border:1px solid var(--modal-input-border,#38444d); background:var(--modal-input-bg,#202327); border-radius:8px; padding:8px; display:flex; gap:8px; align-items:flex-start; }
@@ -4450,7 +4859,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             /* 設定モーダル等をメインモーダルと同じ最前面レイヤーに持ち上げる */
             /* これによりDOM順序が後の設定モーダルが手前に表示される */
             #adv-settings-modal.adv-settings-modal,
-            .ft-modal-backdrop {
+            .ft-modal-backdrop,
+            .adv-toast {
                 z-index: 2147483647 !important;
             }
             /* モーダル本体: 画面中央に固定し、サイズを強制適用 */
@@ -4498,7 +4908,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     <button id="adv-settings-button" class="adv-settings-btn" type="button" data-i18n-title="tooltipSettings">
                         ${SETTINGS_SVG}
                     </button>
-                </div>
+                    <button id="adv-header-sync-btn" class="adv-header-sync-btn" title="Sync Now" style="display:none;">
+                        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-4.41 3.59-8 8-8 4.41 0 8 3.59 8 8 0 4.41-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" transform="scale(0)"/><path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z"/></svg>
+                    </button>
+                    </div>
                 <div class="adv-secret-wrap">
                     <button id="adv-secret-btn" class="adv-secret-btn off" data-i18n-title="tooltipSecret" title="">
                         <span class="dot" aria-hidden="true"></span>
@@ -4871,6 +5284,85 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                           </div>
                       </div>
 
+                      <div class="adv-settings-section-header" style="display:flex; justify-content:space-between; align-items:center; margin-top:24px; border-bottom:none; padding-bottom:0;">
+                          <div style="display:flex; align-items:center; gap:6px;">
+                              <span data-i18n="settingsTitleSync">Cloud Sync</span>
+                              <span class="adv-chip primary" style="font-size:10px; padding:2px 6px; height:auto; cursor:default;" data-i18n="chipBeta">Beta</span>
+                          </div>
+                          <label class="adv-switch" title="" data-i18n-title="settingsTitleSync">
+                              <input id="adv-settings-sync-enable" type="checkbox">
+                              <span class="adv-slider"></span>
+                          </label>
+                      </div>
+
+                      <div id="adv-sync-settings-container" style="display:none; margin-top:7px; margin-bottom:4px; padding:16px; background:rgba(128,128,128,0.05); border-radius:12px; border:1px solid var(--modal-border);">
+
+                          <div class="adv-settings-group" style="margin-bottom:16px;">
+                              <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:6px;">
+                                  <label style="font-size:13px; margin-bottom:0; color:var(--modal-text-primary);" data-i18n="labelSyncEndpoint">Endpoint URL</label>
+                                  <a href="https://github.com/koyasi777/advanced-search-for-x-twitter/blob/main/worker/README.md" data-i18n-href="urlSyncHelp" target="_blank" rel="noopener noreferrer"
+                                     style="font-size:11px; color:var(--modal-primary-color); text-decoration:none; display:flex; align-items:center; gap:3px; opacity:0.9; transition:opacity 0.2s;"
+                                     onmouseover="this.style.opacity='1';this.style.textDecoration='underline'"
+                                     onmouseout="this.style.opacity='0.9';this.style.textDecoration='none'">
+                                      <svg viewBox="0 0 24 24" aria-hidden="true" style="width:13px; height:13px; fill:currentColor;">
+                                        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
+                                      </svg>
+                                      <span data-i18n="linkSyncSetup">Setup Guide</span>
+                                  </a>
+                              </div>
+                              <input type="url" id="adv-sync-endpoint" data-i18n-placeholder="placeholderSyncEndpoint" placeholder="https://your-worker.workers.dev"
+                                     style="width:100%; box-sizing:border-box; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:13px; padding:10px 12px; border-radius:6px;">
+                          </div>
+
+                          <div class="adv-settings-group" style="margin-bottom:16px;">
+                              <label style="font-size:13px; margin-bottom:6px; color:var(--modal-text-primary);" data-i18n="labelSyncId">Sync ID (UUID)</label>
+                              <div style="display:flex; gap:8px;">
+                                  <input type="text" id="adv-sync-id" data-i18n-placeholder="placeholderSyncId" placeholder="Paste or Generate UUID"
+                                      style="flex:1; min-width:0; box-sizing:border-box; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:13px; padding:10px 12px; border-radius:6px; letter-spacing:0.5px;">
+                                  <button id="adv-sync-gen-id-btn" type="button" class="adv-modal-button" data-i18n="buttonGenerate"
+                                      style="white-space:nowrap; padding:0 16px; border-radius:6px; font-size:13px;">Generate</button>
+                              </div>
+                          </div>
+
+                          <div class="adv-settings-group">
+                              <label style="font-size:13px; margin-bottom:6px; color:var(--modal-text-primary);" data-i18n="labelSyncPassword">Encryption Password</label>
+                              <div style="position:relative; display:flex; align-items:center;">
+                                  <input type="password" id="adv-sync-secret" data-i18n-placeholder="placeholderSyncPassword" placeholder="Strong password required"
+                                      style="width:100%; box-sizing:border-box; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:13px; padding:10px 40px 10px 12px; border-radius:6px; letter-spacing:1px;">
+
+                                  <button type="button" id="adv-sync-secret-toggle" class="adv-modal-button"
+                                      style="position:absolute; right:6px; top:50%; transform:translateY(-50%); border:none; background:transparent; padding:4px; height:auto; color:var(--modal-text-secondary); cursor:pointer; display:flex; align-items:center; justify-content:center;"
+                                      data-i18n-title="tooltipShowHidePassword" title="Show/Hide Password">
+                                      <svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:currentColor;">
+                                          <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"></path>
+                                      </svg>
+                                  </button>
+                              </div>
+
+                              <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-top:6px;">
+                                <div style="font-size:11px; color:var(--modal-text-secondary); line-height:1.4; max-width:70%;" data-i18n="noteSyncEncryption">
+                                    * Data is encrypted locally before upload. The server never sees this password.
+                                </div>
+                                <button id="adv-sync-change-pass-btn" type="button" class="adv-chip" style="font-size:11px; padding:2px 8px;" data-i18n="labelSyncChangePass">Change</button>
+                              </div>
+                          </div>
+
+                          <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--modal-border);">
+                              <div style="display:flex; justify-content:space-between; align-items:center;">
+                                  <div id="adv-sync-status" style="font-size:12px; color:var(--modal-text-secondary); font-weight:700; display:flex; align-items:center; gap:6px;">
+                                      <span id="adv-sync-status-dot" style="width:10px; height:10px; background:var(--modal-text-secondary); border-radius:50%; display:inline-block; opacity:0.5; transition: background-color 0.3s;"></span>
+                                      <span data-i18n="labelSyncStatus">Status: </span><span id="adv-sync-status-text" data-i18n="syncStatusIdle">Idle</span>
+                                      <svg id="adv-sync-spinner" viewBox="0 0 24 24" style="width:14px; height:14px; fill:var(--modal-primary-color); display:none; animation: adv-spin 1s linear infinite;">
+                                          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-4.41 3.59-8 8-8 4.41 0 8 3.59 8 8 0 4.41-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" style="opacity:0.3"></path>
+                                          <path d="M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8z"></path>
+                                      </svg>
+                                  </div>
+                                  <button id="adv-sync-now-btn" type="button" class="adv-modal-button primary" style="padding:8px 20px; border-radius:9999px; min-width:100px;" data-i18n="buttonSyncNow">Sync Now</button>
+                              </div>
+                              <div id="adv-sync-error-log" style="display:none; margin-top:10px; padding:10px; background:rgba(244, 33, 46, 0.1); color:#f4212e; font-size:11px; border-radius:6px; white-space:pre-wrap; word-break:break-all; font-family:monospace;"></div>
+                          </div>
+                      </div>
+
                     </div>
                     <div class="adv-settings-footer">
                         <button id="adv-settings-close-footer" type="button" class="adv-modal-button" data-i18n="buttonClose"></button>
@@ -4882,19 +5374,100 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
     const initialize = async () => {
         i18n.init();
 
+        // 排他制御用ロック (Data Loss Prevention)
+        let _ioLock = Promise.resolve();
+        const withIoLock = async (fn) => {
+            const prev = _ioLock;
+            let nextResolve;
+            _ioLock = new Promise(r => nextResolve = r);
+            try {
+                await prev;
+                return await fn();
+            } finally {
+                nextResolve();
+            }
+        };
+
+        let syncManager = null;
+
         const kv = {
             get(key, def) { try { return GM_getValue(key, def); } catch (_) { return def; } },
             set(key, val) { try { GM_setValue(key, val); } catch (_) {} },
             del(key)      { try { GM_deleteValue(key); } catch (_) {} },
         };
+
+        // ▼▼▼ メモリキャッシュを追加し、即時反映させる ▼▼▼
+        const _memCache = {};
+
+        // 削除ログ管理
+        const DELETED_LOG_KEY = 'advDeletedLog_v1';
+        // 削除済みIDとそのタイムスタンプを管理 { [id]: timestamp }
+        const loadDeletedLog = () => loadJSON(DELETED_LOG_KEY, {});
+        const markAsDeleted = (id) => {
+            if (!id) return;
+            const log = loadDeletedLog();
+            log[id] = Date.now();
+            // 古いログの掃除（例として90日以上前の削除記録は消すなどしても良いが、今回は単純保持）
+            saveJSON(DELETED_LOG_KEY, log);
+        };
+
+        const unmarkAsDeleted = (id) => {
+            if (!id) return;
+            const log = loadDeletedLog();
+            if (log[id]) {
+                delete log[id];
+                saveJSON(DELETED_LOG_KEY, log);
+            }
+        };
+
+        // インポート中かどうかを判定するフラグ
+        let __IS_IMPORTING__ = false;
+
         const loadJSON = (key, def) => {
+            // 1. キャッシュにあれば、そのコピーを返す（即時反映）
+            if (Object.prototype.hasOwnProperty.call(_memCache, key)) {
+                try { return JSON.parse(JSON.stringify(_memCache[key])); } catch(_) {}
+            }
+            // 2. なければストレージから読む
             try {
-                const raw = kv.get(key, JSON.stringify(def));
-                return JSON.parse(raw);
+                const raw = kv.get(key, undefined);
+                if (raw === undefined) return def;
+                const val = JSON.parse(raw);
+                _memCache[key] = val; // キャッシュにも保存
+                return val;
             } catch(_) { return def; }
         };
+
+        // Debounce helper for sync
+        let _syncTimeout;
+        const triggerAutoSync = () => {
+            if (syncManager) {
+                clearTimeout(_syncTimeout);
+                _syncTimeout = setTimeout(() => syncManager.executeSync(), 3000); // 3秒後に同期
+            }
+        };
+
         const saveJSON = (key, value) => {
-            try { kv.set(key, JSON.stringify(value)); } catch(_) {}
+            // 1. 即座にメモリキャッシュを更新
+            _memCache[key] = value;
+
+            // 2. インポート中はストレージ書き込みのみで終了
+            if (__IS_IMPORTING__) {
+                try { kv.set(key, JSON.stringify(value)); } catch(_) {}
+                return;
+            }
+
+            withIoLock(async () => {
+                try { kv.set(key, JSON.stringify(value)); } catch(_) {}
+                try { kv.set(DIRTY_KEY, '1'); } catch(_) {}
+
+                // SyncManagerに変更を通知（これで実行中の同期があっても再スケジュールされる）
+                if (syncManager) {
+                    syncManager.notifyChange();
+                }
+
+                triggerAutoSync();
+            });
         };
 
         const DEFAULT_TABS = ['search', 'history', 'saved', 'favorites', 'mute', 'lists', 'accounts'];
@@ -5666,7 +6239,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 return { row: items[idx], mode: 'before' };
             }
             function rebuildTagList() {
-                tagListEl.innerHTML = '';
+                setInnerHTML(tagListEl,'');
                 const entries = ft_getTagListWithUncategorized();
                 if (entries.length === 1 && entries[0].kind === 'uncat') {
                     const empty = document.createElement('div'); empty.style.opacity = '0.7'; empty.style.fontSize = '12px'; empty.textContent = i18n.t('FT_SETTINGS_EMPTY_TAG_LIST'); tagListEl.appendChild(empty);
@@ -5683,7 +6256,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     orderDiv.appendChild(upBtn); orderDiv.appendChild(downBtn);
                     const delBtn = document.createElement('button'); delBtn.className = 'ft-modal-tag-delete'; delBtn.textContent = i18n.t('FT_SETTINGS_DELETE_BUTTON'); delBtn.type='button';
                     mainCell.appendChild(colorInput); mainCell.appendChild(nameInput);
-                    const dragHandle = document.createElement('div'); dragHandle.className = 'ft-modal-tag-drag-handle'; dragHandle.innerHTML = '≡';
+                    const dragHandle = document.createElement('div'); dragHandle.className = 'ft-modal-tag-drag-handle'; setInnerHTML(dragHandle,'≡');
 
                     if (entry.kind === 'uncat') {
                         row.draggable = false; dragHandle.draggable = false; dragHandle.title = i18n.t('FT_SETTINGS_UNCATEGORIZED_DELETE_TOOLTIP');
@@ -5943,9 +6516,15 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
         const trigger = document.createElement('button');
         const HISTORY_SORT_KEY = 'advHistorySort_v1';
+        const SYNC_ENABLED_KEY = 'advSyncEnabled_v1';
+        const UNASSIGNED_IDX_KEYS = {
+            saved: 'advSavedUnassignedIndex_v1',
+            accounts: 'advAccountsUnassignedIndex_v1',
+            lists: 'advListsUnassignedIndex_v1'
+        };
         trigger.id = 'advanced-search-trigger';
         trigger.type = 'button';
-        trigger.innerHTML = SEARCH_SVG;
+        setInnerHTML(trigger,SEARCH_SVG);
         trigger.classList.add('adv-trigger-search');
         trigger.setAttribute('aria-label', i18n.t('tooltipTrigger'));
         trigger.setAttribute('aria-haspopup', 'dialog');
@@ -5953,7 +6532,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         document.body.appendChild(trigger);
 
         const modalContainer = document.createElement('div');
-        modalContainer.innerHTML = modalHTML;
+        setInnerHTML(modalContainer,modalHTML);
         // bodyへの単純追加をやめ、#layers と同じ階層に挿入
         const mountModal = () => {
             const layers = document.getElementById('layers');
@@ -6280,45 +6859,64 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             return _favCache;
         };
 
-        // 保存時にキャッシュとSetも同時に更新する
+        // 保存用タイマー変数
+        let _favSaveTimer = null;
+
+        // 保存時にキャッシュとSetは即時更新し、ストレージ保存は遅延させる
         const saveFavorites = (arr) => {
+            // 1. メモリ上のデータは即時更新 (これでUI判定や検索は一瞬で反映される)
             _favCache = arr;
             _favSet = new Set(arr.map(x => x.id));
-            saveJSON(FAV_KEY, arr);
+
+            // 2. 既存の保存予約があればキャンセル (連打対策)
+            if (_favSaveTimer) clearTimeout(_favSaveTimer);
+
+            // 3. 重たい書き込み処理を非同期で遅延実行
+            // ユーザーが操作を終えてから 500ms 後、あるいは UI描画が落ち着いた後に実行
+            _favSaveTimer = setTimeout(() => {
+                // ここで初めて重い JSON.stringify が走る
+                saveJSON(FAV_KEY, arr);
+                _favSaveTimer = null;
+            }, 500);
         };
 
         const toggleFavorite = (tweetMeta) => {
-            // loadFavoritesはキャッシュを返すので高速
+            // 1. キャッシュからデータを取得 (ロード済み前提)
             const list = loadFavorites();
             const idx = list.findIndex(x => x.id === tweetMeta.id);
+            const isAdding = idx < 0;
 
-            if (idx >= 0) {
-                // --- 削除 (Remove) ---
-                // 配列を直接変更せず、新しい配列を作って整合性を保つのがベストだが
-                // ここでは元のロジックに合わせて破壊的変更をしてから saveFavorites で全体更新する
+            // 2. メモリ上のデータを更新 (saveFavorites内部で遅延保存が予約される)
+            if (isAdding) {
+                unmarkAsDeleted(tweetMeta.id); // 過去の削除ログを消去
+                list.unshift({ ...tweetMeta, ts: Date.now() });
+                showToast(i18n.t('toastFavorited'));
+            } else {
+                markAsDeleted(tweetMeta.id); // 削除ログを記録（クラウド同期用）
                 list.splice(idx, 1);
-                saveFavorites(list); // ここで _favSet も更新される
-
-                // 解除時はタグデータも削除する
+                // 解除時はタグデータも削除
                 if (ft_state && ft_state.tweetTags && ft_state.tweetTags[tweetMeta.id]) {
                     delete ft_state.tweetTags[tweetMeta.id];
                     ft_saveState();
                 }
-
-                renderFavorites(); // (お気に入りタブが開いている場合用)
                 showToast(i18n.t('toastUnfavorited'));
-            } else {
-                list.unshift({ ...tweetMeta, ts: Date.now() });
-                saveFavorites(list); // ここで _favSet も更新される
-                renderFavorites();
-                showToast(i18n.t('toastFavorited'));
             }
 
-            // 最後に全同期
-            updateAllFavoriteButtons();          // ボタン更新
-            refreshTagChipsForTweet(tweetMeta.id); // タグチップ更新
+            // 3. 変更をコミット (ここが高速化のキモ：保存は非同期になる)
+            saveFavorites(list);
 
-            return idx < 0; // 追加されたら true
+            // 4. UIを即座に更新
+            // キャッシュ(_favSet)は更新済みなので、isFavorited() は正しい値を返す
+            updateAllFavoriteButtons();
+            refreshTagChipsForTweet(tweetMeta.id);
+
+            // お気に入りタブが開かれている場合のみ再描画 (重いので)
+            if (document.getElementById('adv-tab-favorites').classList.contains('active')) {
+                // ここも少し遅らせてメインスレッドを解放しても良い
+                requestAnimationFrame(() => renderFavorites());
+            }
+
+            return isAdding;
         };
 
         // Setを使った超高速判定 (JSON.parseが発生しない)
@@ -6328,23 +6926,27 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         };
 
         const deleteFavorite = (id) => {
-            // 1. お気に入りリストから削除
-            const list = loadFavorites().filter(x => x.id !== id);
-            saveFavorites(list); // ここで _favSet も更新される
+            markAsDeleted(id);
 
-            // 2. タグデータも削除する (データのクリーンアップ)
+            // 1. メモリ操作 & 遅延保存予約
+            const list = loadFavorites().filter(x => x.id !== id);
+            saveFavorites(list);
+
+            // 2. タグデータ削除
             if (ft_state && ft_state.tweetTags && ft_state.tweetTags[id]) {
                 delete ft_state.tweetTags[id];
-                ft_saveState(); // 状態を保存
+                ft_saveState();
             }
 
-            // 3. UI更新 (リスト再描画 & トースト)
-            renderFavorites();
+            // 3. UI即時更新
             showToast(i18n.t('toastDeleted'));
+            updateAllFavoriteButtons();
+            refreshTagChipsForTweet(id);
 
-            // 4. タイムライン上の見た目を同期
-            updateAllFavoriteButtons();   // ボタンの色を更新
-            refreshTagChipsForTweet(id);  // タグチップを消去
+            // 4. リスト再描画 (タブが開いている場合のみ)
+            if (document.getElementById('adv-tab-favorites').classList.contains('active')) {
+                 requestAnimationFrame(() => renderFavorites());
+            }
         };
 
         // お気に入りリストのイベント委譲ハンドラ
@@ -6550,7 +7152,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
             const userUrl = `/${escapeAttr(item.user.handle)}`;
 
-            row.innerHTML = `
+            setInnerHTML(row,`
                 ${item.user.avatar
                     ? `<a class="adv-item-avatar-link adv-link adv-link-user" href="${userUrl}">
                          <img class="adv-item-avatar" src="${escapeAttr(item.user.avatar)}">
@@ -6575,7 +7177,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
                 <button class="adv-chip primary adv-fav-btn-pos adv-fav-btn-top" data-action="open">${i18n.t('buttonOpen')}</button>
                 <button class="adv-chip danger adv-fav-btn-pos adv-fav-btn-bottom" data-action="delete">${i18n.t('delete')}</button>
-            `;
+            `);
 
             // 既存コードにあるこの処理が、adv-link クラスを持つ要素にSPA遷移イベントを一括登録
             row.querySelectorAll('a.adv-link').forEach(a => {
@@ -6630,7 +7232,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             state.sentinelClass = `adv-sentinel-${key}`;
 
             // 表示クリア
-            container.innerHTML = '';
+            setInnerHTML(container,'');
 
             // 空の場合
             if (items.length === 0) {
@@ -6714,7 +7316,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 const bar = document.createElement('div');
                 bar.className = 'adv-folder-toolbar';
                 // タグ絞り込みボタン、ソート選択、検索ボックス
-                bar.innerHTML = `
+                setInnerHTML(bar,`
                     <div style="display:flex; gap:6px; align-items:center; flex:0 0 auto;">
                         <button id="adv-favorites-tag-filter-btn" class="ft-filter-button" type="button">
                             <span class="ft-filter-button-label"></span>
@@ -6728,7 +7330,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                         </select>
                     </div>
                     <input id="adv-favorites-search" class="adv-input" type="text" placeholder="${i18n.t('placeholderSearchSaved')}" style="flex:1; min-width:80px;">
-                `;
+                `);
 
                 // 翻訳適用（動的生成のためここで適用）
                 bar.querySelectorAll('[data-i18n]').forEach(el => { el.textContent = i18n.t(el.dataset.i18n); });
@@ -7043,6 +7645,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         const HISTORY_KEY = 'advSearchHistory_v2';
         const SAVED_KEY   = 'advSearchSaved_v2';
         const SECRET_KEY  = 'advSearchSecretMode_v1';
+        // データリビジョン管理キー
+        const DATA_REVISION_KEY = 'advDataRevision_v1';
+        // 未同期の変更フラグ
+        const DIRTY_KEY = 'advDataDirty_v1';
 
         const MUTE_KEY = 'advMutedWords_v1';
         const NATIVE_SEARCH_WIDTH_KEY = 'advNativeSearchWidth_v1';
@@ -7215,6 +7821,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
             v: SETTINGS_EXPORT_VERSION,
 
+            // クラウド同期設定を含める
+            syncConfig: safeParse(SYNC_CFG_KEY, null),
+
+            // 削除ログを含める
+            deletedLog: (typeof loadDeletedLog === 'function') ? loadDeletedLog() : {},
+
             // 言語・除外設定・ミュート
             lang: kv.get(LANG_OVERRIDE_KEY, ''),
             initialTab: kv.get(INITIAL_TAB_KEY, 'last'),
@@ -7231,6 +7843,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             // シークレットモード・履歴ソート
             secret: kv.get(SECRET_KEY, '0') === '1',
             historySort: kv.get(HISTORY_SORT_KEY, 'newest'),
+
+            favSort: kv.get(FAV_SORT_KEY, 'saved_newest'),
 
             // 検索窓の幅
             nativeSearchWidth: kv.get(NATIVE_SEARCH_WIDTH_KEY, null),
@@ -7277,225 +7891,324 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           return JSON.stringify(data, null, 2);
         }
 
+        // クラウド同期専用のペイロード生成（UI設定を除外し、データのみを含める）
+        function buildCloudSyncPayload() {
+            // ローカルの全データを取得
+            const fullData = JSON.parse(buildSettingsExportJSON());
+
+            // 削除ログを読み込む
+            const deletedLog = loadDeletedLog();
+
+            // 同期対象とするキー（コンテンツ・データ）のみを抽出
+            const syncData = {
+                appName: fullData.appName,
+                v: fullData.v,
+
+                // 削除ログを含める
+                deletedLog: deletedLog,
+
+                // --- 同期するデータ (Content) ---
+                history: fullData.history,           // 検索履歴
+                saved: fullData.saved,               // 保存済み検索
+                favorites: fullData.favorites,       // お気に入り
+                favoriteTags: fullData.favoriteTags, // お気に入りタグ
+                accounts: fullData.accounts,         // アカウントリスト
+                lists: fullData.lists,               // リスト一覧
+                folders: fullData.folders,           // 各フォルダ構成
+                unassignedIndex: fullData.unassignedIndex, // 未分類の位置
+
+                // ミュート・除外設定
+                muted: fullData.muted,
+                muteMaster: fullData.muteMaster,
+                muteMode: fullData.muteMode,
+                excludeFlags: fullData.excludeFlags
+            };
+
+            // 注意: ここには syncTimestamp や revision を含めません。
+            // それらは暗号化コンテナの外側（エンベロープ）またはメタデータとして扱います。
+
+            // --- 除外されるキー (Device Specific UI) ---
+            // modalState (位置・サイズ)
+            // triggerState (ボタン位置)
+            // zoom (拡大率)
+            // tabs (並び順・表示設定・初期タブ)
+            // lang (言語設定)
+            // secret (シークレットモード状態)
+            // historySort (ソート順)
+            // nativeSearchWidth (検索窓幅)
+
+            return JSON.stringify(syncData);
+        }
+
         function applySettingsImportJSON(text) {
-            let data;
+            // インポート開始（saveJSONによる更新検知をブロック）
+            __IS_IMPORTING__ = true;
+
             try {
-                data = JSON.parse(text);
-            } catch (_) {
-                alert(i18n.t('alertInvalidJSON'));
-                return false;
-            }
-            if (!data || typeof data !== 'object') {
-                alert(i18n.t('alertInvalidData'));
-                return false;
-            }
-
-            // バリデーションロジック
-            // 1. アプリ識別子 (appName) があるかチェック
-            const hasSignature = (data.appName === 'AdvancedSearchForX');
-
-            // 2. 識別子がない場合、このアプリ特有の構造（vプロパティ + 主要な配列のいずれか）を持っているかチェック（後方互換性救済）
-            const hasValidStructure = (
-                typeof data.v === 'number' &&
-                (Array.isArray(data.history) || Array.isArray(data.saved) || Array.isArray(data.favorites) || typeof data.tabs === 'object')
-            );
-
-            if (!hasSignature && !hasValidStructure) {
-                alert(i18n.t('alertInvalidApp'));
-                return false;
-            }
-            // バリデーション終了
-
-            // --- 基本設定（v1/v2 共通） ---
-            if (data.lang !== undefined) {
-                try { kv.set(LANG_OVERRIDE_KEY, data.lang || ''); } catch (_) {}
-            }
-
-            if (data.initialTab !== undefined) {
-                try { kv.set(INITIAL_TAB_KEY, data.initialTab || 'last'); } catch (_) {}
-            }
-
-            if (data.excludeFlags) {
-                saveExcludeFlags({
-                    name: !!data.excludeFlags.name,
-                    handle: !!data.excludeFlags.handle,
-                    reposts: !!data.excludeFlags.reposts,
-                    hashtags: !!data.excludeFlags.hashtags,
-                });
-            }
-
-            if (Array.isArray(data.muted)) {
-                saveMuted(data.muted);
-            }
-
-            if (typeof data.muteMaster === 'boolean') {
-                saveMuteMaster(data.muteMaster);
-            }
-
-            // ミュートモードの読み込みと保存
-            if (data.muteMode && (data.muteMode === 'hidden' || data.muteMode === 'collapsed')) {
-                saveMuteMode(data.muteMode);
-            }
-
-            // --- v2 以降で追加された保存データ ---
-            if (Array.isArray(data.history)) {
-                saveJSON(HISTORY_KEY, data.history);
-            }
-            if (Array.isArray(data.saved)) {
-                saveJSON(SAVED_KEY, data.saved);
-            }
-
-            // saveFavorites を経由させてキャッシュ(_favSet)も更新する
-            if (Array.isArray(data.favorites)) {
-                saveFavorites(data.favorites);
-            }
-
-            if (typeof data.secret === 'boolean') {
-                try { kv.set(SECRET_KEY, data.secret ? '1' : '0'); } catch (_) {}
-            }
-            if (data.historySort) {
-                try { kv.set(HISTORY_SORT_KEY, data.historySort); } catch (_) {}
-            }
-            // 検索窓の幅復元
-            if (data.nativeSearchWidth !== undefined) {
+                let data;
                 try {
-                    if (data.nativeSearchWidth) kv.set(NATIVE_SEARCH_WIDTH_KEY, data.nativeSearchWidth);
-                    else kv.del(NATIVE_SEARCH_WIDTH_KEY);
-                } catch (_) {}
-            }
-            if (data.tabs && typeof data.tabs === 'object') {
-                if (data.tabs.last) {
-                    try { kv.set(LAST_TAB_KEY, data.tabs.last); } catch (_) {}
+                    data = JSON.parse(text);
+                } catch (_) {
+                    alert(i18n.t('alertInvalidJSON'));
+                    __IS_IMPORTING__ = false; // エラー時解除
+                    return false;
                 }
-                if (Array.isArray(data.tabs.order)) {
-                    saveJSON(TABS_ORDER_KEY, data.tabs.order);
+                if (!data || typeof data !== 'object') {
+                    alert(i18n.t('alertInvalidData'));
+                    __IS_IMPORTING__ = false; // エラー時解除
+                    return false;
                 }
-                if (data.tabs.visibility && typeof data.tabs.visibility === 'object') {
-                    saveTabsVisibility(data.tabs.visibility);
+
+                // バリデーションロジック
+                // 1. アプリ識別子 (appName) があるかチェック
+                const hasSignature = (data.appName === 'AdvancedSearchForX');
+
+                // 2. 識別子がない場合、このアプリ特有の構造（vプロパティ + 主要な配列のいずれか）を持っているかチェック（後方互換性救済）
+                const hasValidStructure = (
+                    typeof data.v === 'number' &&
+                    (Array.isArray(data.history) || Array.isArray(data.saved) || Array.isArray(data.favorites) || typeof data.tabs === 'object')
+                );
+
+                if (!hasSignature && !hasValidStructure) {
+                    alert(i18n.t('alertInvalidApp'));
+                    return false;
                 }
-            }
-            if (data.modalState) {
-                try { kv.set(MODAL_STATE_KEY, JSON.stringify(data.modalState)); } catch (_) {}
-            }
-            if (data.triggerState) {
-                try { kv.set(TRIGGER_STATE_KEY, JSON.stringify(data.triggerState)); } catch (_) {}
-            }
-            if (data.zoom && typeof data.zoom === 'object') {
-                try {
-                    for (const [tab, key] of Object.entries(ZOOM_KEYS)) {
-                        if (data.zoom[tab] != null) {
-                            kv.set(key, String(data.zoom[tab]));
+                // バリデーション終了
+
+                // 削除ログの保存
+                if (data.deletedLog && typeof data.deletedLog === 'object') {
+                    try { saveJSON(DELETED_LOG_KEY, data.deletedLog); } catch (_) {}
+                }
+
+                // --- 基本設定（v1/v2 共通） ---
+                if (data.lang !== undefined) {
+                    try { kv.set(LANG_OVERRIDE_KEY, data.lang || ''); } catch (_) {}
+                }
+
+                if (data.initialTab !== undefined) {
+                    try { kv.set(INITIAL_TAB_KEY, data.initialTab || 'last'); } catch (_) {}
+                }
+
+                if (data.excludeFlags) {
+                    saveExcludeFlags({
+                        name: !!data.excludeFlags.name,
+                        handle: !!data.excludeFlags.handle,
+                        reposts: !!data.excludeFlags.reposts,
+                        hashtags: !!data.excludeFlags.hashtags,
+                    });
+                }
+
+                if (Array.isArray(data.muted)) {
+                    saveMuted(data.muted);
+                }
+
+                if (typeof data.muteMaster === 'boolean') {
+                    saveMuteMaster(data.muteMaster);
+                }
+
+                // ミュートモードの読み込みと保存
+                if (data.muteMode && (data.muteMode === 'hidden' || data.muteMode === 'collapsed')) {
+                    saveMuteMode(data.muteMode);
+                }
+
+                // --- v2 以降で追加された保存データ ---
+                if (Array.isArray(data.history)) {
+                    saveJSON(HISTORY_KEY, data.history);
+                }
+                if (Array.isArray(data.saved)) {
+                    saveJSON(SAVED_KEY, data.saved);
+                }
+
+                // saveFavorites を経由させてキャッシュ(_favSet)も更新する
+                if (Array.isArray(data.favorites)) {
+                    saveFavorites(data.favorites);
+                }
+
+                if (typeof data.secret === 'boolean') {
+                    try { kv.set(SECRET_KEY, data.secret ? '1' : '0'); } catch (_) {}
+                }
+                if (data.historySort) {
+                    try { kv.set(HISTORY_SORT_KEY, data.historySort); } catch (_) {}
+                }
+                if (data.favSort) {
+                    try { kv.set(FAV_SORT_KEY, data.favSort); } catch (_) {}
+                }
+                // 検索窓の幅復元
+                if (data.nativeSearchWidth !== undefined) {
+                    try {
+                        if (data.nativeSearchWidth) kv.set(NATIVE_SEARCH_WIDTH_KEY, data.nativeSearchWidth);
+                        else kv.del(NATIVE_SEARCH_WIDTH_KEY);
+                    } catch (_) {}
+                }
+                if (data.tabs && typeof data.tabs === 'object') {
+                    if (data.tabs.last) {
+                        try { kv.set(LAST_TAB_KEY, data.tabs.last); } catch (_) {}
+                    }
+                    if (Array.isArray(data.tabs.order)) {
+                        saveJSON(TABS_ORDER_KEY, data.tabs.order);
+                    }
+                    if (data.tabs.visibility && typeof data.tabs.visibility === 'object') {
+                        saveTabsVisibility(data.tabs.visibility);
+                    }
+                }
+                if (data.modalState) {
+                    try { kv.set(MODAL_STATE_KEY, JSON.stringify(data.modalState)); } catch (_) {}
+                }
+                if (data.triggerState) {
+                    try { kv.set(TRIGGER_STATE_KEY, JSON.stringify(data.triggerState)); } catch (_) {}
+                }
+                if (data.zoom && typeof data.zoom === 'object') {
+                    try {
+                        for (const [tab, key] of Object.entries(ZOOM_KEYS)) {
+                            if (data.zoom[tab] != null) {
+                                kv.set(key, String(data.zoom[tab]));
+                            }
                         }
+                    } catch (_) {}
+                }
+
+                if (Array.isArray(data.accounts) && typeof saveAccounts === 'function') {
+                    try { saveAccounts(data.accounts); } catch (_) {}
+                }
+                if (Array.isArray(data.lists) && typeof saveLists === 'function') {
+                    try { saveLists(data.lists); } catch (_) {}
+                }
+
+                if (data.folders && typeof data.folders === 'object') {
+                    if (Array.isArray(data.folders.accounts) && typeof ACCOUNTS_FOLDERS_KEY !== 'undefined') {
+                        try { saveFolders(ACCOUNTS_FOLDERS_KEY, data.folders.accounts); } catch (_) {}
                     }
-                } catch (_) {}
-            }
-
-            if (Array.isArray(data.accounts) && typeof saveAccounts === 'function') {
-                try { saveAccounts(data.accounts); } catch (_) {}
-            }
-            if (Array.isArray(data.lists) && typeof saveLists === 'function') {
-                try { saveLists(data.lists); } catch (_) {}
-            }
-
-            if (data.folders && typeof data.folders === 'object') {
-                if (Array.isArray(data.folders.accounts) && typeof ACCOUNTS_FOLDERS_KEY !== 'undefined') {
-                    try { saveFolders(ACCOUNTS_FOLDERS_KEY, data.folders.accounts); } catch (_) {}
+                    if (Array.isArray(data.folders.lists) && typeof LISTS_FOLDERS_KEY !== 'undefined') {
+                        try { saveFolders(LISTS_FOLDERS_KEY, data.folders.lists); } catch (_) {}
+                    }
+                    if (Array.isArray(data.folders.saved) && typeof SAVED_FOLDERS_KEY !== 'undefined') {
+                        try { saveFolders(SAVED_FOLDERS_KEY, data.folders.saved); } catch (_) {}
+                    }
                 }
-                if (Array.isArray(data.folders.lists) && typeof LISTS_FOLDERS_KEY !== 'undefined') {
-                    try { saveFolders(LISTS_FOLDERS_KEY, data.folders.lists); } catch (_) {}
-                }
-                if (Array.isArray(data.folders.saved) && typeof SAVED_FOLDERS_KEY !== 'undefined') {
-                    try { saveFolders(SAVED_FOLDERS_KEY, data.folders.saved); } catch (_) {}
-                }
-            }
 
-            if (data.unassignedIndex && typeof data.unassignedIndex === 'object') {
-                if ('saved' in data.unassignedIndex) try { kv.set('advSavedUnassignedIndex_v1', String(data.unassignedIndex.saved | 0)); } catch (_) {}
-                if ('accounts' in data.unassignedIndex) try { kv.set('advAccountsUnassignedIndex_v1', String(data.unassignedIndex.accounts | 0)); } catch (_) {}
-                if ('lists' in data.unassignedIndex) try { kv.set('advListsUnassignedIndex_v1', String(data.unassignedIndex.lists | 0)); } catch (_) {}
-            }
+                if (data.unassignedIndex && typeof data.unassignedIndex === 'object') {
+                    if ('saved' in data.unassignedIndex) try { kv.set('advSavedUnassignedIndex_v1', String(data.unassignedIndex.saved | 0)); } catch (_) {}
+                    if ('accounts' in data.unassignedIndex) try { kv.set('advAccountsUnassignedIndex_v1', String(data.unassignedIndex.accounts | 0)); } catch (_) {}
+                    if ('lists' in data.unassignedIndex) try { kv.set('advListsUnassignedIndex_v1', String(data.unassignedIndex.lists | 0)); } catch (_) {}
+                }
 
-            /* --- Favorite Tags Data --- */
-            if (data.favoriteTags && typeof ft_saveState === 'function') {
+                // クラウド同期設定の復元
+                if (data.syncConfig && typeof data.syncConfig === 'object') {
+                    try {
+                        // ストレージに保存
+                        kv.set(SYNC_CFG_KEY, JSON.stringify(data.syncConfig));
+
+                        // メモリ上のマネージャーにも即座に反映 (UI更新のため)
+                        if (typeof syncManager !== 'undefined') {
+                            syncManager.loadConfig();
+                            // UIの入力欄にも値をセット
+                            if (syncEpInput) syncEpInput.value = syncManager.endpoint;
+                            if (syncIdInput) syncIdInput.value = syncManager.syncId;
+                            if (syncScInput) syncScInput.value = syncManager.secret;
+
+                            // 状態表示を更新
+                            if (syncManager.endpoint && syncManager.secret) {
+                                syncManager.updateStatus('Config Loaded');
+                            }
+                        }
+                    } catch (_) {}
+                }
+
+                /* --- Favorite Tags Data --- */
+                if (data.favoriteTags && typeof ft_saveState === 'function') {
+                    try {
+                        const s = data.favoriteTags;
+                        ft_normalizeTagOrdersFor(s);
+                        ft_clampUncategorizedOrderFor(s);
+                        ft_saveState(s); // ストレージへの保存
+
+                        if (typeof ft_state !== 'undefined') {
+                            ft_state = s;
+                        }
+                    } catch (_) {}
+                }
+
+                // 言語を再適用
                 try {
-                    const s = data.favoriteTags;
-                    ft_normalizeTagOrdersFor(s);
-                    ft_clampUncategorizedOrderFor(s);
-                    ft_saveState(s); // ストレージへの保存
-
-                    if (typeof ft_state !== 'undefined') {
-                        ft_state = s;
+                    const override = kv.get(LANG_OVERRIDE_KEY, '');
+                    if (override && i18n.translations[override]) {
+                        i18n.lang = override;
+                    } else if (!override) {
+                        i18n.init();
                     }
                 } catch (_) {}
-            }
 
-            // 言語を再適用
-            try {
-                const override = kv.get(LANG_OVERRIDE_KEY, '');
-                if (override && i18n.translations[override]) {
-                    i18n.lang = override;
-                } else if (!override) {
-                    i18n.init();
+                try {
+                    i18n.apply(document.getElementById('advanced-search-modal'));
+                    i18n.apply(document.getElementById('adv-settings-modal'));
+                } catch (_) {}
+
+                try { applySecretBtn(); } catch (_) {}
+                try { renderHistory(); } catch (_) {}
+                try { renderSaved(); } catch (_) {}
+                try { renderLists(); } catch (_) {}
+                try { renderAccounts(); } catch (_) {}
+                try { renderMuted(); } catch (_) {}
+
+                // お気に入りリストを再描画し、ボタン状態・タグチップを全更新する
+                try {
+                    renderFavorites();
+                    updateAllFavoriteButtons();
+                } catch (_) {}
+
+                try { rescanAllTweetsForFilter(); } catch (_) {}
+
+                /* --- Favorite Tags UI Refresh --- */
+                try {
+                    if (typeof ft_refreshAllTagChips === 'function') ft_refreshAllTagChips();
+                } catch (_) {}
+
+                // タブの表示状態を適用
+                try { applyTabsVisibility(); } catch (_) {}
+
+                // ▼▼▼ インポートした設定を即座に画面に反映する処理 ▼▼▼
+
+                // 1. ズーム設定の反映 (データに含まれている場合のみ実行)
+                if (data.zoom) {
+                    try {
+                        Object.keys(zoomByTab).forEach(tab => loadZoomFor(tab));
+                        applyZoom();
+                    } catch (_) {}
                 }
-            } catch (_) {}
 
-            try {
-                i18n.apply(document.getElementById('advanced-search-modal'));
-                i18n.apply(document.getElementById('adv-settings-modal'));
-            } catch (_) {}
+                // 2. モーダル位置・サイズの反映 (データに含まれている場合のみ実行)
+                // クラウド同期時は modalState がないためスキップされ、位置ズレを防ぐ
+                if (data.modalState) {
+                    try {
+                        loadModalState();
+                        requestAnimationFrame(keepModalInViewport);
+                    } catch (_) {}
+                }
 
-            try { applySecretBtn(); } catch (_) {}
-            try { renderHistory(); } catch (_) {}
-            try { renderSaved(); } catch (_) {}
-            try { renderLists(); } catch (_) {}
-            try { renderAccounts(); } catch (_) {}
-            try { renderMuted(); } catch (_) {}
+                // 3. トリガーボタン位置の反映 (データに含まれている場合のみ実行)
+                if (data.triggerState) {
+                    try {
+                        applyTriggerStoredPosition();
+                        requestAnimationFrame(keepTriggerInViewport);
+                    } catch (_) {}
+                }
 
-            // お気に入りリストを再描画し、ボタン状態・タグチップを全更新する
-            try {
-                renderFavorites();
-                updateAllFavoriteButtons();
-            } catch (_) {}
+                // 4. 検索窓の幅の反映 (データに含まれている場合のみ実行)
+                if (data.nativeSearchWidth !== undefined) {
+                    try {
+                        setupNativeSearchResizer();
+                    } catch (_) {}
+                }
 
-            try { rescanAllTweetsForFilter(); } catch (_) {}
-
-            /* --- Favorite Tags UI Refresh --- */
-            try {
-                if (typeof ft_refreshAllTagChips === 'function') ft_refreshAllTagChips();
-            } catch (_) {}
-
-            // タブの表示状態を適用
-            try { applyTabsVisibility(); } catch (_) {}
-
-            /* ▼▼▼ インポートした設定を即座に画面に反映する処理 ▼▼▼ */
-
-            // 1. ズーム設定の反映
-            // Storageからメモリ変数(zoomByTab)へ再ロードし、DOMに適用
-            try {
-                Object.keys(zoomByTab).forEach(tab => loadZoomFor(tab));
-                applyZoom();
-            } catch (_) {}
-
-            // 2. モーダル位置・サイズの反映
-            // Storageから読み込み直し、位置補正(keepModalInViewport)も含めて適用
-            try {
-                loadModalState(); // 内部で applyModalStoredPosition() が呼ばれ、座標とサイズがセットされる
-                requestAnimationFrame(keepModalInViewport);
-            } catch (_) {}
-
-            // 3. トリガーボタン位置の反映
-            try {
-                applyTriggerStoredPosition();
-                requestAnimationFrame(keepTriggerInViewport);
-            } catch (_) {}
-
-            // 4. 検索窓の幅の反映
-            try {
-                setupNativeSearchResizer();
-            } catch (_) {}
-
-            showToast(i18n.t('toastImported'));
-            return true;
+                showToast(i18n.t('toastImported'));
+                return true;
+            } catch (e) {
+                console.error(e);
+                return false;
+            } finally {
+                // 成功・失敗・エラーに関わらず、必ずフラグを戻す
+                __IS_IMPORTING__ = false;
+            }
         }
 
         // マスターON/OFF（全体の適用を止めるだけ。各エントリの enabled は保持）
@@ -8340,17 +9053,21 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               TABS_VISIBILITY_KEY,
               LANG_OVERRIDE_KEY,
               HISTORY_SORT_KEY,
+              FAV_SORT_KEY,
               EXC_NAME_KEY,
               EXC_HANDLE_KEY,
               EXC_REPOSTS_KEY,
               EXC_HASHTAGS_KEY,
               NATIVE_SEARCH_WIDTH_KEY,
               FAV_KEY,
-              'advSavedUnassignedIndex_v1',
-              'advAccountsUnassignedIndex_v1',
-              'advListsUnassignedIndex_v1',
+              ...Object.values(UNASSIGNED_IDX_KEYS), // 定数を使用
               ...Object.values(ZOOM_KEYS),
               FT_STATE_KEY,
+              DELETED_LOG_KEY,
+              SYNC_CFG_KEY,
+              SYNC_ENABLED_KEY,
+              DATA_REVISION_KEY,
+              DIRTY_KEY
             ];
 
             KEYS_TO_DELETE.forEach(k => {
@@ -8458,6 +9175,50 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               keepTriggerInViewport();
             } catch (_) {}
 
+            // SyncManagerのメモリ状態もリセット
+            if (typeof syncManager !== 'undefined') {
+                syncManager.endpoint = '';
+                syncManager.secret = '';
+                syncManager.syncId = '';
+                syncManager.encryptionKey = null;
+                syncManager.signingKey = null;
+                // UIの入力欄もクリア
+                if (syncEpInput) syncEpInput.value = '';
+                if (syncIdInput) syncIdInput.value = '';
+                if (syncScInput) syncScInput.value = '';
+                if (typeof syncManager.updateStatus === 'function') syncManager.updateStatus('Reset');
+            }
+
+            // ▼▼▼ 設定モーダルのUI表示を強制的に初期値に戻す ▼▼▼
+
+            // 1. 言語設定リセット
+            if (settingsLangSel) settingsLangSel.value = '';
+
+            // 2. 初期タブ設定リセット
+            if (settingsInitialTabSel) settingsInitialTabSel.value = 'last';
+
+            // 3. タブ表示トグルのリセット（すべてONに戻す）
+            if (typeof DEFAULT_TABS !== 'undefined') {
+                DEFAULT_TABS.forEach(tabName => {
+                    const toggle = document.getElementById(`adv-settings-tab-toggle-${tabName}`);
+                    if (toggle) toggle.checked = true;
+                });
+            }
+
+            // 4. クラウド同期設定のリセット（入力欄クリア & トグルOFF）
+            if (syncEnableToggle) {
+                syncEnableToggle.checked = false;
+                if (syncContainer) syncContainer.style.display = 'none';
+            }
+            if (typeof syncEpInput !== 'undefined') syncEpInput.value = '';
+            if (typeof syncIdInput !== 'undefined') syncIdInput.value = '';
+            if (typeof syncScInput !== 'undefined') syncScInput.value = '';
+
+            // 5. ヘッダーの同期アイコンを消す
+            if (typeof updateHeaderSyncVisibility === 'function') {
+                updateHeaderSyncVisibility();
+            }
+
             showToast(i18n.t('toastReset'));
           });
         }
@@ -8544,6 +9305,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         };
 
         const deleteHistory = (id) => {
+            markAsDeleted(id);
             const listRaw = loadJSON(HISTORY_KEY, []);
             const list = migrateList(listRaw);
             const next = list.filter(it => it.id !== id);
@@ -8575,6 +9337,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         };
 
         const deleteSaved = (id) => {
+            markAsDeleted(id);
             const listRaw = loadJSON(SAVED_KEY, []);
             const list = migrateList(listRaw);
             const next = list.filter(it => it.id !== id);
@@ -8702,7 +9465,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 row.className = 'adv-item';
                 row.dataset.id = item.id;
 
-                row.innerHTML = `
+                setInnerHTML(row,`
                   <div class="adv-item-main">
                     <div class="adv-item-title">${escapeHTML(item.q)}</div>
                     <div class="adv-item-sub">
@@ -8714,7 +9477,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     <button class="adv-chip primary" data-action="run">${i18n.t('run')}</button>
                     <button class="adv-chip danger" data-action="delete">${i18n.t('delete')}</button>
                   </div>
-                `;
+                `);
 
                 row.querySelector('[data-action="run"]').addEventListener('click', () => {
                     parseQueryAndApplyToModal(item.q);
@@ -8772,7 +9535,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               row.className = 'adv-item';
               row.draggable = true;
               row.dataset.id = item.id;
-              row.innerHTML = `
+              setInnerHTML(row,`
                 <div class="adv-item-handle" title="Drag">≡</div>
                 <div class="adv-item-main">
                   <div class="adv-item-title">${escapeHTML(item.q)}</div>
@@ -8785,7 +9548,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                   <button class="adv-chip primary" data-action="run">${i18n.t('run')}</button>
                   <button class="adv-chip danger"  data-action="delete">${i18n.t('delete')}</button>
                 </div>
-              `;
+              `);
               row.querySelector('[data-action="run"]').addEventListener('click', ()=>{
                 parseQueryAndApplyToModal(item.q);
                 applyScopesToControls({pf:!!item.pf, lf:!!item.lf});
@@ -8887,7 +9650,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           // 4) フィルタUI（セレクト＆検索＆新規フォルダ）
           if (sel) {
             const prev = sel.value;
-            sel.innerHTML = '';
+            setInnerHTML(sel,'');
             const optAll = document.createElement('option'); optAll.value='__ALL__'; optAll.textContent=i18n.t('folderFilterAll'); sel.appendChild(optAll);
             const optUn  = document.createElement('option'); optUn.value='__UNASSIGNED__'; optUn.textContent=i18n.t('folderFilterUnassigned'); sel.appendChild(optUn);
             folders.forEach(f=>{
@@ -8931,7 +9694,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               return !q || targetText.includes(q);
           };
 
-          host.innerHTML = '';
+          setInnerHTML(host,'');
           empty.textContent = items.length ? '' : (emptyMessage || '');
 
           // 5) Unassigned インデックス保持
@@ -9121,10 +9884,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
             const actions = document.createElement('div');
             actions.className = 'adv-folder-actions';
-            actions.innerHTML = `
+            setInnerHTML(actions,`
               <button class="adv-chip"        data-action="rename"  title="${i18n.t('folderRenameTitle')}">${i18n.t('folderRename')}</button>
               <button class="adv-chip danger" data-action="delete"  title="${i18n.t('folderDeleteTitle')}">${i18n.t('folderDelete')}</button>
-            `;
+            `);
 
             header.appendChild(titleWrap);
             header.appendChild(actions);
@@ -9937,12 +10700,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                             ph.className = 'adv-collapsed-placeholder';
 
                             // ここで triggerWord を表示する
-                            ph.innerHTML = `
+                            setInnerHTML(ph,`
                                 <div class="adv-collapsed-label">
                                     <span style="opacity:0.8">${i18n.t('muteLabel')} ${escapeHTML(triggerWord)}</span>
                                 </div>
                                 <button class="adv-btn-show">${i18n.t('buttonShow')}</button>
-                            `;
+                            `);
 
                             const uncollapse = (e) => {
                                 e.stopPropagation();
@@ -9956,7 +10719,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                             cell.appendChild(ph);
                         } else {
                             const labelEl = ph.querySelector('.adv-collapsed-label span');
-                            if (labelEl) labelEl.innerHTML = `${i18n.t('muteLabel')} ${escapeHTML(triggerWord)}`;
+                            if (labelEl) setInnerHTML(labelEl,`${i18n.t('muteLabel')} ${escapeHTML(triggerWord)}`);
                         }
                     } else {
                         // [完全非表示モード] (Hard Hide または hidden設定)
@@ -10242,7 +11005,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           const title = escapeHTML(item.name || `@${item.handle}`);
           const sub   = escapeHTML(`@${item.handle}`);
 
-          row.innerHTML = `
+          setInnerHTML(row,`
             <div class="adv-item-handle" title="Drag">≡</div>
             ${
               item.avatar
@@ -10266,7 +11029,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               <button class="adv-chip primary" data-action="confirm">${i18n.t('buttonConfirm')}</button>
               <button class="adv-chip danger" data-action="delete">${i18n.t('delete')}</button>
             </div>
-          `;
+          `);
 
           row.querySelector('[data-action="confirm"]').addEventListener('click', (e) => {
             spaNavigate(`/${item.handle}`, { ctrlMeta: e.ctrlKey || e.metaKey });
@@ -10331,7 +11094,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           const title = escapeHTML(item.name);
           const sub   = escapeHTML(item.url);
 
-          row.innerHTML = `
+          setInnerHTML(row,`
             <div class="adv-item-handle" title="Drag">≡</div>
             <div class="adv-item-main">
               <div class="adv-item-title">
@@ -10346,7 +11109,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               <button class="adv-chip primary" data-action="confirm">${i18n.t('buttonConfirm')}</button>
               <button class="adv-chip danger" data-action="delete">${i18n.t('delete')}</button>
             </div>
-          `;
+          `);
 
           row.querySelector('[data-action="confirm"]').addEventListener('click', (e) => {
             spaNavigate(item.url, { ctrlMeta: e.ctrlKey || e.metaKey });
@@ -10414,11 +11177,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             if (target && !target.previousElementSibling?.classList?.contains('adv-folder-toolbar')) {
               const bar = document.createElement('div');
               bar.className = 'adv-folder-toolbar';
-              bar.innerHTML = `
+              setInnerHTML(bar,`
                 <select id="adv-accounts-folder-filter" class="adv-select"></select>
                 <input id="adv-accounts-search" class="adv-input" type="text" data-i18n-placeholder="placeholderFilterAccounts" placeholder="${i18n.t('placeholderFilterAccounts')}">
                 <button id="adv-accounts-new-folder" class="adv-chip" data-i18n="buttonAddFolder">${i18n.t('buttonAddFolder')}</button>
-              `;
+              `);
               target.parentElement.insertBefore(bar, target);
             }
           }
@@ -10430,11 +11193,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             if (target && !target.previousElementSibling?.classList?.contains('adv-folder-toolbar')) {
               const bar = document.createElement('div');
               bar.className = 'adv-folder-toolbar';
-              bar.innerHTML = `
+              setInnerHTML(bar,`
                 <select id="adv-lists-folder-filter" class="adv-select"></select>
                 <input id="adv-lists-search" class="adv-input" type="text" data-i18n-placeholder="placeholderFilterLists" placeholder="${i18n.t('placeholderFilterLists')}">
                 <button id="adv-lists-new-folder" class="adv-chip" data-i18n="buttonAddFolder">${i18n.t('buttonAddFolder')}</button>
-              `;
+              `);
               target.parentElement.insertBefore(bar, target);
             }
           }
@@ -10446,11 +11209,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             if (target && !target.previousElementSibling?.classList?.contains('adv-folder-toolbar')) {
               const bar = document.createElement('div');
               bar.className = 'adv-folder-toolbar';
-              bar.innerHTML = `
+              setInnerHTML(bar,`
                 <select id="adv-saved-folder-filter" class="adv-select"></select>
                 <input id="adv-saved-search" class="adv-input" type="text" data-i18n-placeholder="placeholderSearchSaved" placeholder="${i18n.t('placeholderSearchSaved')}">
                 <button id="adv-saved-new-folder" class="adv-chip" data-i18n="buttonAddFolder">${i18n.t('buttonAddFolder')}</button>
-              `;
+              `);
               target.parentElement.insertBefore(bar, target);
             }
           }
@@ -10489,6 +11252,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             return 'exists';
           }
           const id = uid();
+          unmarkAsDeleted(id); // ID重複/再利用時の安全策
           list.unshift({ id, handle: h, name, avatar, ts: Date.now() });
           saveAccounts(list);
           // フォルダーへは入れない（未所属のまま）
@@ -10520,6 +11284,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           return 'unchanged';
         };
         const deleteAccount = (id) => {
+            markAsDeleted(id);
             // ▼ 削除対象のハンドルを保持しておく
             const accounts = loadAccounts();
             const deletedAccount = accounts.find(x => x.id === id);
@@ -10706,7 +11471,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           const ICON_PATH_CHECK = 'M23 8l-5 5-3-3 1.5-1.5L18 10l3.5-3.5L23 8z'; // 右上に配置したチェック
           const iconPath = isAdded ? ICON_PATH_CHECK : ICON_PATH_ADD;
 
-          btn.innerHTML = `
+          setInnerHTML(btn,`
             <div dir="ltr" class="${innerCls}" style="${innerStyle}">
               <svg
                 viewBox="0 0 24 24"
@@ -10717,11 +11482,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               >
                 <circle cx="10" cy="7.5" r="3.5"></circle>
                 <path d="M3.5 18.5C3.5 15.46 6.79 13 10 13s6.5 2.46 6.5 5.5V20H3.5v-1.5z"></path>
-                <path d="${iconPath}"></path>
+                <path d="${iconPath}" style="fill:var(--modal-primary-color)"></path>
               </svg>
               <span class="${spanCls}"></span>
             </div>
-          `;
+          `);
 
           btn.addEventListener('click', () => {
             if (isAdded) {
@@ -10784,6 +11549,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           const list = loadLists();
           if (list.some(x => x.url === u)) return 'exists';
           const id = uid();
+          unmarkAsDeleted(id); // ID重複/再利用時の安全策
           list.unshift({ id, name: nm, url: u, ts: Date.now() });
           saveLists(list);
           // フォルダーへは入れない（未所属のまま）
@@ -10797,6 +11563,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         };
 
         const deleteList = (id) => {
+            markAsDeleted(id);
             // ▼ 削除対象のURLを保持しておく
             const lists = loadLists();
             const deletedList = lists.find(x => x.id === id);
@@ -11020,14 +11787,14 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           const iconPath = isAdded ? ICON_PATH_CHECK : ICON_PATH_ADD;
 
           // ▼ iconPath を使用するように innerHTML を変更
-          btn.innerHTML = `
+          setInnerHTML(btn,`
               <div dir="ltr" class="${innerCls}" style="${innerStyle}">
                   <svg viewBox="0 0 24 24" aria-hidden="true" class="${svgCls}" fill="currentColor">
                       <g><path d="${iconPath}"></path></g>
                   </svg>
                   <span class="${spanCls}"></span>
               </div>
-          `;
+          `);
 
           // ▼ クリックイベントのロジックをトグルに変更
           btn.addEventListener('click', () => {
@@ -11323,7 +12090,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 const row = document.createElement('div');
                 row.className = 'adv-mute-item';
                 if (!item.enabled) row.classList.add('disabled');
-                row.innerHTML = `
+                setInnerHTML(row,`
                   <div class="adv-mute-content-left">
                       <div class="adv-mute-word">${escapeHTML(item.word)}</div>
                       <div class="adv-mute-options-row">
@@ -11344,7 +12111,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                   <div class="adv-mute-actions-right">
                     <button class="adv-chip danger" data-action="delete" style="padding:2px 8px; font-size:11px;">${i18n.t('delete')}</button>
                   </div>
-                `;
+                `);
                 row.querySelector('[data-action="toggle-enabled"]').addEventListener('change', () => toggleMutedEnabled(item.id));
                 row.querySelector('[data-action="toggle-cs"]').addEventListener('change', () => toggleMutedCS(item.id));
                 row.querySelector('[data-action="toggle-wb"]').addEventListener('change', () => toggleMutedWB(item.id));
@@ -11611,10 +12378,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 const extracted = [];
 
                 // コンテナ(tweetPhoto)を基準にループすることで、DOM上の表示順序(1,2,3,4)を維持する
-                const mediaContainers = Array.from(rootElement.querySelectorAll('div[data-testid="tweetPhoto"]'));
+                // tweetPhoto だけでなく videoPlayer も対象にする
+                const mediaContainers = Array.from(rootElement.querySelectorAll('div[data-testid="tweetPhoto"], div[data-testid="videoPlayer"]'));
 
-                // 同じコンテナを二重に処理しないためのセット（念のため）
+                // 同じコンテナや同じ動画を二重に処理しないためのセット
                 const processedUrls = new Set();
+                const processedElements = new Set();
 
                 mediaContainers.forEach(container => {
                     // 引用枠内の除外判定
@@ -11627,6 +12396,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                         if (url && !processedUrls.has(url)) {
                             extracted.push({ type: 'video', url: url });
                             processedUrls.add(url);
+                            processedElements.add(container);
                         }
                         return; // 動画が見つかったらこのコンテナは処理終了
                     }
@@ -11635,9 +12405,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     const img = container.querySelector('img');
                     if (img && img.src) {
                         const url = img.src;
-                        if (!processedUrls.has(url)) {
+                        if (url && !processedUrls.has(url)) {
+                            // アイコンや絵文字を拾わないように簡単なフィルタ
                             extracted.push({ type: 'image', url: url });
                             processedUrls.add(url);
+                            processedElements.add(container);
                         }
                     }
                 });
@@ -11965,10 +12737,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             btn.title = i18n.t('tabFavorites');
 
             // SVG (Star)
-            btn.innerHTML = `
+            setInnerHTML(btn,`
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
-            </svg>`;
+            </svg>`);
 
             const updateState = () => {
                 const active = isFavorited(tweetId);
@@ -12210,6 +12982,863 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             });
         };
         setupExclusiveChecks();
+
+        // ヘッダー同期ボタンの制御ロジック
+        const headerSyncBtn = document.getElementById('adv-header-sync-btn');
+        const updateHeaderSyncVisibility = () => {
+            const isEnabled = kv.get(SYNC_ENABLED_KEY, '0') === '1';
+            // 同期有効 かつ 設定(URL/Secret)が済んでいる場合のみ表示
+            const cfg = (() => { try { return JSON.parse(kv.get(SYNC_CFG_KEY, '{}')); } catch { return {}; } })();
+            const isConfigured = !!(cfg.endpoint && cfg.secret);
+
+            if (headerSyncBtn) {
+                headerSyncBtn.style.display = (isEnabled && isConfigured) ? 'flex' : 'none';
+            }
+        };
+        // ボタンクリックで手動同期実行
+        if (headerSyncBtn) {
+            headerSyncBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (typeof syncManager !== 'undefined') {
+                    // 設定保存を一応挟んでから実行
+                    syncManager.saveConfig(syncManager.endpoint, syncManager.secret, syncManager.syncId).then(() => {
+                        syncManager.executeSync();
+                    });
+                }
+            });
+        }
+
+       /* ============================================================
+         * Secure Sync Manager (D1 Transactional / Gzip Compression)
+         * ============================================================ */
+        const SYNC_CFG_KEY = 'advSyncConfig_v1';
+
+        // Helper: Gzip Compression using Native Streams
+        const gzipCompress = async (str) => {
+            const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('gzip'));
+            return new Response(stream).arrayBuffer();
+        };
+
+        const gzipDecompress = async (arrayBuffer) => {
+            const stream = new Response(arrayBuffer).body.pipeThrough(new DecompressionStream('gzip'));
+            return new Response(stream).text();
+        };
+
+        // Helper: fetch wrapper with strict timeout & header sanitization
+        const gmFetch = (url, options = {}) => {
+            return new Promise((resolve, reject) => {
+                // Strict CORS対策: Originヘッダーを明示
+                const headers = { ...(options.headers || {}) };
+                if (!headers['Origin']) {
+                    headers['Origin'] = (typeof location !== 'undefined' && location.origin) ? location.origin : 'https://x.com';
+                }
+
+                GM_xmlhttpRequest({
+                    method: options.method || 'GET',
+                    url: url,
+                    headers: headers,
+                    data: options.body,
+                    timeout: 30000, // 圧縮処理などを考慮し少し長めに
+                    onload: (res) => resolve(res),
+                    onerror: (err) => reject(new Error('Network error')),
+                    ontimeout: () => reject(new Error('Timeout'))
+                });
+            });
+        };
+
+        class SyncManager {
+            constructor() {
+                this.endpoint = '';
+                this.secret = '';
+                this.syncId = '';
+                this.authToken = null;      // 認証用トークン
+                this.encryptionKey = null;  // 暗号化用
+                this.signingKey = null;     // 署名用
+                this.currentSalt = null;    // 初回送信用のソルト
+                this.isSyncing = false;
+                this.nextSyncScheduled = false; // 次回同期の予約フラグ
+
+                // 同期処理中に発生した変更を検知するフラグ
+                this.pendingChanges = false;
+
+                this.readyPromise = Promise.resolve();
+                this.loadConfig();
+            }
+
+            // 外部から変更を通知するメソッド
+            notifyChange() {
+                this.pendingChanges = true;
+                // もし現在同期中なら、終わった直後にもう一度走らせるよう予約を入れる
+                if (this.isSyncing) {
+                    this.nextSyncScheduled = true;
+                }
+            }
+
+            loadConfig() {
+                try {
+                    const cfg = JSON.parse(GM_getValue(SYNC_CFG_KEY, '{}'));
+                    this.endpoint = cfg.endpoint || '';
+                    this.secret = cfg.secret || '';
+                    this.syncId = cfg.syncId || '';
+
+                    // ここでの deriveKeys() 呼び出しを削除。
+                    // 理由は、この時点ではサーバーから Salt を取得しておらず、正しい鍵が生成できないため。
+                    // 鍵生成は executeSync() の中で Handshake した後に行われる。
+
+                    // 設定ロード時にボタン表示状態を更新
+                    updateHeaderSyncVisibility();
+                } catch (e) {}
+            }
+
+            saveConfig(endpoint, secret, syncId) {
+                this.endpoint = endpoint.trim().replace(/\/$/, '');
+                this.secret = secret.trim();
+                this.syncId = syncId.trim();
+
+                GM_setValue(SYNC_CFG_KEY, JSON.stringify({
+                    endpoint: this.endpoint,
+                    secret: this.secret,
+                    syncId: this.syncId
+                }));
+
+                // ここでの deriveKeys 呼び出しは削除。
+                // 鍵生成は同期実行時(executeSync)にサーバーからSaltを取得した後に行う。
+
+                return Promise.resolve();
+            }
+
+            // Zero-Knowledge Key Derivation
+            // saltHex: Data Salt (クライアント間で共有されるソルト) を使用して、認証トークンと暗号化キーの両方を生成する
+            async deriveKeys(saltHex) {
+                if (!this.secret || !saltHex) return;
+
+                try {
+                    const cryptoObj = (typeof unsafeWindow !== 'undefined' && unsafeWindow.crypto) ? unsafeWindow.crypto : (window.crypto || window.msCrypto);
+                    const subtle = cryptoObj.subtle;
+                    const enc = new TextEncoder();
+
+                    const keyMaterial = await subtle.importKey(
+                        "raw", enc.encode(this.secret), { name: "PBKDF2" }, false, ["deriveKey", "deriveBits"]
+                    );
+
+                    const ITERATIONS = 600000;
+
+                    // A. 認証トークンの生成
+                    // 以前の修正ではここに serverSalt を使おうとしましたが、Device A/B間の不整合を防ぐため
+                    // 共有されている saltHex (Data Salt) に "|auth" を付与して使用します。
+                    const authBits = await subtle.deriveBits(
+                        { name: "PBKDF2", salt: enc.encode(saltHex + "|auth"), iterations: ITERATIONS, hash: "SHA-256" },
+                        keyMaterial, 256
+                    );
+                    this.authToken = Array.from(new Uint8Array(authBits)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+                    // B. 暗号化キーの生成
+                    this.encryptionKey = await subtle.deriveKey(
+                        { name: "PBKDF2", salt: enc.encode(saltHex + "|enc"), iterations: ITERATIONS, hash: "SHA-256" },
+                        keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+                    );
+
+                    // C. 署名キーの生成
+                    this.signingKey = await subtle.deriveKey(
+                        { name: "PBKDF2", salt: enc.encode(saltHex + "|sign"), iterations: ITERATIONS, hash: "SHA-256" },
+                        keyMaterial, { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]
+                    );
+
+                    this.currentSalt = saltHex;
+
+                } catch (e) {
+                    console.error("Crypto Error:", e);
+                    this.updateStatus("syncStatusError", `Crypto: ${e.name} - ${e.message}`);
+                    throw e;
+                }
+            }
+
+            // Encrypt: JSON -> Gzip -> AES-GCM -> HMAC
+            async encryptPayload(plainDataObj, baseRevision) {
+                if (!this.encryptionKey || !this.signingKey) throw new Error("No keys");
+                const cryptoObj = window.crypto || window.msCrypto;
+
+                // 1. JSON Stringify
+                const jsonStr = JSON.stringify(plainDataObj);
+
+                // 2. Gzip Compression
+                const compressedBuf = await gzipCompress(jsonStr);
+
+                // 3. Encrypt
+                const iv = cryptoObj.getRandomValues(new Uint8Array(12));
+                const ciphertextBuf = await cryptoObj.subtle.encrypt(
+                    { name: "AES-GCM", iv: iv },
+                    this.encryptionKey,
+                    compressedBuf
+                );
+
+                // 4. Base64 Encoding
+                const blob = new Blob([ciphertextBuf]);
+                const reader = new FileReader();
+                const base64Cipher = await new Promise(r => {
+                    reader.onload = () => r(reader.result.split(',')[1]);
+                    reader.readAsDataURL(blob);
+                });
+                const ivHex = Array.from(iv).map(b => b.toString(16).padStart(2, '0')).join('');
+
+                // 5. Sign (IV + Cipher + Revision + SyncID) -> Replay Attack防止強化
+                const signSource = new TextEncoder().encode(`${ivHex}.${base64Cipher}.${baseRevision}.${this.syncId}`);
+                const signatureBuf = await cryptoObj.subtle.sign(
+                    "HMAC", this.signingKey, signSource
+                );
+                const signatureHex = Array.from(new Uint8Array(signatureBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+                return {
+                    baseRevision: baseRevision,
+                    iv: ivHex,
+                    ciphertext: base64Cipher,
+                    signature: signatureHex
+                };
+            }
+
+            // Decrypt: Verify -> AES-GCM -> Gunzip -> JSON
+            async decryptPayload(serverBody, revision) {
+                if (!this.encryptionKey || !this.signingKey) throw new Error("No keys");
+                const cryptoObj = window.crypto || window.msCrypto;
+                const { iv, ciphertext, signature } = serverBody;
+
+                // 1. Verify HMAC
+                if (signature && revision) {
+                    const signSource = new TextEncoder().encode(`${iv}.${ciphertext}.${revision}.${this.syncId}`);
+                    const signatureBuf = new Uint8Array(signature.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+                    const isValid = await cryptoObj.subtle.verify(
+                        "HMAC", this.signingKey, signatureBuf, signSource
+                    );
+                    if (!isValid) throw new Error("Signature verification failed");
+                }
+
+                const ivBuf = new Uint8Array(iv.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+
+                // Base64 Decode
+                const binaryString = atob(ciphertext);
+                const len = binaryString.length;
+                const ciphertextBuf = new Uint8Array(len);
+                for (let i = 0; i < len; i++) ciphertextBuf[i] = binaryString.charCodeAt(i);
+
+                try {
+                    // 2. Decrypt
+                    const decryptedBuf = await cryptoObj.subtle.decrypt(
+                        { name: "AES-GCM", iv: ivBuf },
+                        this.encryptionKey,
+                        ciphertextBuf
+                    );
+
+                    // 3. Gunzip Decompression
+                    const jsonStr = await gzipDecompress(decryptedBuf);
+
+                    // 4. Parse
+                    return JSON.parse(jsonStr);
+                } catch (e) {
+                    throw new Error("Decryption/Decompression Failed");
+                }
+            }
+
+            // 鍵生成ヘルパー (内部利用)
+            async _calcKeysFromSecret(secretStr, saltHex) {
+                const cryptoObj = (typeof unsafeWindow !== 'undefined' && unsafeWindow.crypto) ? unsafeWindow.crypto : (window.crypto || window.msCrypto);
+                const subtle = cryptoObj.subtle;
+                const enc = new TextEncoder();
+                const keyMaterial = await subtle.importKey("raw", enc.encode(secretStr), { name: "PBKDF2" }, false, ["deriveKey", "deriveBits"]);
+                const ITERATIONS = 600000;
+
+                // Auth Token
+                const authBits = await subtle.deriveBits(
+                    { name: "PBKDF2", salt: enc.encode(saltHex + "|auth"), iterations: ITERATIONS, hash: "SHA-256" },
+                    keyMaterial, 256
+                );
+                const authToken = Array.from(new Uint8Array(authBits)).map(b => b.toString(16).padStart(2, '0')).join('');
+
+                // Enc Key
+                const encryptionKey = await subtle.deriveKey(
+                    { name: "PBKDF2", salt: enc.encode(saltHex + "|enc"), iterations: ITERATIONS, hash: "SHA-256" },
+                    keyMaterial, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+                );
+
+                // Sign Key
+                const signingKey = await subtle.deriveKey(
+                    { name: "PBKDF2", salt: enc.encode(saltHex + "|sign"), iterations: ITERATIONS, hash: "SHA-256" },
+                    keyMaterial, { name: "HMAC", hash: "SHA-256" }, false, ["sign", "verify"]
+                );
+
+                return { authToken, encryptionKey, signingKey };
+            }
+
+            // パスワード変更メソッド
+            async changePassword(newPassword) {
+                if (this.isSyncing) return;
+                if (!this.endpoint || !this.syncId || !this.secret) {
+                    // ここは設定不備なので英語アラートのままでも許容、または i18n 追加
+                    alert(i18n.t('syncStatusNotConfigured') || "Not Configured");
+                    return;
+                }
+
+                const confirmed = confirm(i18n.t('confirmRotation'));
+                if (!confirmed) return;
+
+                this.isSyncing = true;
+                this.updateStatus('syncStatusPushing', i18n.t('syncStatusRotating'));
+
+                let success = false;
+
+                try {
+                    // 1. 新しいソルトを生成
+                    const cryptoObj = (typeof unsafeWindow !== 'undefined' && unsafeWindow.crypto) ? unsafeWindow.crypto : window.crypto;
+                    const arr1 = new Uint8Array(16); cryptoObj.getRandomValues(arr1);
+                    const newSalt = Array.from(arr1).map(b => b.toString(16).padStart(2, '0')).join('');
+
+                    // 2. 新しいキーペアを生成
+                    const newKeys = await this._calcKeysFromSecret(newPassword, newSalt);
+
+                    // 3. 現在のローカルデータを準備
+                    const rawData = JSON.parse(buildCloudSyncPayload());
+
+                    // 4. 新しいキーで暗号化
+                    const oldEncKey = this.encryptionKey;
+                    const oldSignKey = this.signingKey;
+
+                    this.encryptionKey = newKeys.encryptionKey;
+                    this.signingKey = newKeys.signingKey;
+
+                    let encryptedBody;
+                    try {
+                        const localRev = parseInt(GM_getValue(DATA_REVISION_KEY, '0')) || 0;
+                        encryptedBody = await this.encryptPayload(rawData, localRev);
+                    } finally {
+                        this.encryptionKey = oldEncKey;
+                        this.signingKey = oldSignKey;
+                    }
+
+                    // 5. PUTリクエスト送信
+                    const payloadToSend = {
+                        ...encryptedBody,
+                        salt: newSalt,
+                        newAuthToken: newKeys.authToken
+                    };
+
+                    const authHeaders = {
+                        'Content-Type': 'application/json',
+                        'X-Sync-ID': this.syncId,
+                        'Authorization': 'Bearer ' + this.authToken
+                    };
+
+                    const res = await gmFetch(this.endpoint, {
+                        method: 'PUT', headers: authHeaders, body: JSON.stringify(payloadToSend)
+                    });
+
+                    if (res.status === 200) {
+                        const resJson = JSON.parse(res.responseText);
+
+                        // 6. 成功したらローカル設定を更新
+                        this.secret = newPassword;
+                        this.currentSalt = newSalt;
+                        this.authToken = newKeys.authToken;
+                        this.encryptionKey = newKeys.encryptionKey;
+                        this.signingKey = newKeys.signingKey;
+
+                        await this.saveConfig(this.endpoint, newPassword, this.syncId);
+
+                        if (resJson.newRevision) {
+                            GM_setValue(DATA_REVISION_KEY, resJson.newRevision.toString());
+                            GM_deleteValue(DIRTY_KEY);
+                        }
+
+                        // UIの入力欄も更新
+                        const uiInput = document.getElementById('adv-sync-secret');
+                        if(uiInput) uiInput.value = newPassword;
+
+                        success = true;
+
+                    } else {
+                        throw new Error(`Server returned ${res.status}: ${res.responseText}`);
+                    }
+
+                } catch(e) {
+                    console.error("Change Password Failed:", e);
+                    // エラーはトーストで表示（アラートだと操作を阻害するため）
+                    showToast(`${i18n.t('toastRotationFailed')}: ${e.message}`);
+                    this.updateStatus('syncStatusError', i18n.t('toastRotationFailed'));
+                } finally {
+                    // 7. 終了処理
+                    this.isSyncing = false;
+
+                    if (success) {
+                        // 成功時: 緑アイコンにする
+                        this.updateStatus('syncStatusSynced');
+                        // 成功トースト
+                        showToast(i18n.t('toastPassChanged'));
+                    } else {
+                        // 失敗時: エラー状態を維持 (再描画)
+                        const currentTextEl = document.getElementById('adv-sync-status-text');
+                        const currentMsg = currentTextEl ? currentTextEl.textContent : 'Error';
+                        this.updateStatus(null, currentMsg);
+                    }
+
+                    updateHeaderSyncVisibility();
+                }
+            }
+
+            // Smart Merge
+            _mergeData(local, server) {
+                const merged = { ...local };
+
+                // Deleted Log Merge
+                const localDel = local.deletedLog || {};
+                const serverDel = server.deletedLog || {};
+                const mergedDel = { ...localDel };
+
+                Object.keys(serverDel).forEach(id => {
+                    const sTs = serverDel[id] || 0;
+                    const lTs = mergedDel[id] || 0;
+                    if (sTs > lTs) mergedDel[id] = sTs;
+                });
+                merged.deletedLog = mergedDel;
+
+                // List Merge Helper
+                const smartMergeList = (locArr, srvArr) => {
+                    if (!Array.isArray(srvArr)) srvArr = [];
+                    if (!Array.isArray(locArr)) locArr = [];
+                    const map = new Map();
+
+                    // 判定用ヘルパー: 削除ログの時刻よりアイテムの更新時刻が新しければ生存させる
+                    const isAlive = (item) => {
+                        const delTs = mergedDel[item.id];
+                        // 削除履歴がない、または 削除時刻よりもアイテム更新時刻(ts)の方が新しい場合は生存
+                        if (!delTs) return true;
+                        return (item.ts || 0) > delTs;
+                    };
+
+                    locArr.forEach(item => {
+                        if (!isAlive(item)) return;
+                        map.set(item.id, item);
+                    });
+                    srvArr.forEach(srvItem => {
+                        if (!isAlive(srvItem)) return;
+
+                        const locItem = map.get(srvItem.id);
+                        if (!locItem) {
+                            map.set(srvItem.id, srvItem);
+                        } else {
+                            const locTs = locItem.ts || 0;
+                            const srvTs = srvItem.ts || 0;
+                            if (srvTs > locTs) map.set(srvItem.id, srvItem);
+                        }
+                    });
+                    return Array.from(map.values());
+                };
+
+                // Muted Merge Helper
+                const mergeMuted = (locArr, srvArr) => {
+                    if (!Array.isArray(srvArr)) return locArr;
+                    const map = new Map();
+                    locArr.forEach(i => {
+                        if (i.id && mergedDel[i.id]) return;
+                        map.set(i.word, i);
+                    });
+                    srvArr.forEach(i => {
+                        if (i.id && mergedDel[i.id]) return;
+                        const loc = map.get(i.word);
+                        if (!loc || (i.ts || 0) > (loc.ts || 0)) map.set(i.word, i);
+                    });
+                    return Array.from(map.values());
+                };
+
+                merged.history = smartMergeList(local.history, server.history);
+                merged.saved = smartMergeList(local.saved, server.saved);
+                merged.favorites = smartMergeList(local.favorites, server.favorites);
+                merged.accounts = smartMergeList(local.accounts, server.accounts);
+                merged.lists = smartMergeList(local.lists, server.lists);
+                merged.muted = mergeMuted(local.muted, server.muted);
+
+                // --- フォルダ構造のマージ ---
+                merged.folders = {
+                    accounts: smartMergeList(local.folders?.accounts, server.folders?.accounts),
+                    lists:    smartMergeList(local.folders?.lists,    server.folders?.lists),
+                    saved:    smartMergeList(local.folders?.saved,    server.folders?.saved)
+                };
+
+                // --- 未分類位置(Unassigned Index)のマージ ---
+                merged.unassignedIndex = {
+                    ...(local.unassignedIndex || {}),
+                    ...(server.unassignedIndex || {})
+                };
+
+                if (local.favoriteTags && server.favoriteTags) {
+                    merged.favoriteTags = { ...local.favoriteTags };
+                    merged.favoriteTags.tags = smartMergeList(local.favoriteTags.tags || [], server.favoriteTags.tags || []);
+                    merged.favoriteTags.tweetTags = { ...(local.favoriteTags.tweetTags || {}) };
+                    Object.entries(server.favoriteTags.tweetTags || {}).forEach(([tid, tagId]) => {
+                        if (!merged.favoriteTags.tweetTags[tid]) merged.favoriteTags.tweetTags[tid] = tagId;
+                    });
+                }
+                return merged;
+            }
+
+            updateStatus(msgKey, rawMsg = null) {
+                const text = rawMsg ? rawMsg : (msgKey ? i18n.t(msgKey) : '');
+                const el = document.getElementById('adv-sync-status-text');
+                if (el) el.textContent = text;
+
+                const dot = document.getElementById('adv-sync-status-dot');
+                const spinner = document.getElementById('adv-sync-spinner');
+                const btn = document.getElementById('adv-sync-now-btn');
+
+                if (dot) {
+                    dot.style.opacity = '1';
+                    if (msgKey === 'syncStatusSynced' || (msgKey === 'syncStatusIdle' && this.endpoint && this.secret)) {
+                        dot.style.backgroundColor = '#17bf63'; // Green (Success/Connected)
+                    } else if (msgKey === 'syncStatusError' || msgKey === 'toastSyncFailed') {
+                        dot.style.backgroundColor = '#f4212e'; // Red (Error)
+                    } else if (msgKey === 'syncStatusNotConfigured' || (!this.endpoint)) {
+                        dot.style.backgroundColor = 'var(--modal-text-secondary)'; // Grey
+                        dot.style.opacity = '0.5';
+                    } else {
+                        dot.style.backgroundColor = '#1d9bf0'; // Blue (Working...)
+                    }
+                }
+                if (spinner) spinner.style.display = this.isSyncing ? 'block' : 'none';
+                if (btn) {
+                    if (this.isSyncing) {
+                        btn.disabled = true;
+                        btn.textContent = i18n.t('syncStatusConnecting');
+                        btn.style.opacity = '0.7';
+                    } else {
+                        btn.disabled = false;
+                        btn.textContent = i18n.t('buttonSyncNow');
+                        btn.style.opacity = '1';
+                    }
+                }
+                if (headerSyncBtn) {
+                    if (this.isSyncing) headerSyncBtn.classList.add('spinning');
+                    else headerSyncBtn.classList.remove('spinning');
+                }
+            }
+
+            // Execute Sync with Handshake Flow
+            async executeSync() {
+                // 実行中なら予約フラグを立てて終了
+                if (this.isSyncing) {
+                    this.nextSyncScheduled = true;
+                    return;
+                }
+                if (GM_getValue(SYNC_ENABLED_KEY, '0') !== '1') return;
+
+                const startTime = Date.now();
+                const MIN_DURATION = 1360;
+
+                const errLog = document.getElementById('adv-sync-error-log');
+                if (errLog) { errLog.style.display = 'none'; errLog.textContent = ''; }
+
+                if (!this.endpoint || !this.syncId || !this.secret) {
+                    this.updateStatus('syncStatusNotConfigured');
+                    return;
+                }
+
+                this.isSyncing = true;
+                // 今回の同期サイクルで処理する変更分として、フラグを一旦下ろす
+                this.pendingChanges = false;
+
+                this.updateStatus('syncStatusConnecting');
+                if (typeof headerSyncBtn !== 'undefined' && headerSyncBtn) {
+                    headerSyncBtn.classList.remove('success', 'error');
+                    headerSyncBtn.title = (typeof i18n !== 'undefined' ? i18n.t('syncStatusConnecting') : 'Connecting...');
+                }
+
+                let success = false;
+                let errorMsg = "";
+
+                try {
+                    // Phase 1: Handshake
+                    const handshakeHeaders = { 'Content-Type': 'application/json', 'X-Sync-ID': this.syncId };
+                    const handshakeRes = await gmFetch(this.endpoint, { method: 'GET', headers: handshakeHeaders });
+
+                    let targetSalt = null;
+                    if (handshakeRes.status === 200) {
+                        const info = JSON.parse(handshakeRes.responseText);
+                        if (info.status === 'exists' && info.salt) {
+                            targetSalt = info.salt;
+                        } else {
+                            const cryptoObj = (typeof unsafeWindow !== 'undefined' && unsafeWindow.crypto) ? unsafeWindow.crypto : window.crypto;
+                            const arr1 = new Uint8Array(16); cryptoObj.getRandomValues(arr1);
+                            targetSalt = Array.from(arr1).map(b => b.toString(16).padStart(2, '0')).join('');
+                        }
+                    } else if (handshakeRes.status === 400) {
+                        throw new Error("Invalid Sync ID format");
+                    } else {
+                        throw new Error(`Handshake failed: ${handshakeRes.status}`);
+                    }
+
+                    await new Promise(r => setTimeout(r, 50));
+                    await this.deriveKeys(targetSalt);
+
+                    // Phase 3: Authenticated Sync
+                    const localRev = parseInt(GM_getValue(DATA_REVISION_KEY, '0')) || 0;
+                    const isDirty = GM_getValue(DIRTY_KEY, '0') === '1';
+
+                    const authHeaders = {
+                        'Content-Type': 'application/json',
+                        'X-Sync-ID': this.syncId,
+                        'Authorization': 'Bearer ' + this.authToken
+                    };
+
+                    // 3-A. GET Data (Revision Check)
+                    const cacheBuster = (this.endpoint.includes('?') ? '&' : '?') + 't=' + Date.now();
+                    const getRes = await gmFetch(this.endpoint + cacheBuster, { method: 'GET', headers: authHeaders });
+
+                    if (getRes.status === 200) {
+                        const serverWrapper = JSON.parse(getRes.responseText);
+                        const serverRev = serverWrapper.revision || 0;
+
+                        if (serverRev > localRev) {
+                            this.updateStatus('syncStatusPulling');
+                            if (serverWrapper.chunks) {
+                                const fullCipherStr = serverWrapper.chunks.map(c => c.data).join("");
+                                const serverDataObj = JSON.parse(fullCipherStr);
+                                const decrypted = await this.decryptPayload(serverDataObj, serverRev - 1);
+
+                                let importSuccess = false;
+                                await withIoLock(async () => {
+                                    const currentLocal = JSON.parse(buildCloudSyncPayload());
+                                    const merged = this._mergeData(currentLocal, decrypted);
+                                    importSuccess = applySettingsImportJSON(JSON.stringify(merged));
+                                });
+
+                                if (importSuccess) {
+                                    GM_setValue(DATA_REVISION_KEY, serverRev.toString());
+                                    // Dirty削除は最後にまとめて行うためここではスキップ
+                                    success = true;
+                                } else {
+                                    throw new Error("Import failed");
+                                }
+                            }
+                        } else if (serverRev === localRev && !isDirty) {
+                            success = true;
+                        }
+                    } else if (getRes.status === 403 || getRes.status === 401) {
+                        throw new Error("Auth Failed: Wrong Password");
+                    }
+
+                    // 3-B. POST Data (Push)
+                    if (!success) {
+                        this.updateStatus('syncStatusPushing');
+                        const rawData = JSON.parse(buildCloudSyncPayload());
+                        const encryptedBody = await this.encryptPayload(rawData, localRev);
+
+                        const payloadToSend = {
+                            ...encryptedBody,
+                            salt: this.currentSalt
+                        };
+
+                        const postRes = await gmFetch(this.endpoint, {
+                            method: 'POST', headers: authHeaders, body: JSON.stringify(payloadToSend)
+                        });
+
+                        if (postRes.status === 200) {
+                            const resJson = JSON.parse(postRes.responseText);
+                            if (resJson.newRevision) {
+                                GM_setValue(DATA_REVISION_KEY, resJson.newRevision.toString());
+                            }
+                            success = true;
+                        } else if (postRes.status === 409) {
+                            this.updateStatus('syncStatusMerging');
+                            const conflictBody = JSON.parse(postRes.responseText);
+                            if (conflictBody.salt && conflictBody.salt !== this.currentSalt) {
+                                console.warn("[Sync] Salt mismatch detected. Re-deriving keys...");
+                                await this.deriveKeys(conflictBody.salt);
+                                authHeaders['Authorization'] = 'Bearer ' + this.authToken;
+                            }
+                            const sChunks = conflictBody.serverChunks || [];
+                            const sCipherStr = sChunks.map(c => c.data).join("");
+                            const sEncData = JSON.parse(sCipherStr);
+                            const sRev = conflictBody.currentRevision;
+
+                            if (sEncData) {
+                                const sData = await this.decryptPayload(sEncData, sRev - 1);
+                                let merged = null;
+                                await withIoLock(async () => {
+                                    const currentLocal = JSON.parse(buildCloudSyncPayload());
+                                    merged = this._mergeData(currentLocal, sData);
+                                    applySettingsImportJSON(JSON.stringify(merged));
+                                });
+                                const mergedEncrypted = await this.encryptPayload(merged, sRev);
+                                const retryPayload = { ...mergedEncrypted, salt: this.currentSalt };
+
+                                const retryRes = await gmFetch(this.endpoint, {
+                                    method: 'POST', headers: authHeaders, body: JSON.stringify(retryPayload)
+                                });
+                                if (retryRes.status === 200) {
+                                    const rJson = JSON.parse(retryRes.responseText);
+                                    GM_setValue(DATA_REVISION_KEY, rJson.newRevision.toString());
+                                    success = true;
+                                } else {
+                                    throw new Error(`Merge retry failed: ${retryRes.status}`);
+                                }
+                            }
+                        } else {
+                            throw new Error(`Upload failed: ${postRes.status}`);
+                        }
+                    }
+
+                    // 成功時に「今回の同期中に新たな変更がなかった場合のみ」フラグを消す
+                    if (success) {
+                        if (!this.pendingChanges) {
+                            GM_deleteValue(DIRTY_KEY);
+                        }
+                    }
+
+                } catch (e) {
+                    console.error('[Sync] Error:', e);
+                    errorMsg = e.message || 'Error';
+                    if (errLog) {
+                        errLog.textContent = errorMsg;
+                        errLog.style.display = 'block';
+                    }
+                    success = false;
+                } finally {
+                    const elapsed = Date.now() - startTime;
+                    const remaining = MIN_DURATION - elapsed;
+                    if (remaining > 0) await new Promise(r => setTimeout(r, remaining));
+
+                    this.isSyncing = false;
+
+                    // pendingChanges が true なら、Dirtyフラグが残っているので再実行する
+                    if (this.nextSyncScheduled || this.pendingChanges) {
+                        this.nextSyncScheduled = false;
+                        setTimeout(() => this.executeSync(), 100);
+                    }
+
+                    if (success) {
+                        this.updateStatus('syncStatusSynced');
+                        if (typeof headerSyncBtn !== 'undefined' && headerSyncBtn) {
+                            headerSyncBtn.classList.add('success');
+                            headerSyncBtn.title = (typeof i18n !== 'undefined' ? i18n.t('toastSynced') : 'Synced');
+                            showToast(typeof i18n !== 'undefined' ? i18n.t('toastSynced') : 'Synced');
+                        }
+                    } else {
+                        this.updateStatus('syncStatusError');
+                        if (typeof headerSyncBtn !== 'undefined' && headerSyncBtn) {
+                            headerSyncBtn.classList.add('error');
+                            headerSyncBtn.title = (typeof i18n !== 'undefined' ? `${i18n.t('toastSyncFailed')}: ${errorMsg}` : 'Failed');
+                            showToast(typeof i18n !== 'undefined' ? i18n.t('toastSyncFailed') : 'Failed');
+                        }
+                    }
+                    if (typeof headerSyncBtn !== 'undefined' && headerSyncBtn) {
+                        headerSyncBtn.classList.remove('spinning');
+                        setTimeout(() => {
+                            headerSyncBtn.classList.remove('success', 'error');
+                            headerSyncBtn.title = (typeof i18n !== 'undefined' ? i18n.t('buttonSyncNow') : 'Sync Now');
+                        }, 3000);
+                    }
+                }
+            }
+        }
+
+        syncManager = new SyncManager();
+
+        // UI Event Listeners for Sync
+        const syncEnableToggle = document.getElementById('adv-settings-sync-enable');
+        const syncContainer = document.getElementById('adv-sync-settings-container');
+        const syncEpInput = document.getElementById('adv-sync-endpoint');
+        const syncIdInput = document.getElementById('adv-sync-id');
+        const syncScInput = document.getElementById('adv-sync-secret');
+        const syncSecretToggle = document.getElementById('adv-sync-secret-toggle');
+        const syncGenBtn  = document.getElementById('adv-sync-gen-id-btn');
+        const syncBtn     = document.getElementById('adv-sync-now-btn');
+
+        // トグル制御と実行ガードの追加
+        if (syncEpInput && syncIdInput && syncScInput && syncBtn && syncEnableToggle && syncContainer) {
+
+            // 1. 初期状態の適用 (ON/OFF)
+            const isSyncEnabled = kv.get(SYNC_ENABLED_KEY, '0') === '1';
+            syncEnableToggle.checked = isSyncEnabled;
+            syncContainer.style.display = isSyncEnabled ? 'block' : 'none';
+
+            // 2. 値のセット
+            syncEpInput.value = syncManager.endpoint;
+            syncIdInput.value = syncManager.syncId;
+            syncScInput.value = syncManager.secret;
+
+            const saveConf = async () => {
+                await syncManager.saveConfig(syncEpInput.value, syncScInput.value, syncIdInput.value);
+                updateHeaderSyncVisibility();
+            };
+
+            // 3. トグルのイベントリスナー
+            syncEnableToggle.addEventListener('change', () => {
+                const enabled = syncEnableToggle.checked;
+                kv.set(SYNC_ENABLED_KEY, enabled ? '1' : '0');
+                syncContainer.style.display = enabled ? 'block' : 'none';
+
+                // ヘッダーボタンの表示更新
+                updateHeaderSyncVisibility();
+
+                // ONになった瞬間にまだ同期していなければ、自動で走らせても親切かもしれないが
+                // ここではユーザーの意図しない通信を防ぐため手動または自動トリガーに任せる
+            });
+
+            syncEpInput.addEventListener('change', saveConf);
+            syncIdInput.addEventListener('change', saveConf);
+            syncScInput.addEventListener('change', saveConf);
+
+            // パスワード表示切り替えロジック
+            if (syncScInput && syncSecretToggle) {
+                const EYE_OPEN_SVG = `<svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:currentColor;"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"></path></svg>`;
+                const EYE_CLOSED_SVG = `<svg viewBox="0 0 24 24" style="width:18px; height:18px; fill:currentColor;"><path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2zm4.31-.78l3.15 3.15.02-.16c0-1.66-1.34-3-3-3l-.17.01z"></path></svg>`;
+
+                syncSecretToggle.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    const isPassword = syncScInput.type === 'password';
+                    syncScInput.type = isPassword ? 'text' : 'password';
+                    setInnerHTML(syncSecretToggle,isPassword ? EYE_CLOSED_SVG : EYE_OPEN_SVG);
+                    syncSecretToggle.title = isPassword ? 'Hide Password' : 'Show Password';
+                });
+            }
+
+            if (syncGenBtn) {
+                syncGenBtn.addEventListener('click', () => {
+                    const uuid = crypto.randomUUID
+                        ? crypto.randomUUID()
+                        : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                            var r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                            return v.toString(16);
+                          });
+                    syncIdInput.value = uuid;
+                    saveConf();
+                });
+            }
+
+            syncBtn.addEventListener('click', async () => {
+                await saveConf();
+                // 実行時にも念のためONかチェック (UI上は隠れているが、コード呼び出しの整合性として)
+                if (syncEnableToggle.checked) {
+                    syncManager.executeSync();
+                }
+            });
+
+            // パスワード変更ボタンのイベントリスナー
+            const changePassBtn = document.getElementById('adv-sync-change-pass-btn');
+            if (changePassBtn) {
+                changePassBtn.addEventListener('click', () => {
+                    const newPass = prompt(i18n.t('promptNewPassword'), "");
+                    if (newPass && newPass.trim()) {
+                        syncManager.changePassword(newPass.trim());
+                    }
+                });
+            }
+        }
+
+        // Auto-sync on load if configured AND ENABLED
+        // ロード時の自動同期も、トグルがONのときのみ実行する
+        if (kv.get(SYNC_ENABLED_KEY, '0') === '1' && syncManager.endpoint && syncManager.secret && syncManager.syncId) {
+            setTimeout(() => syncManager.executeSync(), 2000);
+        }
+
         setupObservers();
 
         // イベント委任のためのルート要素を取得
