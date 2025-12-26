@@ -5411,7 +5411,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         const triggerAutoSync = () => {
             if (syncManager) {
                 clearTimeout(_syncTimeout);
-                _syncTimeout = setTimeout(() => syncManager.executeSync(), 1000); // 1秒後に同期
+                _syncTimeout = setTimeout(() => syncManager.executeSync(), 3000); // 3秒後に同期
             }
         };
 
@@ -13014,6 +13014,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 this.signingKey = null;     // 署名用
                 this.currentSalt = null;    // 初回送信用のソルト
                 this.isSyncing = false;
+                this.nextSyncScheduled = false; // 次回同期の予約フラグ
                 this.readyPromise = Promise.resolve();
                 this.loadConfig();
             }
@@ -13464,7 +13465,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
             // Execute Sync with Handshake Flow
             async executeSync() {
-                if (this.isSyncing) return;
+                // 実行中なら予約フラグを立てて終了
+                if (this.isSyncing) {
+                    this.nextSyncScheduled = true;
+                    return;
+                }
                 if (GM_getValue(SYNC_ENABLED_KEY, '0') !== '1') return;
 
                 const startTime = Date.now();
@@ -13654,6 +13659,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     if (remaining > 0) await new Promise(r => setTimeout(r, remaining));
 
                     this.isSyncing = false;
+
+                    // 予約が入っていたら再実行する
+                    if (this.nextSyncScheduled) {
+                        this.nextSyncScheduled = false;
+                        setTimeout(() => this.executeSync(), 100);
+                    }
+
                     if (success) {
                         this.updateStatus('syncStatusSynced');
                         if (headerSyncBtn) {
