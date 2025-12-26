@@ -6854,6 +6854,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 list.unshift({ ...tweetMeta, ts: Date.now() });
                 showToast(i18n.t('toastFavorited'));
             } else {
+                markAsDeleted(tweetMeta.id); // 削除ログを記録（クラウド同期用）
                 list.splice(idx, 1);
                 // 解除時はタグデータも削除
                 if (ft_state && ft_state.tweetTags && ft_state.tweetTags[tweetMeta.id]) {
