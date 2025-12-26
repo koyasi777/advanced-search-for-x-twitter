@@ -5378,6 +5378,15 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             saveJSON(DELETED_LOG_KEY, log);
         };
 
+        const unmarkAsDeleted = (id) => {
+            if (!id) return;
+            const log = loadDeletedLog();
+            if (log[id]) {
+                delete log[id];
+                saveJSON(DELETED_LOG_KEY, log);
+            }
+        };
+
         // インポート中かどうかを判定するフラグ
         let __IS_IMPORTING__ = false;
 
@@ -6841,6 +6850,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
             // 2. メモリ上のデータを更新 (saveFavorites内部で遅延保存が予約される)
             if (isAdding) {
+                unmarkAsDeleted(tweetMeta.id); // 過去の削除ログを消去
                 list.unshift({ ...tweetMeta, ts: Date.now() });
                 showToast(i18n.t('toastFavorited'));
             } else {
@@ -8117,32 +8127,39 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 // タブの表示状態を適用
                 try { applyTabsVisibility(); } catch (_) {}
 
-                /* ▼▼▼ インポートした設定を即座に画面に反映する処理 ▼▼▼ */
+                // ▼▼▼ インポートした設定を即座に画面に反映する処理 ▼▼▼
 
-                // 1. ズーム設定の反映
-                // Storageからメモリ変数(zoomByTab)へ再ロードし、DOMに適用
-                try {
-                    Object.keys(zoomByTab).forEach(tab => loadZoomFor(tab));
-                    applyZoom();
-                } catch (_) {}
+                // 1. ズーム設定の反映 (データに含まれている場合のみ実行)
+                if (data.zoom) {
+                    try {
+                        Object.keys(zoomByTab).forEach(tab => loadZoomFor(tab));
+                        applyZoom();
+                    } catch (_) {}
+                }
 
-                // 2. モーダル位置・サイズの反映
-                // Storageから読み込み直し、位置補正(keepModalInViewport)も含めて適用
-                try {
-                    loadModalState(); // 内部で applyModalStoredPosition() が呼ばれ、座標とサイズがセットされる
-                    requestAnimationFrame(keepModalInViewport);
-                } catch (_) {}
+                // 2. モーダル位置・サイズの反映 (データに含まれている場合のみ実行)
+                // クラウド同期時は modalState がないためスキップされ、位置ズレを防ぐ
+                if (data.modalState) {
+                    try {
+                        loadModalState();
+                        requestAnimationFrame(keepModalInViewport);
+                    } catch (_) {}
+                }
 
-                // 3. トリガーボタン位置の反映
-                try {
-                    applyTriggerStoredPosition();
-                    requestAnimationFrame(keepTriggerInViewport);
-                } catch (_) {}
+                // 3. トリガーボタン位置の反映 (データに含まれている場合のみ実行)
+                if (data.triggerState) {
+                    try {
+                        applyTriggerStoredPosition();
+                        requestAnimationFrame(keepTriggerInViewport);
+                    } catch (_) {}
+                }
 
-                // 4. 検索窓の幅の反映
-                try {
-                    setupNativeSearchResizer();
-                } catch (_) {}
+                // 4. 検索窓の幅の反映 (データに含まれている場合のみ実行)
+                if (data.nativeSearchWidth !== undefined) {
+                    try {
+                        setupNativeSearchResizer();
+                    } catch (_) {}
+                }
 
                 showToast(i18n.t('toastImported'));
                 return true;
@@ -11196,6 +11213,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             return 'exists';
           }
           const id = uid();
+          unmarkAsDeleted(id); // ID重複/再利用時の安全策
           list.unshift({ id, handle: h, name, avatar, ts: Date.now() });
           saveAccounts(list);
           // フォルダーへは入れない（未所属のまま）
@@ -11492,6 +11510,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           const list = loadLists();
           if (list.some(x => x.url === u)) return 'exists';
           const id = uid();
+          unmarkAsDeleted(id); // ID重複/再利用時の安全策
           list.unshift({ id, name: nm, url: u, ts: Date.now() });
           saveLists(list);
           // フォルダーへは入れない（未所属のまま）
@@ -13326,12 +13345,22 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     if (!Array.isArray(srvArr)) srvArr = [];
                     if (!Array.isArray(locArr)) locArr = [];
                     const map = new Map();
+
+                    // 判定用ヘルパー: 削除ログの時刻よりアイテムの更新時刻が新しければ生存させる
+                    const isAlive = (item) => {
+                        const delTs = mergedDel[item.id];
+                        // 削除履歴がない、または 削除時刻よりもアイテム更新時刻(ts)の方が新しい場合は生存
+                        if (!delTs) return true;
+                        return (item.ts || 0) > delTs;
+                    };
+
                     locArr.forEach(item => {
-                        if (mergedDel[item.id]) return;
+                        if (!isAlive(item)) return;
                         map.set(item.id, item);
                     });
                     srvArr.forEach(srvItem => {
-                        if (mergedDel[srvItem.id]) return;
+                        if (!isAlive(srvItem)) return;
+
                         const locItem = map.get(srvItem.id);
                         if (!locItem) {
                             map.set(srvItem.id, srvItem);
