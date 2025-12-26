@@ -11450,7 +11450,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               >
                 <circle cx="10" cy="7.5" r="3.5"></circle>
                 <path d="M3.5 18.5C3.5 15.46 6.79 13 10 13s6.5 2.46 6.5 5.5V20H3.5v-1.5z"></path>
-                <path d="${iconPath}"></path>
+                <path d="${iconPath}" style="fill:var(--modal-primary-color)"></path>
               </svg>
               <span class="${spanCls}"></span>
             </div>
