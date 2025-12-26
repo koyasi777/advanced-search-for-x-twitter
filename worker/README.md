@@ -1,6 +1,6 @@
-# ☁️ Cloud Sync Server Setup Guide
+# ☁️ クラウド同期サーバー セットアップガイド
 
-このガイドでは、Advanced Search for X (Twitter) 🔍をクラウド同期させ、多端末での利用可能にする為の方法を解説します。
+このガイドでは、**Advanced Search for X (Twitter) 🔍**をクラウド同期させ、多端末での利用可能にする為の方法を解説します。
 
 **Cloudflareのアカウントのみ**（無料枠で十分）を使用し、あなた専用の同期サーバーを構築する手順を解説します。
 
