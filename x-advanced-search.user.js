@@ -5410,7 +5410,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         const triggerAutoSync = () => {
             if (syncManager) {
                 clearTimeout(_syncTimeout);
-                _syncTimeout = setTimeout(() => syncManager.executeSync(), 5000); // 5秒後に同期
+                _syncTimeout = setTimeout(() => syncManager.executeSync(), 1000); // 1秒後に同期
             }
         };
 
