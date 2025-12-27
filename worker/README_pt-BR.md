@@ -112,4 +112,5 @@ Parabéns! A configuração está completa.
 
 2. Abra as **Configurações** da extensão do navegador, cole o URL em **"URL do Endpoint"** e salve.
    * ⚠️ **Importante**: Certifique-se de incluir `https://` no início.
+   * ⚠️ **Importante**: Insira o mesmo "ID de Sincronização" e "Senha" em todos os dispositivos que deseja sincronizar.
 <img width="3459" height="1888" alt="image" src="https://github.com/user-attachments/assets/f065fbfb-b3e7-4a72-b80b-1eca3e087e32" />
