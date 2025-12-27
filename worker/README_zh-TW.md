@@ -112,4 +112,5 @@
 
 2. 開啟擴充功能的設定畫面，將其貼上到 **「端點 URL」 (Endpoint URL)** 中並儲存。
    * ⚠️ **重要**: 請務必在開頭加上 `https://`。如果不加將會發生錯誤。
+   * ⚠️ **重要**: 請在所有需要同步的裝置上輸入相同的「同步 ID」和「密碼」。
 <img width="3459" height="1888" alt="image" src="https://github.com/user-attachments/assets/f065fbfb-b3e7-4a72-b80b-1eca3e087e32" />
