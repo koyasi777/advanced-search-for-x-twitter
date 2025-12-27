@@ -112,4 +112,5 @@ Herzlichen Glückwunsch! Die Einrichtung ist abgeschlossen.
 
 2. Öffnen Sie die **Einstellungen** der Browser-Erweiterung, fügen Sie die URL in **"Endpunkt-URL"** ein und speichern Sie.
    * ⚠️ **Wichtig**: Stellen Sie sicher, dass am Anfang `https://` steht.
+   * ⚠️ **Wichtig**: Geben Sie auf allen zu synchronisierenden Geräten dieselbe „Sync-ID“ und dasselbe „Passwort“ ein.
 <img width="3459" height="1888" alt="image" src="https://github.com/user-attachments/assets/f065fbfb-b3e7-4a72-b80b-1eca3e087e32" />
