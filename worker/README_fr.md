@@ -112,4 +112,5 @@ Félicitations ! La configuration est terminée.
 
 2. Ouvrez les **Paramètres** de l'extension de navigateur, collez l'URL dans **"URL Endpoint"** et enregistrez.
    * ⚠️ **Important** : Assurez-vous d'inclure `https://` au début.
+   * ⚠️ **Important** : Veuillez saisir les mêmes "ID de Synchro" et "Mot de passe" sur tous les appareils à synchroniser.
 <img width="3459" height="1888" alt="image" src="https://github.com/user-attachments/assets/f065fbfb-b3e7-4a72-b80b-1eca3e087e32" />
