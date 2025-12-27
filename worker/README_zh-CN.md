@@ -112,4 +112,5 @@
 
 2. 打开扩展程序的设置界面，将其粘贴到 **“端点 URL” (Endpoint URL)** 中并保存。
    * ⚠️ **重要**: 请务必在开头加上 `https://`。如果不加将会报错。
+   * ⚠️ **重要**: 请在所有需要同步的设备上输入相同的“同步 ID”和“密码”。
 <img width="3459" height="1888" alt="image" src="https://github.com/user-attachments/assets/f065fbfb-b3e7-4a72-b80b-1eca3e087e32" />
