@@ -112,4 +112,5 @@ Worker와 데이터베이스를 연결하는 설정입니다. **이 과정을 �
 
 2. 확장 기능의 설정 화면을 열고 **"엔드포인트 URL" (Endpoint URL)**에 붙여넣고 저장하세요.
    * ⚠️ **중요**: 반드시 맨 앞에 `https://`를 붙여야 합니다. 붙이지 않으면 에러가 발생합니다.
+   * ⚠️ **중요**: 동기화하려는 모든 기기에 동일한 "동기화 ID"와 "비밀번호"를 입력하세요.
 <img width="3459" height="1888" alt="image" src="https://github.com/user-attachments/assets/f065fbfb-b3e7-4a72-b80b-1eca3e087e32" />
