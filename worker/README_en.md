@@ -113,4 +113,5 @@ Congratulations! The setup is complete.
 
 2. Open the **Settings** of the browser extension, paste the URL into **"Endpoint URL"**, and save.
    * ⚠️ **Important**: Be sure to include `https://` at the beginning. It will error without it.
+   * ⚠️ **Important**: Enter the same "Sync ID" and "Password" on all devices you wish to sync.
 <img width="3459" height="1888" alt="image" src="https://github.com/user-attachments/assets/f065fbfb-b3e7-4a72-b80b-1eca3e087e32" />
