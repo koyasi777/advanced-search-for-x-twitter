@@ -112,4 +112,5 @@ Configura la conexión entre el Worker y la base de datos. **Si omites este paso
 
 2. Abre la **Configuración** de la extensión del navegador, pega la URL en **"URL del Endpoint"** y guarda.
    * ⚠️ **Importante**: Asegúrate de incluir `https://` al principio.
+   * ⚠️ **Importante**: Introduce el mismo "ID de Sincronización" y "Contraseña" en todos los dispositivos que desees sincronizar.
 <img width="3459" height="1888" alt="image" src="https://github.com/user-attachments/assets/f065fbfb-b3e7-4a72-b80b-1eca3e087e32" />
