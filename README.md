@@ -14,7 +14,7 @@
   </p>
 
   <p>
-    <img src="https://img.shields.io/badge/version-7.0.1-blue.svg?style=flat-square" alt="Version">
+    <img src="https://img.shields.io/badge/version-7.0.2-blue.svg?style=flat-square" alt="Version">
     <img src="https://img.shields.io/badge/license-MIT-green.svg?style=flat-square" alt="License">
   </p>
 </div>
