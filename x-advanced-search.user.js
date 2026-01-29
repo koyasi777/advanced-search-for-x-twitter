@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      7.0.2
+// @version      7.0.3
 // @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
 // @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
 // @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
@@ -30,6 +30,7 @@
 // @exclude      https://twitter.com/i/tweetdeck*
 // @icon         https://raw.githubusercontent.com/koyasi777/advanced-search-for-x-twitter/refs/heads/main/extension/icons/icon-128.png
 // @grant        GM_addStyle
+// @grant        GM_addValueChangeListener
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_deleteValue
@@ -13918,6 +13919,48 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         if (kv.get(SYNC_ENABLED_KEY, '0') === '1' && syncManager.endpoint && syncManager.secret && syncManager.syncId) {
             setTimeout(() => syncManager.executeSync(), 2000);
         }
+
+        // ▼▼▼ 他タブとの同期ロジック ▼▼▼
+        const SYNC_MAP = {
+            [HISTORY_KEY]: () => { if (typeof renderHistory === 'function') renderHistory(); },
+            [SAVED_KEY]: () => { if (typeof renderSaved === 'function') renderSaved(); },
+            [FAV_KEY]: () => {
+                _favCache = null;
+                _favSet = null;
+                if (typeof renderFavorites === 'function') renderFavorites();
+                if (typeof updateAllFavoriteButtons === 'function') updateAllFavoriteButtons();
+                if (typeof ft_refreshAllTagChips === 'function') ft_refreshAllTagChips();
+            },
+            [ACCOUNTS_KEY]: () => { if (typeof renderAccounts === 'function') renderAccounts(); },
+            [LISTS_KEY]: () => { if (typeof renderLists === 'function') renderLists(); },
+            [MUTE_KEY]: () => {
+                if (typeof renderMuted === 'function') renderMuted();
+                if (typeof rescanAllTweetsForFilter === 'function') rescanAllTweetsForFilter();
+            },
+            [ACCOUNTS_FOLDERS_KEY]: () => { if (typeof renderAccounts === 'function') renderAccounts(); },
+            [LISTS_FOLDERS_KEY]: () => { if (typeof renderLists === 'function') renderLists(); },
+            [SAVED_FOLDERS_KEY]: () => { if (typeof renderSaved === 'function') renderSaved(); },
+            [FT_STATE_KEY]: () => {
+                if (typeof ft_loadState === 'function') ft_state = ft_loadState();
+                if (typeof ft_refreshAllTagChips === 'function') ft_refreshAllTagChips();
+                if (getActiveTabName() === 'favorites' && typeof renderFavorites === 'function') renderFavorites();
+            }
+        };
+
+        Object.keys(SYNC_MAP).forEach(key => {
+            GM_addValueChangeListener(key, (name, oldVal, newVal, remote) => {
+                if (remote) {
+                    try {
+                        _memCache[name] = JSON.parse(newVal);
+                    } catch (e) {
+                        delete _memCache[name];
+                    }
+                    const renderFn = SYNC_MAP[name];
+                    if (renderFn) requestAnimationFrame(renderFn);
+                }
+            });
+        });
+        // ▲▲▲ 他タブとの同期ロジック ▲▲▲
 
         setupObservers();
 
