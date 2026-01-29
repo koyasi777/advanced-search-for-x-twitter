@@ -3,34 +3,35 @@
 
     if (typeof chrome === 'undefined' || !chrome.storage) return;
 
-    // リスナー管理用マップ { key: Set(callback) }
-    const changeListeners = new Map();
-
     // --- 1. データの同期ロード (Chrome Storage -> Memory) ---
     const storageCache = await chrome.storage.local.get(null);
 
-    // ストレージの変更を監視 (他タブ・自タブ問わず発火)
+    // 値の変更を監視するリスナーを保持するオブジェクト
+    const changeListeners = {};
+
+    // 別のタブやウィンドウでデータが変更された場合、メモリキャッシュも即座に更新する
     chrome.storage.onChanged.addListener((changes, area) => {
         if (area === 'local') {
             for (const [key, { oldValue, newValue }] of Object.entries(changes)) {
-                // キャッシュ更新
+                // キャッシュの更新
                 if (newValue === undefined) {
                     delete storageCache[key];
                 } else {
                     storageCache[key] = newValue;
                 }
 
-                // 登録されたリスナーがあれば発火させる
-                // GM_addValueChangeListener(name, oldVal, newVal, remote)
-                if (changeListeners.has(key)) {
-                    changeListeners.get(key).forEach(callback => {
+                // GM_addValueChangeListener で登録されたコールバックを実行
+                // UserScriptの仕様に合わせて (name, oldVal, newVal, remote) を渡す
+                if (changeListeners[key]) {
+                    changeListeners[key].forEach(callback => {
                         try {
-                            // 第4引数 remote は「他インスタンスからの変更か」だが、
-                            // 拡張機能では storage.onChanged は常に「保存された事実」なので true 扱いにして
-                            // 強制的に再描画させるのが最も確実
+                            // remote引数は「他のインスタンスからの変更」を示しますが、
+                            // Chrome拡張機能のonChangedは自身の変更でも発火するため、
+                            // 簡易的に常に true (または文脈による) として扱います。
+                            // ここでは同期を機能させるために true を渡します。
                             callback(key, oldValue, newValue, true);
                         } catch (e) {
-                            console.error("[Adapter] Listener error:", e);
+                            console.error("GM_addValueChangeListener callback error:", e);
                         }
                     });
                 }
@@ -45,7 +46,6 @@
     };
 
     window.GM_setValue = function(key, value) {
-        // メモリキャッシュも即時更新（描画のチラつき防止）
         storageCache[key] = value;
         chrome.storage.local.set({ [key]: value });
     };
@@ -55,15 +55,19 @@
         chrome.storage.local.remove(key);
     };
 
-    // 同期に必要なリスナー登録関数
+    // GM_addValueChangeListener の実装
     window.GM_addValueChangeListener = function(key, callback) {
-        if (!changeListeners.has(key)) {
-            changeListeners.set(key, new Set());
+        if (!changeListeners[key]) {
+            changeListeners[key] = [];
         }
-        changeListeners.get(key).add(callback);
-        
-        // 登録IDを返すのが仕様だが、今回は簡易的に callback 自体をID代わりにする
-        return callback;
+        changeListeners[key].push(callback);
+        // 本来はリスナーIDを返すべきですが、今回は削除機能が使われていないため簡易的な値を返します
+        return changeListeners[key].length;
+    };
+
+    // GM_removeValueChangeListener の実装 (念のため定義)
+    window.GM_removeValueChangeListener = function(listenerId) {
+        // 今回のコードでは使用されていないため、空実装または簡易実装で十分です
     };
 
     window.GM_addStyle = function(css) {
@@ -109,8 +113,8 @@
     };
 
     // --- 3. UserScript本体の起動 ---
-    // manifest.json の記述順序が ["content.js", "adapter.js"] なので、
-    // content.js が先に実行されて window.__X_ADV_SEARCH_MAIN__ に関数が入っている状態になる。
+    // Manifestでの読み込み順序により content.js は既に読み込まれ、関数が定義されているはずですが、
+    // 万が一のために存在チェックを行います。
     if (typeof window.__X_ADV_SEARCH_MAIN__ === 'function') {
         window.__X_ADV_SEARCH_MAIN__();
     }
