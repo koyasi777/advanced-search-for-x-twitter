@@ -109,7 +109,7 @@
 
     window.GM_info = {
         scriptHandler: "Chrome Extension Adapter",
-        version: "7.0.3"
+        version: "7.0.4"
     };
 
     // --- 3. UserScript本体の起動 ---
