@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      7.0.5
+// @version      7.0.6
 // @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
 // @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
 // @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
@@ -8350,6 +8350,29 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                         setupNativeSearchResizer();
                     } catch (_) {}
                 }
+
+                // 5. 設定モーダルのUI表示をインポート内容に合わせて同期
+                try {
+                    if (typeof settingsThemeSel !== 'undefined' && settingsThemeSel) {
+                        settingsThemeSel.value = data.theme || 'auto';
+                    }
+                    if (typeof settingsLangSel !== 'undefined' && settingsLangSel) {
+                        settingsLangSel.value = data.lang || '';
+                    }
+                    if (typeof settingsInitialTabSel !== 'undefined' && settingsInitialTabSel) {
+                        settingsInitialTabSel.value = data.initialTab || 'last';
+                    }
+                    if (data.tabs && data.tabs.visibility) {
+                        if (typeof DEFAULT_TABS !== 'undefined') {
+                            DEFAULT_TABS.forEach(tabName => {
+                                const toggle = document.getElementById(`adv-settings-tab-toggle-${tabName}`);
+                                if (toggle) {
+                                    toggle.checked = data.tabs.visibility[tabName] !== false;
+                                }
+                            });
+                        }
+                    }
+                } catch (_) {}
 
                 showToast(i18n.t('toastImported'));
                 return true;
