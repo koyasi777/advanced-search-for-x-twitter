@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      7.0.4
+// @version      7.0.5
 // @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
 // @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
 // @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
@@ -271,6 +271,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleFeatures: "Tab Visibility",
                 settingsTitleData: "Data",
                 buttonClose: "Close",
+                labelTheme: "Theme",
+                optThemeAuto: "Auto",
+                optThemeLight: "Light",
+                optThemeDim: "Dim",
+                optThemeDark: "Dark",
                 labelUILang: "Interface language",
                 optUILangAuto: "Auto",
                 labelInitialTab: "Startup tab",
@@ -543,6 +548,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleFeatures: "タブ表示設定",
                 settingsTitleData: "データ管理",
                 buttonClose: "閉じる",
+                labelTheme: "テーマ",
+                optThemeAuto: "自動判定",
+                optThemeLight: "ライト",
+                optThemeDim: "ディム",
+                optThemeDark: "ダーク",
                 labelUILang: "UI 言語",
                 optUILangAuto: "自動判定",
                 labelInitialTab: "起動時に開くタブ",
@@ -813,6 +823,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleFeatures: "标签显示",
                 settingsTitleData: "数据管理",
                 buttonClose: "关闭",
+                labelTheme: "主题",
+                optThemeAuto: "自动",
+                optThemeLight: "浅色",
+                optThemeDim: "暗色",
+                optThemeDark: "深色",
                 labelUILang: "界面语言",
                 optUILangAuto: "自动",
                 labelInitialTab: "启动时打开的标签页",
@@ -1082,6 +1097,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleFeatures: "標籤顯示",
                 settingsTitleData: "資料管理",
                 buttonClose: "關閉",
+                labelTheme: "主題",
+                optThemeAuto: "自動",
+                optThemeLight: "淺色",
+                optThemeDim: "暗色",
+                optThemeDark: "深色",
                 labelUILang: "介面語言",
                 optUILangAuto: "自動",
                 labelInitialTab: "啟動時開啟的分頁",
@@ -1351,6 +1371,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleFeatures: "탭 표시 설정",
                 settingsTitleData: "데이터 관리",
                 buttonClose: "닫기",
+                labelTheme: "테마",
+                optThemeAuto: "자동",
+                optThemeLight: "라이트",
+                optThemeDim: "딤",
+                optThemeDark: "다크",
                 labelUILang: "UI 언어",
                 optUILangAuto: "자동",
                 labelInitialTab: "시작 시 열 탭",
@@ -1623,6 +1648,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleFeatures: "Affichage onglets",
                 settingsTitleData: "Données",
                 buttonClose: "Fermer",
+                labelTheme: "Thème",
+                optThemeAuto: "Auto",
+                optThemeLight: "Clair",
+                optThemeDim: "Sombre",
+                optThemeDark: "Noir",
                 labelUILang: "Langue de l'interface",
                 optUILangAuto: "Auto",
                 labelInitialTab: "Onglet au démarrage",
@@ -1892,6 +1922,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleFeatures: "Visibilidad de pestañas",
                 settingsTitleData: "Datos",
                 buttonClose: "Cerrar",
+                labelTheme: "Tema",
+                optThemeAuto: "Automático",
+                optThemeLight: "Claro",
+                optThemeDim: "Oscuro",
+                optThemeDark: "Noche",
                 labelUILang: "Idioma de interfaz",
                 optUILangAuto: "Automático",
                 labelInitialTab: "Pestaña de inicio",
@@ -2161,6 +2196,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleFeatures: "Tab-Sichtbarkeit",
                 settingsTitleData: "Daten",
                 buttonClose: "Schließen",
+                labelTheme: "Design",
+                optThemeAuto: "Automatisch",
+                optThemeLight: "Hell",
+                optThemeDim: "Gedimmt",
+                optThemeDark: "Dunkel",
                 labelUILang: "Oberflächensprache",
                 optUILangAuto: "Automatisch",
                 labelInitialTab: "Start-Tab",
@@ -2430,6 +2470,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleFeatures: "Visibilidade de abas",
                 settingsTitleData: "Dados",
                 buttonClose: "Fechar",
+                labelTheme: "Tema",
+                optThemeAuto: "Automático",
+                optThemeLight: "Claro",
+                optThemeDim: "Escuro",
+                optThemeDark: "Noite",
                 labelUILang: "Idioma da interface",
                 optUILangAuto: "Automático",
                 labelInitialTab: "Aba inicial",
@@ -2699,6 +2744,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleFeatures: "Вкладки",
                 settingsTitleData: "Данные",
                 buttonClose: "Закрыть",
+                labelTheme: "Тема",
+                optThemeAuto: "Авто",
+                optThemeLight: "Светлая",
+                optThemeDim: "Приглушенная",
+                optThemeDark: "Темная",
                 labelUILang: "Язык интерфейса",
                 optUILangAuto: "Авто",
                 labelInitialTab: "Вкладка при запуске",
@@ -2887,10 +2937,18 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         },
         applyTheme: function(modalElement, triggerEl) {
             if (!modalElement) return;
-            const bodyBg = getComputedStyle(document.body).backgroundColor;
+
+            let savedTheme = 'auto';
+            try { savedTheme = GM_getValue('advTheme_v1', 'auto'); } catch (e) {}
+
             let theme = 'dark';
-            if (bodyBg === 'rgb(21, 32, 43)') theme = 'dim';
-            else if (bodyBg === 'rgb(255, 255, 255)') theme = 'light';
+            if (savedTheme === 'auto') {
+                const bodyBg = getComputedStyle(document.body).backgroundColor;
+                if (bodyBg === 'rgb(21, 32, 43)') theme = 'dim';
+                else if (bodyBg === 'rgb(255, 255, 255)') theme = 'light';
+            } else {
+                theme = savedTheme;
+            }
 
             // ▼ ブックマークUIのテーマ切替用にクラスを付与
             try {
@@ -5250,6 +5308,15 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 <div class="adv-settings-body">
                   <div class="adv-settings-section-header" data-i18n="settingsTitleGeneral"></div>
                     <div class="adv-settings-group">
+                        <label for="adv-settings-theme" data-i18n="labelTheme"></label>
+                        <select id="adv-settings-theme">
+                            <option value="auto" data-i18n="optThemeAuto"></option>
+                            <option value="light" data-i18n="optThemeLight"></option>
+                            <option value="dim" data-i18n="optThemeDim"></option>
+                            <option value="dark" data-i18n="optThemeDark"></option>
+                        </select>
+                    </div>
+                    <div class="adv-settings-group">
                         <label for="adv-settings-lang" data-i18n="labelUILang"></label>
                         <select id="adv-settings-lang">
                             <option value="" data-i18n="optUILangAuto"></option>
@@ -6640,6 +6707,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         const secretStateEl = document.getElementById('adv-secret-state');
 
         const settingsModal = document.getElementById('adv-settings-modal');
+        const settingsThemeSel = document.getElementById('adv-settings-theme');
         const settingsLangSel = document.getElementById('adv-settings-lang');
         const settingsInitialTabSel = document.getElementById('adv-settings-initial-tab');
         const settingsFileInput = document.getElementById('adv-settings-file-input');
@@ -7898,8 +7966,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             // 削除ログを含める
             deletedLog: (typeof loadDeletedLog === 'function') ? loadDeletedLog() : {},
 
-            // 言語・除外設定・ミュート
+            // 言語・テーマ・除外設定・ミュート
             lang: kv.get(LANG_OVERRIDE_KEY, ''),
+            theme: kv.get('advTheme_v1', 'auto'),
             initialTab: kv.get(INITIAL_TAB_KEY, 'last'),
             excludeFlags: loadExcludeFlags(),
             muteMaster: loadMuteMaster(),
@@ -8054,6 +8123,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 // --- 基本設定（v1/v2 共通） ---
                 if (data.lang !== undefined) {
                     try { kv.set(LANG_OVERRIDE_KEY, data.lang || ''); } catch (_) {}
+                }
+
+                if (data.theme !== undefined) {
+                    try { kv.set('advTheme_v1', data.theme || 'auto'); } catch (_) {}
                 }
 
                 if (data.initialTab !== undefined) {
@@ -8236,6 +8309,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
                 // タブの表示状態を適用
                 try { applyTabsVisibility(); } catch (_) {}
+
+                // テーマ適用
+                try {
+                    themeManager.applyTheme(modal, trigger);
+                    const dialog = document.querySelector('.adv-settings-dialog');
+                    if (dialog) themeManager.applyTheme(dialog, null);
+                } catch (_) {}
 
                 // ▼▼▼ インポートした設定を即座に画面に反映する処理 ▼▼▼
 
@@ -8982,6 +9062,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             if (settingsLangSel) settingsLangSel.value = override || '';
           } catch (_) {}
 
+          // テーマの読み込み
+          try {
+            const themeVal = kv.get('advTheme_v1', 'auto');
+            if (settingsThemeSel) settingsThemeSel.value = themeVal;
+          } catch (_) {}
+
           try {
             const initTab = kv.get(INITIAL_TAB_KEY, 'last');
             if (settingsInitialTabSel) settingsInitialTabSel.value = initTab;
@@ -9120,6 +9206,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             if (!confirm(i18n.t('confirmResetAll'))) return;
 
             const KEYS_TO_DELETE = [
+              'advTheme_v1',
               MODAL_STATE_KEY,
               TRIGGER_STATE_KEY,
               HISTORY_KEY,
@@ -9272,6 +9359,16 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
             // ▼▼▼ 設定モーダルのUI表示を強制的に初期値に戻す ▼▼▼
 
+            // テーマ設定のリセットと適用
+            if (typeof settingsThemeSel !== 'undefined' && settingsThemeSel) settingsThemeSel.value = 'auto';
+            try {
+                const mdl = document.getElementById('advanced-search-modal');
+                const trg = document.getElementById('advanced-search-trigger');
+                const dlg = document.querySelector('.adv-settings-dialog');
+                if (mdl) themeManager.applyTheme(mdl, trg);
+                if (dlg) themeManager.applyTheme(dlg, null);
+            } catch (_) {}
+
             // 1. 言語設定リセット
             if (settingsLangSel) settingsLangSel.value = '';
 
@@ -9301,6 +9398,16 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             }
 
             showToast(i18n.t('toastReset'));
+          });
+        }
+
+        if (settingsThemeSel) {
+          settingsThemeSel.addEventListener('change', () => {
+            try { kv.set('advTheme_v1', settingsThemeSel.value); } catch (_) {}
+            // 即座にテーマを再適用する
+            themeManager.applyTheme(modal, trigger);
+            const dialog = settingsModal.querySelector('.adv-settings-dialog');
+            if (dialog) themeManager.applyTheme(dialog, null);
           });
         }
 
