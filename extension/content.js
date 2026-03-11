@@ -10,7 +10,7 @@
 // @name:de      Advanced Search for X (Twitter) 🔍
 // @name:pt-BR   Advanced Search for X (Twitter) 🔍
 // @name:ru      Advanced Search for X (Twitter) 🔍
-// @version      7.0.4
+// @version      7.0.7
 // @description      No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
 // @description:ja   検索コマンドはもう覚える必要なし。誰にでも使いやすい高度な検索UI、検索履歴、検索条件の保存、投稿（ツイート）をタグで管理できるローカルお気に入り機能、正規表現対応のミュート、フォルダー分け対応のアカウント／リスト管理機能などを統合した超多機能フローティングウィンドウを X.com（Twitter）に追加します。
 // @description:en   No need to memorize search commands anymore. Adds a feature-rich floating window to X.com (Twitter) that combines an easy-to-use advanced search UI, search history, saved searches, local post (tweet) bookmarks with tags, regex-based muting, and folder-based account and list management.
@@ -87,6 +87,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             'en': {
                 modalTitle: "Advanced Search",
                 tooltipClose: "Close",
+                labelResultType: "Result type",
+                optResultDefault: "Default",
+                optResultTop: "Top",
+                optResultLatest: "Latest",
+                optResultPeople: "People",
+                optResultMedia: "Media",
+                optResultLists: "Lists",
                 labelAllWords: "All of these words",
                 placeholderAllWords: "e.g., AI news",
                 labelExactPhrase: "This exact phrase",
@@ -271,6 +278,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleFeatures: "Tab Visibility",
                 settingsTitleData: "Data",
                 buttonClose: "Close",
+                labelTheme: "Theme",
+                optThemeAuto: "Auto",
+                optThemeLight: "Light",
+                optThemeDim: "Dim",
+                optThemeDark: "Dark",
                 labelUILang: "Interface language",
                 optUILangAuto: "Auto",
                 labelInitialTab: "Startup tab",
@@ -359,6 +371,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             'ja': {
                 modalTitle: "高度な検索",
                 tooltipClose: "閉じる",
+                labelResultType: "検索結果",
+                optResultDefault: "指定しない",
+                optResultTop: "話題のポスト",
+                optResultLatest: "最新",
+                optResultPeople: "アカウント",
+                optResultMedia: "メディア",
+                optResultLists: "リスト",
                 labelAllWords: "すべての語句を含む",
                 placeholderAllWords: "例: AI ニュース",
                 labelExactPhrase: "この語句を完全に含む",
@@ -543,6 +562,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleFeatures: "タブ表示設定",
                 settingsTitleData: "データ管理",
                 buttonClose: "閉じる",
+                labelTheme: "テーマ",
+                optThemeAuto: "自動判定",
+                optThemeLight: "ライト",
+                optThemeDim: "ディム",
+                optThemeDark: "ダーク",
                 labelUILang: "UI 言語",
                 optUILangAuto: "自動判定",
                 labelInitialTab: "起動時に開くタブ",
@@ -629,6 +653,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             'zh-CN': {
                 modalTitle: "高级搜索",
                 tooltipClose: "关闭",
+                labelResultType: "搜索结果类型",
+                optResultDefault: "默认 (不指定)",
+                optResultTop: "热门",
+                optResultLatest: "最新",
+                optResultPeople: "用户",
+                optResultMedia: "媒体",
+                optResultLists: "列表",
                 labelAllWords: "包含全部词语",
                 placeholderAllWords: "例如：AI 新闻",
                 labelExactPhrase: "包含确切短语",
@@ -813,6 +844,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleFeatures: "标签显示",
                 settingsTitleData: "数据管理",
                 buttonClose: "关闭",
+                labelTheme: "主题",
+                optThemeAuto: "自动",
+                optThemeLight: "浅色",
+                optThemeDim: "暗色",
+                optThemeDark: "深色",
                 labelUILang: "界面语言",
                 optUILangAuto: "自动",
                 labelInitialTab: "启动时打开的标签页",
@@ -898,6 +934,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             'zh-TW': {
                 modalTitle: "進階搜尋",
                 tooltipClose: "關閉",
+                labelResultType: "搜尋結果類型",
+                optResultDefault: "預設 (不指定)",
+                optResultTop: "熱門",
+                optResultLatest: "最新",
+                optResultPeople: "用戶",
+                optResultMedia: "媒體",
+                optResultLists: "列表",
                 labelAllWords: "包含所有詞語",
                 placeholderAllWords: "例如：AI 新聞",
                 labelExactPhrase: "包含精確詞組",
@@ -1082,6 +1125,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleFeatures: "標籤顯示",
                 settingsTitleData: "資料管理",
                 buttonClose: "關閉",
+                labelTheme: "主題",
+                optThemeAuto: "自動",
+                optThemeLight: "淺色",
+                optThemeDim: "暗色",
+                optThemeDark: "深色",
                 labelUILang: "介面語言",
                 optUILangAuto: "自動",
                 labelInitialTab: "啟動時開啟的分頁",
@@ -1167,6 +1215,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             'ko': {
                 modalTitle: "고급 검색",
                 tooltipClose: "닫기",
+                labelResultType: "검색 결과",
+                optResultDefault: "지정 안 함",
+                optResultTop: "인기",
+                optResultLatest: "최신",
+                optResultPeople: "사용자",
+                optResultMedia: "미디어",
+                optResultLists: "리스트",
                 labelAllWords: "다음 단어 모두 포함",
                 placeholderAllWords: "예: AI 뉴스",
                 labelExactPhrase: "정확하게 일치하는 문구",
@@ -1351,6 +1406,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleFeatures: "탭 표시 설정",
                 settingsTitleData: "데이터 관리",
                 buttonClose: "닫기",
+                labelTheme: "테마",
+                optThemeAuto: "자동",
+                optThemeLight: "라이트",
+                optThemeDim: "딤",
+                optThemeDark: "다크",
                 labelUILang: "UI 언어",
                 optUILangAuto: "자동",
                 labelInitialTab: "시작 시 열 탭",
@@ -1439,6 +1499,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             'fr': {
                 modalTitle: "Recherche avancée",
                 tooltipClose: "Fermer",
+                labelResultType: "Type de résultat",
+                optResultDefault: "Par défaut",
+                optResultTop: "Top",
+                optResultLatest: "Récents",
+                optResultPeople: "Personnes",
+                optResultMedia: "Médias",
+                optResultLists: "Listes",
                 labelAllWords: "Tous ces mots",
                 placeholderAllWords: "ex: AI actualités",
                 labelExactPhrase: "Cette phrase exacte",
@@ -1623,6 +1690,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleFeatures: "Affichage onglets",
                 settingsTitleData: "Données",
                 buttonClose: "Fermer",
+                labelTheme: "Thème",
+                optThemeAuto: "Auto",
+                optThemeLight: "Clair",
+                optThemeDim: "Sombre",
+                optThemeDark: "Noir",
                 labelUILang: "Langue de l'interface",
                 optUILangAuto: "Auto",
                 labelInitialTab: "Onglet au démarrage",
@@ -1708,6 +1780,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             'es': {
                 modalTitle: "Búsqueda avanzada",
                 tooltipClose: "Cerrar",
+                labelResultType: "Tipo de resultado",
+                optResultDefault: "Por defecto",
+                optResultTop: "Destacados",
+                optResultLatest: "Más recientes",
+                optResultPeople: "Personas",
+                optResultMedia: "Multimedia",
+                optResultLists: "Listas",
                 labelAllWords: "Todas estas palabras",
                 placeholderAllWords: "ej. AI noticias",
                 labelExactPhrase: "Esta frase exacta",
@@ -1892,6 +1971,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleFeatures: "Visibilidad de pestañas",
                 settingsTitleData: "Datos",
                 buttonClose: "Cerrar",
+                labelTheme: "Tema",
+                optThemeAuto: "Automático",
+                optThemeLight: "Claro",
+                optThemeDim: "Oscuro",
+                optThemeDark: "Noche",
                 labelUILang: "Idioma de interfaz",
                 optUILangAuto: "Automático",
                 labelInitialTab: "Pestaña de inicio",
@@ -1977,6 +2061,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             'de': {
                 modalTitle: "Erweiterte Suche",
                 tooltipClose: "Schließen",
+                labelResultType: "Ergebnistyp",
+                optResultDefault: "Standard",
+                optResultTop: "Top",
+                optResultLatest: "Neueste",
+                optResultPeople: "Personen",
+                optResultMedia: "Medien",
+                optResultLists: "Listen",
                 labelAllWords: "All diese Wörter",
                 placeholderAllWords: "z.B. AI Nachrichten",
                 labelExactPhrase: "Genau dieser Ausdruck",
@@ -2161,6 +2252,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleFeatures: "Tab-Sichtbarkeit",
                 settingsTitleData: "Daten",
                 buttonClose: "Schließen",
+                labelTheme: "Design",
+                optThemeAuto: "Automatisch",
+                optThemeLight: "Hell",
+                optThemeDim: "Gedimmt",
+                optThemeDark: "Dunkel",
                 labelUILang: "Oberflächensprache",
                 optUILangAuto: "Automatisch",
                 labelInitialTab: "Start-Tab",
@@ -2246,6 +2342,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             'pt-BR': {
                 modalTitle: "Busca avançada",
                 tooltipClose: "Fechar",
+                labelResultType: "Tipo de resultado",
+                optResultDefault: "Padrão",
+                optResultTop: "Em destaque",
+                optResultLatest: "Mais recentes",
+                optResultPeople: "Pessoas",
+                optResultMedia: "Mídia",
+                optResultLists: "Listas",
                 labelAllWords: "Todas estas palavras",
                 placeholderAllWords: "ex: AI notícias",
                 labelExactPhrase: "Esta frase exata",
@@ -2430,6 +2533,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleFeatures: "Visibilidade de abas",
                 settingsTitleData: "Dados",
                 buttonClose: "Fechar",
+                labelTheme: "Tema",
+                optThemeAuto: "Automático",
+                optThemeLight: "Claro",
+                optThemeDim: "Escuro",
+                optThemeDark: "Noite",
                 labelUILang: "Idioma da interface",
                 optUILangAuto: "Automático",
                 labelInitialTab: "Aba inicial",
@@ -2515,6 +2623,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             'ru': {
                 modalTitle: "Расширенный поиск",
                 tooltipClose: "Закрыть",
+                labelResultType: "Тип результата",
+                optResultDefault: "По умолчанию",
+                optResultTop: "Популярные",
+                optResultLatest: "Последние",
+                optResultPeople: "Люди",
+                optResultMedia: "Медиа",
+                optResultLists: "Списки",
                 labelAllWords: "Все эти слова",
                 placeholderAllWords: "напр., AI новости",
                 labelExactPhrase: "Точная фраза",
@@ -2699,6 +2814,11 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 settingsTitleFeatures: "Вкладки",
                 settingsTitleData: "Данные",
                 buttonClose: "Закрыть",
+                labelTheme: "Тема",
+                optThemeAuto: "Авто",
+                optThemeLight: "Светлая",
+                optThemeDim: "Приглушенная",
+                optThemeDark: "Темная",
                 labelUILang: "Язык интерфейса",
                 optUILangAuto: "Авто",
                 labelInitialTab: "Вкладка при запуске",
@@ -2887,10 +3007,18 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         },
         applyTheme: function(modalElement, triggerEl) {
             if (!modalElement) return;
-            const bodyBg = getComputedStyle(document.body).backgroundColor;
+
+            let savedTheme = 'auto';
+            try { savedTheme = GM_getValue('advTheme_v1', 'auto'); } catch (e) {}
+
             let theme = 'dark';
-            if (bodyBg === 'rgb(21, 32, 43)') theme = 'dim';
-            else if (bodyBg === 'rgb(255, 255, 255)') theme = 'light';
+            if (savedTheme === 'auto') {
+                const bodyBg = getComputedStyle(document.body).backgroundColor;
+                if (bodyBg === 'rgb(21, 32, 43)') theme = 'dim';
+                else if (bodyBg === 'rgb(255, 255, 255)') theme = 'light';
+            } else {
+                theme = savedTheme;
+            }
 
             // ▼ ブックマークUIのテーマ切替用にクラスを付与
             try {
@@ -4999,25 +5127,38 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                         <div class="adv-form-group"><label for="adv-any-words" data-i18n="labelAnyWords"></label><input type="text" id="adv-any-words" data-i18n-placeholder="placeholderAnyWords"></div>
                         <div class="adv-form-group"><label for="adv-not-words" data-i18n="labelNotWords"></label><input type="text" id="adv-not-words" data-i18n-placeholder="placeholderNotWords"></div>
                         <div class="adv-form-group"><label for="adv-hashtag" data-i18n="labelHashtag"></label><input type="text" id="adv-hashtag" data-i18n-placeholder="placeholderHashtag"></div>
-                        <div class="adv-form-group">
-                          <label for="adv-lang" data-i18n="labelLang"></label>
-                          <select id="adv-lang">
-                            <option value="" data-i18n="optLangDefault"></option>
-                            <option value="ja" data-i18n="optLangJa"></option>
-                            <option value="en" data-i18n="optLangEn"></option>
-                            <option value="id" data-i18n="optLangId"></option>     <!-- インドネシア -->
-                            <option value="hi" data-i18n="optLangHi"></option>     <!-- ヒンディー（インド） -->
-                            <option value="de" data-i18n="optLangDe"></option>     <!-- ドイツ -->
-                            <option value="tr" data-i18n="optLangTr"></option>     <!-- トルコ -->
-                            <option value="es" data-i18n="optLangEs"></option>     <!-- スペイン語（メキシコ含む） -->
-                            <option value="pt" data-i18n="optLangPt"></option>     <!-- ポルトガル語（ブラジル）-->
-                            <option value="ar" data-i18n="optLangAr"></option>     <!-- アラビア語（サウジ等） -->
-                            <option value="fr" data-i18n="optLangFr"></option>
-                            <option value="ko" data-i18n="optLangKo"></option>
-                            <option value="ru" data-i18n="optLangRu"></option>
-                            <option value="zh-cn" data-i18n="optLangZhHans"></option> <!-- 簡体中文 -->
-                            <option value="zh-tw" data-i18n="optLangZhHant"></option> <!-- 繁體中文 -->
-                          </select>
+                        <div class="adv-form-row two-cols">
+                            <div class="adv-form-group">
+                                <label for="adv-result-type" data-i18n="labelResultType"></label>
+                                <select id="adv-result-type">
+                                    <option value="" data-i18n="optResultDefault"></option>
+                                    <option value="top" data-i18n="optResultTop"></option>
+                                    <option value="live" data-i18n="optResultLatest"></option>
+                                    <option value="user" data-i18n="optResultPeople"></option>
+                                    <option value="media" data-i18n="optResultMedia"></option>
+                                    <option value="list" data-i18n="optResultLists"></option>
+                                </select>
+                            </div>
+                            <div class="adv-form-group">
+                              <label for="adv-lang" data-i18n="labelLang"></label>
+                              <select id="adv-lang">
+                                <option value="" data-i18n="optLangDefault"></option>
+                                <option value="ja" data-i18n="optLangJa"></option>
+                                <option value="en" data-i18n="optLangEn"></option>
+                                <option value="id" data-i18n="optLangId"></option>     <!-- インドネシア -->
+                                <option value="hi" data-i18n="optLangHi"></option>     <!-- ヒンディー（インド） -->
+                                <option value="de" data-i18n="optLangDe"></option>     <!-- ドイツ -->
+                                <option value="tr" data-i18n="optLangTr"></option>     <!-- トルコ -->
+                                <option value="es" data-i18n="optLangEs"></option>     <!-- スペイン語（メキシコ含む） -->
+                                <option value="pt" data-i18n="optLangPt"></option>     <!-- ポルトガル語（ブラジル）-->
+                                <option value="ar" data-i18n="optLangAr"></option>     <!-- アラビア語（サウジ等） -->
+                                <option value="fr" data-i18n="optLangFr"></option>
+                                <option value="ko" data-i18n="optLangKo"></option>
+                                <option value="ru" data-i18n="optLangRu"></option>
+                                <option value="zh-cn" data-i18n="optLangZhHans"></option> <!-- 簡体中文 -->
+                                <option value="zh-tw" data-i18n="optLangZhHant"></option> <!-- 繁體中文 -->
+                              </select>
+                            </div>
                         </div>
                         <hr class="adv-separator">
                         <div class="adv-form-group">
@@ -5249,6 +5390,15 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 </div>
                 <div class="adv-settings-body">
                   <div class="adv-settings-section-header" data-i18n="settingsTitleGeneral"></div>
+                    <div class="adv-settings-group">
+                        <label for="adv-settings-theme" data-i18n="labelTheme"></label>
+                        <select id="adv-settings-theme">
+                            <option value="auto" data-i18n="optThemeAuto"></option>
+                            <option value="light" data-i18n="optThemeLight"></option>
+                            <option value="dim" data-i18n="optThemeDim"></option>
+                            <option value="dark" data-i18n="optThemeDark"></option>
+                        </select>
+                    </div>
                     <div class="adv-settings-group">
                         <label for="adv-settings-lang" data-i18n="labelUILang"></label>
                         <select id="adv-settings-lang">
@@ -6640,6 +6790,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         const secretStateEl = document.getElementById('adv-secret-state');
 
         const settingsModal = document.getElementById('adv-settings-modal');
+        const settingsThemeSel = document.getElementById('adv-settings-theme');
         const settingsLangSel = document.getElementById('adv-settings-lang');
         const settingsInitialTabSel = document.getElementById('adv-settings-initial-tab');
         const settingsFileInput = document.getElementById('adv-settings-file-input');
@@ -6655,6 +6806,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
         const accountScopeSel = document.getElementById('adv-account-scope');
         const locationScopeSel = document.getElementById('adv-location-scope');
+        const resultTypeSel = document.getElementById('adv-result-type');
 
         ['n','e','s','w','ne','nw','se','sw'].forEach(dir => {
             const h = document.createElement('div');
@@ -7898,8 +8050,9 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             // 削除ログを含める
             deletedLog: (typeof loadDeletedLog === 'function') ? loadDeletedLog() : {},
 
-            // 言語・除外設定・ミュート
+            // 言語・テーマ・除外設定・ミュート
             lang: kv.get(LANG_OVERRIDE_KEY, ''),
+            theme: kv.get('advTheme_v1', 'auto'),
             initialTab: kv.get(INITIAL_TAB_KEY, 'last'),
             excludeFlags: loadExcludeFlags(),
             muteMaster: loadMuteMaster(),
@@ -8054,6 +8207,10 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 // --- 基本設定（v1/v2 共通） ---
                 if (data.lang !== undefined) {
                     try { kv.set(LANG_OVERRIDE_KEY, data.lang || ''); } catch (_) {}
+                }
+
+                if (data.theme !== undefined) {
+                    try { kv.set('advTheme_v1', data.theme || 'auto'); } catch (_) {}
                 }
 
                 if (data.initialTab !== undefined) {
@@ -8237,6 +8394,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 // タブの表示状態を適用
                 try { applyTabsVisibility(); } catch (_) {}
 
+                // テーマ適用
+                try {
+                    themeManager.applyTheme(modal, trigger);
+                    const dialog = document.querySelector('.adv-settings-dialog');
+                    if (dialog) themeManager.applyTheme(dialog, null);
+                } catch (_) {}
+
                 // ▼▼▼ インポートした設定を即座に画面に反映する処理 ▼▼▼
 
                 // 1. ズーム設定の反映 (データに含まれている場合のみ実行)
@@ -8270,6 +8434,29 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                         setupNativeSearchResizer();
                     } catch (_) {}
                 }
+
+                // 5. 設定モーダルのUI表示をインポート内容に合わせて同期
+                try {
+                    if (typeof settingsThemeSel !== 'undefined' && settingsThemeSel) {
+                        settingsThemeSel.value = data.theme || 'auto';
+                    }
+                    if (typeof settingsLangSel !== 'undefined' && settingsLangSel) {
+                        settingsLangSel.value = data.lang || '';
+                    }
+                    if (typeof settingsInitialTabSel !== 'undefined' && settingsInitialTabSel) {
+                        settingsInitialTabSel.value = data.initialTab || 'last';
+                    }
+                    if (data.tabs && data.tabs.visibility) {
+                        if (typeof DEFAULT_TABS !== 'undefined') {
+                            DEFAULT_TABS.forEach(tabName => {
+                                const toggle = document.getElementById(`adv-settings-tab-toggle-${tabName}`);
+                                if (toggle) {
+                                    toggle.checked = data.tabs.visibility[tabName] !== false;
+                                }
+                            });
+                        }
+                    }
+                } catch (_) {}
 
                 showToast(i18n.t('toastImported'));
                 return true;
@@ -8666,18 +8853,35 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         requestAnimationFrame(keepTriggerInViewport);
         setupTriggerDrag();
 
-        const readScopesFromControls = () => ({ pf: accountScopeSel.value === 'following', lf: locationScopeSel.value === 'nearby' });
-        const applyScopesToControls = ({pf=false, lf=false}) => {
+        const readScopesFromControls = () => ({
+            pf: accountScopeSel.value === 'following',
+            lf: locationScopeSel.value === 'nearby',
+            f: resultTypeSel ? resultTypeSel.value : ''
+        });
+        const applyScopesToControls = ({pf=false, lf=false, f=''}) => {
             accountScopeSel.value = pf ? 'following' : '';
             locationScopeSel.value = lf ? 'nearby' : '';
+            if (resultTypeSel) {
+                // 許可された値のみセット
+                if (['', 'top', 'live', 'user', 'media', 'list'].includes(f)) {
+                    resultTypeSel.value = f;
+                } else {
+                    resultTypeSel.value = '';
+                }
+            }
         };
         const readScopesFromURL = (urlStr) => {
             try {
                 const u = new URL(urlStr || location.href, location.origin);
                 const pf = (u.searchParams.get('pf') || '') === 'on';
                 const lf = (u.searchParams.get('lf') || '') === 'on';
-                return { pf, lf };
-            } catch { return { pf:false, lf:false }; }
+                let f = '';
+                // 検索画面にいる場合のみパラメータを評価（それ以外は「指定しない」）
+                if (u.pathname.startsWith('/search')) {
+                    f = u.searchParams.get('f') || 'top';
+                }
+                return { pf, lf, f };
+            } catch { return { pf:false, lf:false, f:'' }; }
         };
 
         const STATE_SYNC = {
@@ -8953,7 +9157,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
         const syncFromModalToSearchBox = () => {
             if (isUpdating) return; isUpdating=true;
-            const finalQuery = buildQueryStringFromModal();
+            const finalQuery = buildQueryStringFromModal().trim();
             // ▼ 複数形に変更し、ループ処理
             const inputs = getActiveSearchInputs();
             if (inputs.length > 0) {
@@ -8980,6 +9184,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           try {
             const override = kv.get(LANG_OVERRIDE_KEY, '');
             if (settingsLangSel) settingsLangSel.value = override || '';
+          } catch (_) {}
+
+          // テーマの読み込み
+          try {
+            const themeVal = kv.get('advTheme_v1', 'auto');
+            if (settingsThemeSel) settingsThemeSel.value = themeVal;
           } catch (_) {}
 
           try {
@@ -9120,6 +9330,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             if (!confirm(i18n.t('confirmResetAll'))) return;
 
             const KEYS_TO_DELETE = [
+              'advTheme_v1',
               MODAL_STATE_KEY,
               TRIGGER_STATE_KEY,
               HISTORY_KEY,
@@ -9213,7 +9424,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               activateTab('search');
 
               parseQueryAndApplyToModal('');
-              applyScopesToControls({ pf: false, lf: false });
+              applyScopesToControls({ pf: false, lf: false, f: '' });
               applySecretBtn();
               renderHistory();
               renderSaved();
@@ -9272,6 +9483,16 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
             // ▼▼▼ 設定モーダルのUI表示を強制的に初期値に戻す ▼▼▼
 
+            // テーマ設定のリセットと適用
+            if (typeof settingsThemeSel !== 'undefined' && settingsThemeSel) settingsThemeSel.value = 'auto';
+            try {
+                const mdl = document.getElementById('advanced-search-modal');
+                const trg = document.getElementById('advanced-search-trigger');
+                const dlg = document.querySelector('.adv-settings-dialog');
+                if (mdl) themeManager.applyTheme(mdl, trg);
+                if (dlg) themeManager.applyTheme(dlg, null);
+            } catch (_) {}
+
             // 1. 言語設定リセット
             if (settingsLangSel) settingsLangSel.value = '';
 
@@ -9301,6 +9522,16 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             }
 
             showToast(i18n.t('toastReset'));
+          });
+        }
+
+        if (settingsThemeSel) {
+          settingsThemeSel.addEventListener('change', () => {
+            try { kv.set('advTheme_v1', settingsThemeSel.value); } catch (_) {}
+            // 即座にテーマを再適用する
+            themeManager.applyTheme(modal, trigger);
+            const dialog = settingsModal.querySelector('.adv-settings-dialog');
+            if (dialog) themeManager.applyTheme(dialog, null);
           });
         }
 
@@ -9360,17 +9591,17 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         });
         applySecretBtn();
 
-        const migrateList = (list) => Array.isArray(list) ? list.map(it => ({ id:it.id||uid(), q:it.q||'', ts:it.ts||Date.now(), pf:!!it.pf, lf:!!it.lf })) : [];
+        const migrateList = (list) => Array.isArray(list) ? list.map(it => ({ id:it.id||uid(), q:it.q||'', ts:it.ts||Date.now(), pf:!!it.pf, lf:!!it.lf, f:it.f||'' })) : [];
 
-        const recordHistory = (q, pf, lf) => {
+        const recordHistory = (q, pf, lf, f = '') => {
             if (!q || loadSecret()) return;
             const now = Date.now();
-            if (lastHistory.q === q && lastHistory.pf === pf && lastHistory.lf === lf && (now - lastHistory.ts) < 3000) return;
-            lastHistory.q = q; lastHistory.pf = pf; lastHistory.lf = lf; lastHistory.ts = now;
+            if (lastHistory.q === q && lastHistory.pf === pf && lastHistory.lf === lf && lastHistory.f === f && (now - lastHistory.ts) < 3000) return;
+            lastHistory.q = q; lastHistory.pf = pf; lastHistory.lf = lf; lastHistory.f = f; lastHistory.ts = now;
 
             const listRaw = loadJSON(HISTORY_KEY, []);
             const list = migrateList(listRaw);
-            const idx = list.findIndex(it => it.q === q && !!it.pf === !!pf && !!it.lf === !!lf);
+            const idx = list.findIndex(it => it.q === q && !!it.pf === !!pf && !!it.lf === !!lf && (it.f || '') === f);
             if (idx === 0) {
                 list[0].ts = now;
             } else if (idx > 0) {
@@ -9378,7 +9609,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                 item.ts = now;
                 list.unshift(item);
             } else {
-                list.unshift({ id: uid(), q, pf: !!pf, lf: !!lf, ts: now });
+                list.unshift({ id: uid(), q, pf: !!pf, lf: !!lf, f, ts: now });
                 // if (list.length > 50) list.length = 50;
             }
             saveJSON(HISTORY_KEY, list);
@@ -9402,14 +9633,14 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             showToast(i18n.t('toastDeleted'));
         };
 
-        const addSaved = (q, pf, lf) => {
+        const addSaved = (q, pf, lf, f = '') => {
             const listRaw = loadJSON(SAVED_KEY, []);
             const list = migrateList(listRaw);
-            if (list.some(it => it.q === q && !!it.pf === !!pf && !!it.lf === !!lf)) {
+            if (list.some(it => it.q === q && !!it.pf === !!pf && !!it.lf === !!lf && (it.f || '') === f)) {
                 updateSaveButtonState();
                 return;
             }
-            const item = { id: uid(), q, pf: !!pf, lf: !!lf, ts: Date.now() };
+            const item = { id: uid(), q, pf: !!pf, lf: !!lf, f, ts: Date.now() };
             list.push(item);
             saveJSON(SAVED_KEY, list);
             renderSaved();
@@ -9432,14 +9663,13 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
         const updateSaveButtonState = () => {
             const q = buildQueryStringFromModal().trim();
-            const {pf, lf} = readScopesFromControls();
+            const {pf, lf, f} = readScopesFromControls();
             const saved = migrateList(loadJSON(SAVED_KEY, []));
-            const exists = !!q && saved.some(it => it.q === q && !!it.pf === !!pf && !!it.lf === !!lf);
+            const exists = !!q && saved.some(it => it.q === q && !!it.pf === !!pf && !!it.lf === !!lf && (it.f || '') === f);
             saveButton.disabled = !q || exists;
             saveButton.textContent = i18n.t(exists ? 'buttonSaved' : 'buttonSave');
             saveButton.setAttribute('aria-disabled', saveButton.disabled ? 'true' : 'false');
         };
-
 
 
         // タブのクリックイベントとD&Dイベントリスナーをセットアップ
@@ -9501,8 +9731,16 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             });
         })();
 
-        const scopeChipsHTML = (pf, lf) => {
+        const scopeChipsHTML = (pf, lf, f) => {
             const chips = [];
+
+            // 検索タブの種類をバッジとして追加
+            if (f === 'live') chips.push(`<span class="adv-chip scope" role="note">${i18n.t('optResultLatest')}</span>`);
+            else if (f === 'user') chips.push(`<span class="adv-chip scope" role="note">${i18n.t('optResultPeople')}</span>`);
+            else if (f === 'media') chips.push(`<span class="adv-chip scope" role="note">${i18n.t('optResultMedia')}</span>`);
+            else if (f === 'list') chips.push(`<span class="adv-chip scope" role="note">${i18n.t('optResultLists')}</span>`);
+            else chips.push(`<span class="adv-chip scope" role="note">${i18n.t('optResultTop')}</span>`);
+
             if (pf) chips.push(`<span class="adv-chip scope" role="note">${i18n.t('chipFollowing')}</span>`);
             if (lf) chips.push(`<span class="adv-chip scope" role="note">${i18n.t('chipNearby')}</span>`);
             return chips.join('');
@@ -9551,7 +9789,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                     <div class="adv-item-title">${escapeHTML(item.q)}</div>
                     <div class="adv-item-sub">
                       <span>${fmtTime(item.ts)}</span>
-                      ${scopeChipsHTML(!!item.pf, !!item.lf)}
+                      ${scopeChipsHTML(!!item.pf, !!item.lf, item.f)}
                     </div>
                   </div>
                   <div class="adv-item-actions">
@@ -9562,8 +9800,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
 
                 row.querySelector('[data-action="run"]').addEventListener('click', () => {
                     parseQueryAndApplyToModal(item.q);
-                    applyScopesToControls({ pf: !!item.pf, lf: !!item.lf });
-                    executeSearch({ pf: item.pf, lf: item.lf });
+                    applyScopesToControls({ pf: !!item.pf, lf: !!item.lf, f: item.f });
+                    executeSearch({ pf: !!item.pf, lf: !!item.lf, f: item.f });
                 });
 
                 row.querySelector('[data-action="delete"]').addEventListener('click', () => {
@@ -9611,7 +9849,6 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             loadItems: itemsLoader,
             saveItems: itemsSaver,
             renderRow: (item) => {
-              // 以前の renderSavedRow と同じ見た目
               const row = document.createElement('div');
               row.className = 'adv-item';
               row.draggable = true;
@@ -9622,7 +9859,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                   <div class="adv-item-title">${escapeHTML(item.q)}</div>
                   <div class="adv-item-sub">
                     <span>${fmtTime(item.ts)}</span>
-                    ${scopeChipsHTML(!!item.pf, !!item.lf)}
+                    ${scopeChipsHTML(!!item.pf, !!item.lf, item.f)}
                   </div>
                 </div>
                 <div class="adv-item-actions">
@@ -9632,9 +9869,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               `);
               row.querySelector('[data-action="run"]').addEventListener('click', ()=>{
                 parseQueryAndApplyToModal(item.q);
-                applyScopesToControls({pf:!!item.pf, lf:!!item.lf});
-                // activateTab('search');
-                executeSearch({pf:item.pf, lf:item.lf});
+                applyScopesToControls({pf:!!item.pf, lf:!!item.lf, f:item.f});
+                executeSearch({pf:!!item.pf, lf:!!item.lf, f:item.f});
               });
               row.querySelector('[data-action="delete"]').addEventListener('click', ()=> deleteSaved(item.id));
 
@@ -10900,6 +11136,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           const params = new URLSearchParams({ q: finalQuery, src: 'typed_query' });
           if (scopes.pf) params.set('pf', 'on');
           if (scopes.lf) params.set('lf', 'on');
+          // 'top' または ''(指定しない) 以外の場合のみクエリにfパラメータを付与
+          if (scopes.f && scopes.f !== 'top') params.set('f', scopes.f);
 
           const targetPath = `/search?${params.toString()}`;
 
@@ -10913,7 +11151,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
           }
 
           // 2) ルートに関わらず常に SPA 遷移で検索を確定
-          recordHistory(finalQuery, scopes.pf, scopes.lf);
+          recordHistory(finalQuery, scopes.pf, scopes.lf, scopes.f);
           const before = location.href;
           try {
             await spaNavigate(targetPath);
@@ -10942,11 +11180,12 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             return buildQueryStringFromModal().trim();
           })();
 
-          const { pf, lf } = readScopesFromControls();
+          const { pf, lf, f } = readScopesFromControls();
           const params = new URLSearchParams({ src: 'typed_query' });
           if (q) params.set('q', q);
           if (pf) params.set('pf', 'on');
           if (lf) params.set('lf', 'on');
+          if (f && f !== 'top') params.set('f', f);
 
           // 入力側を先に最新化
           // ▼ ループ処理
@@ -10956,7 +11195,7 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
               });
           }
 
-          recordHistory(q, pf, lf);
+          recordHistory(q, pf, lf, f);
           const path = `/search?${params.toString()}`;
           try {
             await spaNavigate(path);
@@ -10966,6 +11205,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         };
         accountScopeSel.addEventListener('change', onScopeChange);
         locationScopeSel.addEventListener('change', onScopeChange);
+        // 検索結果の変更は即時遷移させないため、onScopeChange はバインドせず「保存状態の更新」だけ行う
+        if (resultTypeSel) resultTypeSel.addEventListener('change', updateSaveButtonState);
 
         const setupModalDrag = () => {
             const header = modal.querySelector('.adv-modal-header');
@@ -12012,8 +12253,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
         saveButton.addEventListener('click', () => {
             const q = buildQueryStringFromModal().trim();
             if (!q) return;
-            const {pf, lf} = readScopesFromControls();
-            addSaved(q, pf, lf);
+            const {pf, lf, f} = readScopesFromControls();
+            addSaved(q, pf, lf, f);
             activateTab('saved');
         });
 
@@ -12269,7 +12510,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
                             const q = u.searchParams.get('q') || '';
                             const pf = (u.searchParams.get('pf') || '') === 'on';
                             const lf = (u.searchParams.get('lf') || '') === 'on';
-                            if (q) recordHistory(decodeURIComponent(q), pf, lf);
+                            const f = u.searchParams.get('f') || 'top';
+                            if (q) recordHistory(decodeURIComponent(q), pf, lf, f);
                         } else if (u.pathname.startsWith('/hashtag/')) {
                             const hashtag = u.pathname.substring('/hashtag/'.length).split('/')[0];
                             if (hashtag) {
@@ -14048,8 +14290,8 @@ const __X_ADV_SEARCH_MAIN_LOGIC__ = function() {
             const input = e.target.querySelector('input[data-testid="SearchBox_Search_Input"]');
             if (input) {
                 const val = (input.value || '').trim();
-                const {pf, lf} = readScopesFromControls();
-                if (val) recordHistory(val, pf, lf);
+                const {pf, lf, f} = readScopesFromControls();
+                if (val) recordHistory(val, pf, lf, f);
             }
         }, true); // キャプチャフェーズで実行
 
